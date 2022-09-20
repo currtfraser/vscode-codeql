@@ -14,7 +14,7 @@ export default {
       <VariantAnalysisContainer>
         <Story />
       </VariantAnalysisContainer>
-    )
+    ),
   ],
   argTypes: {
     onStopQueryClick: {
@@ -35,7 +35,7 @@ export default {
         disable: true,
       },
     },
-  }
+  },
 } as ComponentMeta<typeof VariantAnalysisActions>;
 
 const Template: ComponentStory<typeof VariantAnalysisActions> = (args) => (

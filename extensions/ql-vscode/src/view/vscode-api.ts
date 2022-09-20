@@ -1,4 +1,8 @@
-import { FromCompareViewMessage, FromRemoteQueriesMessage, FromResultsViewMsg } from '../pure/interface-types';
+import {
+  FromCompareViewMessage,
+  FromRemoteQueriesMessage,
+  FromResultsViewMsg,
+} from '../pure/interface-types';
 
 export interface VsCodeApi {
   /**

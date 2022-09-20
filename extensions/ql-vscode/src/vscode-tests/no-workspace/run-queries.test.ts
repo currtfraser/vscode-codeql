@@ -31,7 +31,9 @@ describe('run-queries', () => {
     expect(info.compiledQueryPath).to.eq(path.join(saveDir, 'compiledQuery.qlo'));
     expect(info.dilPath).to.eq(path.join(saveDir, 'results.dil'));
     expect(info.resultsPaths.resultsPath).to.eq(path.join(saveDir, 'results.bqrs'));
-    expect(info.resultsPaths.interpretedResultsPath).to.eq(path.join(saveDir, 'interpretedResults.sarif'));
+    expect(info.resultsPaths.interpretedResultsPath).to.eq(
+      path.join(saveDir, 'interpretedResults.sarif')
+    );
     expect(info.dbItemPath).to.eq(Uri.file('/abc').fsPath);
   });
 
@@ -58,22 +60,28 @@ describe('run-queries', () => {
     expect(info.canHaveInterpretedResults()).to.eq(true);
   });
 
-  [SELECT_QUERY_NAME, 'other'].forEach(resultSetName => {
+  [SELECT_QUERY_NAME, 'other'].forEach((resultSetName) => {
     it(`should export csv results for result set ${resultSetName}`, async () => {
       const csvLocation = path.join(tmpDir.name, 'test.csv');
       const qs = createMockQueryServerClient(
         createMockCliServer({
           bqrsInfo: [{ 'result-sets': [{ name: resultSetName }, { name: 'hucairz' }] }],
-          bqrsDecode: [{
-            columns: [{ kind: 'NotString' }, { kind: 'String' }],
-            tuples: [['a', 'b'], ['c', 'd']],
-            next: 1
-          }, {
-            // just for fun, give a different set of columns here
-            // this won't happen with the real CLI, but it's a good test
-            columns: [{ kind: 'String' }, { kind: 'NotString' }, { kind: 'StillNotString' }],
-            tuples: [['a', 'b', 'c']]
-          }]
+          bqrsDecode: [
+            {
+              columns: [{ kind: 'NotString' }, { kind: 'String' }],
+              tuples: [
+                ['a', 'b'],
+                ['c', 'd'],
+              ],
+              next: 1,
+            },
+            {
+              // just for fun, give a different set of columns here
+              // this won't happen with the real CLI, but it's a good test
+              columns: [{ kind: 'String' }, { kind: 'NotString' }, { kind: 'StillNotString' }],
+              tuples: [['a', 'b', 'c']],
+            },
+          ],
         })
       );
       const info = createMockQueryInfo();
@@ -96,19 +104,21 @@ describe('run-queries', () => {
     const qs = createMockQueryServerClient(
       createMockCliServer({
         bqrsInfo: [{ 'result-sets': [{ name: SELECT_QUERY_NAME }, { name: 'hucairz' }] }],
-        bqrsDecode: [{
-          columns: [{ kind: 'NotString' }, { kind: 'String' }],
-          // We only escape string columns. In practice, we will only see quotes in strings, but
-          // it is a good test anyway.
-          tuples: [
-            ['"a"', '"b"'],
-            ['c,xxx', 'd,yyy'],
-            ['aaa " bbb', 'ccc " ddd'],
-            [true, false],
-            [123, 456],
-            [123.98, 456.99],
-          ],
-        }]
+        bqrsDecode: [
+          {
+            columns: [{ kind: 'NotString' }, { kind: 'String' }],
+            // We only escape string columns. In practice, we will only see quotes in strings, but
+            // it is a good test anyway.
+            tuples: [
+              ['"a"', '"b"'],
+              ['c,xxx', 'd,yyy'],
+              ['aaa " bbb', 'ccc " ddd'],
+              [true, false],
+              [123, 456],
+              [123.98, 456.99],
+            ],
+          },
+        ],
       })
     );
     const info = createMockQueryInfo();
@@ -118,18 +128,22 @@ describe('run-queries', () => {
     expect(result).to.eq(true);
 
     const csv = fs.readFileSync(csvLocation, 'utf8');
-    expect(csv).to.eq('"a","""b"""\nc,xxx,"d,yyy"\naaa " bbb,"ccc "" ddd"\ntrue,"false"\n123,"456"\n123.98,"456.99"\n');
+    expect(csv).to.eq(
+      '"a","""b"""\nc,xxx,"d,yyy"\naaa " bbb,"ccc "" ddd"\ntrue,"false"\n123,"456"\n123.98,"456.99"\n'
+    );
 
     // now verify that we are using the expected result set
     expect((qs.cliServer.bqrsDecode as sinon.SinonStub).callCount).to.eq(1);
-    expect((qs.cliServer.bqrsDecode as sinon.SinonStub).getCall(0).args[1]).to.eq(SELECT_QUERY_NAME);
+    expect((qs.cliServer.bqrsDecode as sinon.SinonStub).getCall(0).args[1]).to.eq(
+      SELECT_QUERY_NAME
+    );
   });
 
   it('should handle csv exports for a query with no result sets', async () => {
     const csvLocation = path.join(tmpDir.name, 'test.csv');
     const qs = createMockQueryServerClient(
       createMockCliServer({
-        bqrsInfo: [{ 'result-sets': [] }]
+        bqrsInfo: [{ 'result-sets': [] }],
       })
     );
     const info = createMockQueryInfo();
@@ -146,7 +160,7 @@ describe('run-queries', () => {
       const mockQlProgram = {
         dbschemePath: '',
         libraryPath: [],
-        queryPath: ''
+        queryPath: '',
       };
 
       const results = await info.compile(
@@ -156,9 +170,7 @@ describe('run-queries', () => {
         mockCancel as any
       );
 
-      expect(results).to.deep.eq([
-        { message: 'err', severity: Severity.ERROR }
-      ]);
+      expect(results).to.deep.eq([{ message: 'err', severity: Severity.ERROR }]);
 
       expect(qs.sendRequest).to.have.been.calledOnceWith(
         compileQuery,
@@ -175,11 +187,11 @@ describe('run-queries', () => {
             emitDebugInfo: true,
           },
           extraOptions: {
-            timeoutSecs: 5
+            timeoutSecs: 5,
           },
           queryToCheck: mockQlProgram,
           resultPath: info.compiledQueryPath,
-          target: { query: {} }
+          target: { query: {} },
         },
         mockCancel,
         mockProgress
@@ -196,29 +208,31 @@ describe('run-queries', () => {
       'my-scheme', // queryDbscheme,
       undefined,
       {
-        kind: 'problem'
+        kind: 'problem',
       }
     );
   }
 
   function createMockQueryServerClient(cliServer?: CodeQLCliServer): QueryServerClient {
-    return {
+    return ({
       config: {
-        timeoutSecs: 5
+        timeoutSecs: 5,
       },
-      sendRequest: sandbox.stub().returns(new Promise(resolve => {
-        resolve({
-          messages: [
-            { message: 'err', severity: Severity.ERROR },
-            { message: 'warn', severity: Severity.WARNING },
-          ]
-        });
-      })),
+      sendRequest: sandbox.stub().returns(
+        new Promise((resolve) => {
+          resolve({
+            messages: [
+              { message: 'err', severity: Severity.ERROR },
+              { message: 'warn', severity: Severity.WARNING },
+            ],
+          });
+        })
+      ),
       logger: {
-        log: sandbox.spy()
+        log: sandbox.spy(),
       },
-      cliServer
-    } as unknown as QueryServerClient;
+      cliServer,
+    } as unknown) as QueryServerClient;
   }
 
   function createMockCliServer(mockOperations: Record<string, any[]>): CodeQLCliServer {
@@ -230,6 +244,6 @@ describe('run-queries', () => {
       });
     }
 
-    return mockServer as unknown as CodeQLCliServer;
+    return (mockServer as unknown) as CodeQLCliServer;
   }
 });

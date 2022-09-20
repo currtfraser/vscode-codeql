@@ -14,10 +14,7 @@ import {
   TextEditorRevealType,
   ThemeColor,
 } from 'vscode';
-import {
-  tryGetResolvableLocation,
-  isLineColumnLoc
-} from './pure/bqrs-utils';
+import { tryGetResolvableLocation, isLineColumnLoc } from './pure/bqrs-utils';
 import { DatabaseItem, DatabaseManager } from './databases';
 import { ViewSourceFileMsg } from './pure/interface-types';
 import { Logger } from './logging';
@@ -25,7 +22,7 @@ import {
   LineColumnLocation,
   WholeFileLocation,
   UrlValue,
-  ResolvableLocationValue
+  ResolvableLocationValue,
 } from './pure/bqrs-cli-types';
 
 /**
@@ -50,10 +47,7 @@ export enum WebviewReveal {
  * Converts a filesystem URI into a webview URI string that the given panel
  * can use to read the file.
  */
-export function fileUriToWebviewUri(
-  panel: WebviewPanel,
-  fileUriOnDisk: Uri
-): string {
+export function fileUriToWebviewUri(panel: WebviewPanel, fileUriOnDisk: Uri): string {
   return panel.webview.asWebviewUri(fileUriOnDisk).toString();
 }
 
@@ -62,10 +56,7 @@ export function fileUriToWebviewUri(
  * @param loc CodeQL location to resolve. Must have a non-empty value for `loc.file`.
  * @param databaseItem Database in which to resolve the file location.
  */
-function resolveFivePartLocation(
-  loc: LineColumnLocation,
-  databaseItem: DatabaseItem
-): Location {
+function resolveFivePartLocation(loc: LineColumnLocation, databaseItem: DatabaseItem): Location {
   // `Range` is a half-open interval, and is zero-based. CodeQL locations are closed intervals, and
   // are one-based. Adjust accordingly.
   const range = new Range(
@@ -83,10 +74,7 @@ function resolveFivePartLocation(
  * @param loc CodeQL location to resolve, corresponding to an entire filesystem resource. Must have a non-empty value for `loc.file`.
  * @param databaseItem Database in which to resolve the filesystem resource location.
  */
-function resolveWholeFileLocation(
-  loc: WholeFileLocation,
-  databaseItem: DatabaseItem
-): Location {
+function resolveWholeFileLocation(loc: WholeFileLocation, databaseItem: DatabaseItem): Location {
   // A location corresponding to the start of the file.
   const range = new Range(0, 0, 0, 0);
   return new Location(databaseItem.resolveSourceFile(loc.uri), range);
@@ -131,28 +119,25 @@ export function getHtmlForWebview(
   }: {
     allowInlineStyles?: boolean;
   } = {
-      allowInlineStyles: false,
-    }
+    allowInlineStyles: false,
+  }
 ): string {
-  const scriptUriOnDisk = Uri.file(
-    ctx.asAbsolutePath('out/webview.js')
-  );
+  const scriptUriOnDisk = Uri.file(ctx.asAbsolutePath('out/webview.js'));
 
-  const stylesheetUrisOnDisk = [
-    Uri.file(ctx.asAbsolutePath('out/webview.css'))
-  ];
+  const stylesheetUrisOnDisk = [Uri.file(ctx.asAbsolutePath('out/webview.css'))];
 
   // Convert the on-disk URIs into webview URIs.
   const scriptWebviewUri = webview.asWebviewUri(scriptUriOnDisk);
-  const stylesheetWebviewUris = stylesheetUrisOnDisk.map(stylesheetUriOnDisk =>
-    webview.asWebviewUri(stylesheetUriOnDisk));
+  const stylesheetWebviewUris = stylesheetUrisOnDisk.map((stylesheetUriOnDisk) =>
+    webview.asWebviewUri(stylesheetUriOnDisk)
+  );
 
   // Use a nonce in the content security policy to uniquely identify the above resources.
   const nonce = getNonce();
 
   const stylesheetsHtmlLines = allowInlineStyles
-    ? stylesheetWebviewUris.map(uri => createStylesLinkWithoutNonce(uri))
-    : stylesheetWebviewUris.map(uri => createStylesLinkWithNonce(nonce, uri));
+    ? stylesheetWebviewUris.map((uri) => createStylesLinkWithoutNonce(uri))
+    : stylesheetWebviewUris.map((uri) => createStylesLinkWithNonce(nonce, uri));
 
   const styleSrc = allowInlineStyles
     ? `${webview.cspSource} vscode-file: 'unsafe-inline'`
@@ -172,7 +157,9 @@ export function getHtmlForWebview(
 <html>
   <head>
     <meta http-equiv="Content-Security-Policy"
-          content="default-src 'none'; script-src 'nonce-${nonce}'; font-src ${fontSrc}; style-src ${styleSrc}; connect-src ${webview.cspSource};">
+          content="default-src 'none'; script-src 'nonce-${nonce}'; font-src ${fontSrc}; style-src ${styleSrc}; connect-src ${
+    webview.cspSource
+  };">
         ${stylesheetsHtmlLines.join(`    ${os.EOL}`)}
   </head>
   <body>
@@ -197,18 +184,15 @@ export async function showLocation(location?: Location) {
   }
 
   const doc = await workspace.openTextDocument(location.uri);
-  const editorsWithDoc = Window.visibleTextEditors.filter(
-    (e) => e.document === doc
-  );
+  const editorsWithDoc = Window.visibleTextEditors.filter((e) => e.document === doc);
   const editor =
     editorsWithDoc.length > 0
       ? editorsWithDoc[0]
-      : await Window.showTextDocument(
-        doc, {
-        // avoid preview mode so editor is sticky and will be added to navigation and search histories.
-        preview: false,
-        viewColumn: ViewColumn.One,
-      });
+      : await Window.showTextDocument(doc, {
+          // avoid preview mode so editor is sticky and will be added to navigation and search histories.
+          preview: false,
+          viewColumn: ViewColumn.One,
+        });
 
   const range = location.range;
   // When highlighting the range, vscode's occurrence-match and bracket-match highlighting will
@@ -221,8 +205,7 @@ export async function showLocation(location?: Location) {
   // For single-line ranges, select the whole range, mainly to disable bracket highlighting.
   // For multi-line ranges, place the cursor at the beginning to avoid visual artifacts from selected line-breaks.
   // Multi-line ranges are usually large enough to overshadow the noise from bracket highlighting.
-  const selectionEnd =
-    range.start.line === range.end.line ? range.end : range.start;
+  const selectionEnd = range.start.line === range.end.line ? range.end : range.start;
   editor.selection = new Selection(range.start, selectionEnd);
   editor.revealRange(range, TextEditorRevealType.InCenter);
   editor.setDecorations(shownLocationDecoration, [range]);
@@ -230,30 +213,23 @@ export async function showLocation(location?: Location) {
 }
 
 const findMatchBackground = new ThemeColor('editor.findMatchBackground');
-const findRangeHighlightBackground = new ThemeColor(
-  'editor.findRangeHighlightBackground'
-);
-
+const findRangeHighlightBackground = new ThemeColor('editor.findRangeHighlightBackground');
 
 export const shownLocationDecoration = Window.createTextEditorDecorationType({
   backgroundColor: findMatchBackground,
 });
 
-export const shownLocationLineDecoration = Window.createTextEditorDecorationType(
-  {
-    backgroundColor: findRangeHighlightBackground,
-    isWholeLine: true,
-  }
-);
+export const shownLocationLineDecoration = Window.createTextEditorDecorationType({
+  backgroundColor: findRangeHighlightBackground,
+  isWholeLine: true,
+});
 
 export async function jumpToLocation(
   msg: ViewSourceFileMsg,
   databaseManager: DatabaseManager,
   logger: Logger
 ) {
-  const databaseItem = databaseManager.findDatabaseItem(
-    Uri.parse(msg.databaseUri)
-  );
+  const databaseItem = databaseManager.findDatabaseItem(Uri.parse(msg.databaseUri));
   if (databaseItem !== undefined) {
     try {
       await showResolvableLocation(msg.loc, databaseItem);
@@ -261,7 +237,7 @@ export async function jumpToLocation(
       if (e instanceof Error) {
         if (e.message.match(/File not found/)) {
           void Window.showErrorMessage(
-            'Original file of this result is not in the database\'s source archive.'
+            "Original file of this result is not in the database's source archive."
           );
         } else {
           void logger.log(`Unable to handleMsgFromView: ${e.message}`);

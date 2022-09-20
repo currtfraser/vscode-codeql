@@ -80,7 +80,7 @@ export class EvaluationLogScannerSet {
     return {
       dispose: () => {
         this.scannerProviders.delete(id);
-      }
+      },
     };
   }
 
@@ -89,15 +89,20 @@ export class EvaluationLogScannerSet {
    * @param jsonSummaryLocation The file path of the JSON summary log.
    * @param problemReporter Callback interface for reporting any problems discovered.
    */
-  public async scanLog(jsonSummaryLocation: string, problemReporter: EvaluationLogProblemReporter): Promise<void> {
-    const scanners = [...this.scannerProviders.values()].map(p => p.createScanner(problemReporter));
+  public async scanLog(
+    jsonSummaryLocation: string,
+    problemReporter: EvaluationLogProblemReporter
+  ): Promise<void> {
+    const scanners = [...this.scannerProviders.values()].map((p) =>
+      p.createScanner(problemReporter)
+    );
 
-    await readJsonlFile(jsonSummaryLocation, async obj => {
-      scanners.forEach(scanner => {
+    await readJsonlFile(jsonSummaryLocation, async (obj) => {
+      scanners.forEach((scanner) => {
         scanner.onEvent(obj);
       });
     });
 
-    scanners.forEach(scanner => scanner.onDone());
+    scanners.forEach((scanner) => scanner.onDone());
   }
 }

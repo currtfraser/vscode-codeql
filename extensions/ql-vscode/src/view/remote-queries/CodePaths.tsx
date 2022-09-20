@@ -1,10 +1,19 @@
 import { XCircleIcon } from '@primer/octicons-react';
 import { Overlay } from '@primer/react';
-import { VSCodeDropdown, VSCodeLink, VSCodeOption, VSCodeTag } from '@vscode/webview-ui-toolkit/react';
+import {
+  VSCodeDropdown,
+  VSCodeLink,
+  VSCodeOption,
+  VSCodeTag,
+} from '@vscode/webview-ui-toolkit/react';
 import * as React from 'react';
 import { ChangeEvent, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { CodeFlow, AnalysisMessage, ResultSeverity } from '../../remote-queries/shared/analysis-result';
+import {
+  CodeFlow,
+  AnalysisMessage,
+  ResultSeverity,
+} from '../../remote-queries/shared/analysis-result';
 import { SectionTitle, VerticalSpace } from '../common';
 import FileCodeSnippet from './FileCodeSnippet';
 
@@ -16,7 +25,7 @@ const StyledCloseButton = styled.button`
   color: var(--vscode-editor-foreground);
   border: none;
   &:focus-visible {
-    outline: none
+    outline: none;
   }
 `;
 
@@ -34,7 +43,7 @@ const OverlayContainer = styled.div`
 `;
 
 const CloseButton = ({ onClick }: { onClick: () => void }) => (
-  <StyledCloseButton onClick={onClick} tabIndex={-1} >
+  <StyledCloseButton onClick={onClick} tabIndex={-1}>
     <XCircleIcon size={24} />
   </StyledCloseButton>
 );
@@ -42,43 +51,46 @@ const CloseButton = ({ onClick }: { onClick: () => void }) => (
 const CodePath = ({
   codeFlow,
   message,
-  severity
+  severity,
 }: {
   codeFlow: CodeFlow;
   message: AnalysisMessage;
   severity: ResultSeverity;
 }) => {
-  return <>
-    {codeFlow.threadFlows.map((threadFlow, index) =>
-      <div key={`thread-flow-${index}`} style={{ maxWidth: '55em' }}>
-        {index !== 0 && <VerticalSpace size={3} />}
+  return (
+    <>
+      {codeFlow.threadFlows.map((threadFlow, index) => (
+        <div key={`thread-flow-${index}`} style={{ maxWidth: '55em' }}>
+          {index !== 0 && <VerticalSpace size={3} />}
 
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div style={{ flexGrow: 1, padding: 0, border: 'none' }}>
-            <SectionTitle>Step {index + 1}</SectionTitle>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <div style={{ flexGrow: 1, padding: 0, border: 'none' }}>
+              <SectionTitle>Step {index + 1}</SectionTitle>
+            </div>
+            {index === 0 && (
+              <div style={{ padding: 0, border: 'none' }}>
+                <VSCodeTag>Source</VSCodeTag>
+              </div>
+            )}
+            {index === codeFlow.threadFlows.length - 1 && (
+              <div style={{ padding: 0, border: 'none' }}>
+                <VSCodeTag>Sink</VSCodeTag>
+              </div>
+            )}
           </div>
-          {index === 0 &&
-            <div style={{ padding: 0, border: 'none' }}>
-              <VSCodeTag>Source</VSCodeTag>
-            </div>
-          }
-          {index === codeFlow.threadFlows.length - 1 &&
-            <div style={{ padding: 0, border: 'none' }}>
-              <VSCodeTag>Sink</VSCodeTag>
-            </div>
-          }
-        </div>
 
-        <VerticalSpace size={2} />
-        <FileCodeSnippet
-          fileLink={threadFlow.fileLink}
-          codeSnippet={threadFlow.codeSnippet}
-          highlightedRegion={threadFlow.highlightedRegion}
-          severity={severity}
-          message={index === codeFlow.threadFlows.length - 1 ? message : threadFlow.message} />
-      </div>
-    )}
-  </>;
+          <VerticalSpace size={2} />
+          <FileCodeSnippet
+            fileLink={threadFlow.fileLink}
+            codeSnippet={threadFlow.codeSnippet}
+            highlightedRegion={threadFlow.highlightedRegion}
+            severity={severity}
+            message={index === codeFlow.threadFlows.length - 1 ? message : threadFlow.message}
+          />
+        </div>
+      ))}
+    </>
+  );
 };
 
 const getCodeFlowName = (codeFlow: CodeFlow) => {
@@ -88,39 +100,38 @@ const getCodeFlowName = (codeFlow: CodeFlow) => {
 
 const Menu = ({
   codeFlows,
-  setSelectedCodeFlow
+  setSelectedCodeFlow,
 }: {
-  codeFlows: CodeFlow[],
-  setSelectedCodeFlow: (value: React.SetStateAction<CodeFlow>) => void
+  codeFlows: CodeFlow[];
+  setSelectedCodeFlow: (value: React.SetStateAction<CodeFlow>) => void;
 }) => {
-  return <VSCodeDropdown
-    onChange={(event: ChangeEvent<HTMLSelectElement>) => {
-      const selectedOption = event.target;
-      const selectedIndex = selectedOption.value as unknown as number;
-      setSelectedCodeFlow(codeFlows[selectedIndex]);
-    }}
-  >
-    {codeFlows.map((codeFlow, index) =>
-      <VSCodeOption
-        key={`codeflow-${index}'`}
-        value={index}
-      >
-        {getCodeFlowName(codeFlow)}
-      </VSCodeOption>
-    )}
-  </VSCodeDropdown>;
+  return (
+    <VSCodeDropdown
+      onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+        const selectedOption = event.target;
+        const selectedIndex = (selectedOption.value as unknown) as number;
+        setSelectedCodeFlow(codeFlows[selectedIndex]);
+      }}
+    >
+      {codeFlows.map((codeFlow, index) => (
+        <VSCodeOption key={`codeflow-${index}'`} value={index}>
+          {getCodeFlowName(codeFlow)}
+        </VSCodeOption>
+      ))}
+    </VSCodeDropdown>
+  );
 };
 
 const CodePaths = ({
   codeFlows,
   ruleDescription,
   message,
-  severity
+  severity,
 }: {
-  codeFlows: CodeFlow[],
-  ruleDescription: string,
-  message: AnalysisMessage,
-  severity: ResultSeverity
+  codeFlows: CodeFlow[];
+  ruleDescription: string;
+  message: AnalysisMessage;
+  severity: ResultSeverity;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCodeFlow, setSelectedCodeFlow] = useState(codeFlows[0]);
@@ -132,10 +143,7 @@ const CodePaths = ({
 
   return (
     <div ref={anchorRef}>
-      <VSCodeLink
-        onClick={() => setIsOpen(true)}
-        ref={linkRef}
-        sx={{ cursor: 'pointer' }}>
+      <VSCodeLink onClick={() => setIsOpen(true)} ref={linkRef} sx={{ cursor: 'pointer' }}>
         Show paths
       </VSCodeLink>
       {isOpen && (
@@ -143,7 +151,8 @@ const CodePaths = ({
           returnFocusRef={linkRef}
           onEscape={closeOverlay}
           onClickOutside={closeOverlay}
-          anchorSide="outside-top">
+          anchorSide="outside-top"
+        >
           <OverlayContainer>
             <CloseButton onClick={closeOverlay} />
 
@@ -160,13 +169,9 @@ const CodePaths = ({
             </div>
 
             <VerticalSpace size={2} />
-            <CodePath
-              codeFlow={selectedCodeFlow}
-              severity={severity}
-              message={message} />
+            <CodePath codeFlow={selectedCodeFlow} severity={severity} message={message} />
 
             <VerticalSpace size={3} />
-
           </OverlayContainer>
         </Overlay>
       )}

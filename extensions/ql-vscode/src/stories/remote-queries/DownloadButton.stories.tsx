@@ -14,7 +14,7 @@ export default {
         disable: true,
       },
     },
-  }
+  },
 } as ComponentMeta<typeof DownloadButtonComponent>;
 
 const Template: ComponentStory<typeof DownloadButtonComponent> = (args) => (

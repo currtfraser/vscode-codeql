@@ -22,7 +22,7 @@ import {
   showAndLogErrorMessage,
   showAndLogInformationMessage,
   showAndLogWarningMessage,
-  showBinaryChoiceDialog
+  showBinaryChoiceDialog,
 } from './helpers';
 import { logger } from './logging';
 import { URLSearchParams } from 'url';
@@ -31,7 +31,7 @@ import { DisposableObject } from './pure/disposable-object';
 import { commandRunner } from './commandRunner';
 import { ONE_HOUR_IN_MS, TWO_HOURS_IN_MS } from './pure/time';
 import { assertNever, getErrorMessage, getErrorStack } from './pure/helpers-pure';
-import { CompletedLocalQueryInfo, LocalQueryInfo as LocalQueryInfo, QueryHistoryInfo } from './query-results';
+import { CompletedLocalQueryInfo, LocalQueryInfo, QueryHistoryInfo } from './query-results';
 import { DatabaseManager } from './databases';
 import { registerQueryHistoryScubber } from './query-history-scrubber';
 import { QueryStatus } from './query-status';
@@ -116,15 +116,18 @@ const WORKSPACE_QUERY_HISTORY_FILE = 'workspace-query-history.json';
 /**
  * Tree data provider for the query history view.
  */
-export class HistoryTreeDataProvider extends DisposableObject implements TreeDataProvider<QueryHistoryInfo> {
+export class HistoryTreeDataProvider extends DisposableObject
+  implements TreeDataProvider<QueryHistoryInfo> {
   private _sortOrder = SortOrder.DateAsc;
 
   private _onDidChangeTreeData = super.push(new EventEmitter<QueryHistoryInfo | undefined>());
 
-  readonly onDidChangeTreeData: Event<QueryHistoryInfo | undefined> = this
-    ._onDidChangeTreeData.event;
+  readonly onDidChangeTreeData: Event<QueryHistoryInfo | undefined> = this._onDidChangeTreeData
+    .event;
 
-  private _onDidChangeCurrentQueryItem = super.push(new EventEmitter<QueryHistoryInfo | undefined>());
+  private _onDidChangeCurrentQueryItem = super.push(
+    new EventEmitter<QueryHistoryInfo | undefined>()
+  );
 
   public readonly onDidChangeCurrentQueryItem = this._onDidChangeCurrentQueryItem.event;
 
@@ -138,23 +141,11 @@ export class HistoryTreeDataProvider extends DisposableObject implements TreeDat
 
   private current: QueryHistoryInfo | undefined;
 
-  constructor(
-    extensionPath: string,
-    private readonly labelProvider: HistoryItemLabelProvider,
-  ) {
+  constructor(extensionPath: string, private readonly labelProvider: HistoryItemLabelProvider) {
     super();
-    this.failedIconPath = path.join(
-      extensionPath,
-      FAILED_QUERY_HISTORY_ITEM_ICON
-    );
-    this.localSuccessIconPath = path.join(
-      extensionPath,
-      LOCAL_SUCCESS_QUERY_HISTORY_ITEM_ICON
-    );
-    this.remoteSuccessIconPath = path.join(
-      extensionPath,
-      REMOTE_SUCCESS_QUERY_HISTORY_ITEM_ICON
-    );
+    this.failedIconPath = path.join(extensionPath, FAILED_QUERY_HISTORY_ITEM_ICON);
+    this.localSuccessIconPath = path.join(extensionPath, LOCAL_SUCCESS_QUERY_HISTORY_ITEM_ICON);
+    this.remoteSuccessIconPath = path.join(extensionPath, REMOTE_SUCCESS_QUERY_HISTORY_ITEM_ICON);
   }
 
   async getTreeItem(element: QueryHistoryInfo): Promise<TreeItem> {
@@ -164,7 +155,7 @@ export class HistoryTreeDataProvider extends DisposableObject implements TreeDat
       title: 'Query History Item',
       command: 'codeQLQueryHistory.itemClicked',
       arguments: [element],
-      tooltip: element.failureReason || this.labelProvider.getLabel(element)
+      tooltip: element.failureReason || this.labelProvider.getLabel(element),
     };
 
     // Populate the icon and the context value. We use the context value to
@@ -173,15 +164,14 @@ export class HistoryTreeDataProvider extends DisposableObject implements TreeDat
     switch (element.status) {
       case QueryStatus.InProgress:
         treeItem.iconPath = new ThemeIcon('sync~spin');
-        treeItem.contextValue = element.t === 'local' ? 'inProgressResultsItem' : 'inProgressRemoteResultsItem';
+        treeItem.contextValue =
+          element.t === 'local' ? 'inProgressResultsItem' : 'inProgressRemoteResultsItem';
         break;
       case QueryStatus.Completed:
         if (element.t === 'local') {
           hasResults = await element.completedQuery?.query.hasInterpretedResults();
           treeItem.iconPath = this.localSuccessIconPath;
-          treeItem.contextValue = hasResults
-            ? 'interpretedResultsItem'
-            : 'rawResultsItem';
+          treeItem.contextValue = hasResults ? 'interpretedResultsItem' : 'rawResultsItem';
         } else {
           treeItem.iconPath = this.remoteSuccessIconPath;
           treeItem.contextValue = 'remoteResultsItem';
@@ -189,7 +179,8 @@ export class HistoryTreeDataProvider extends DisposableObject implements TreeDat
         break;
       case QueryStatus.Failed:
         treeItem.iconPath = this.failedIconPath;
-        treeItem.contextValue = element.t === 'local' ? 'cancelledResultsItem' : 'cancelledRemoteResultsItem';
+        treeItem.contextValue =
+          element.t === 'local' ? 'cancelledResultsItem' : 'cancelledRemoteResultsItem';
         break;
       default:
         assertNever(element.status);
@@ -198,57 +189,52 @@ export class HistoryTreeDataProvider extends DisposableObject implements TreeDat
     return treeItem;
   }
 
-  getChildren(
-    element?: QueryHistoryInfo
-  ): ProviderResult<QueryHistoryInfo[]> {
-    return element ? [] : this.history.sort((h1, h2) => {
+  getChildren(element?: QueryHistoryInfo): ProviderResult<QueryHistoryInfo[]> {
+    return element
+      ? []
+      : this.history.sort((h1, h2) => {
+          const h1Label = this.labelProvider.getLabel(h1).toLowerCase();
+          const h2Label = this.labelProvider.getLabel(h2).toLowerCase();
 
-      const h1Label = this.labelProvider.getLabel(h1).toLowerCase();
-      const h2Label = this.labelProvider.getLabel(h2).toLowerCase();
+          const h1Date =
+            h1.t === 'local' ? h1.initialInfo.start.getTime() : h1.remoteQuery?.executionStartTime;
 
-      const h1Date = h1.t === 'local'
-        ? h1.initialInfo.start.getTime()
-        : h1.remoteQuery?.executionStartTime;
+          const h2Date =
+            h2.t === 'local' ? h2.initialInfo.start.getTime() : h2.remoteQuery?.executionStartTime;
 
-      const h2Date = h2.t === 'local'
-        ? h2.initialInfo.start.getTime()
-        : h2.remoteQuery?.executionStartTime;
+          const resultCount1 =
+            h1.t === 'local' ? h1.completedQuery?.resultCount ?? -1 : h1.resultCount ?? -1;
+          const resultCount2 =
+            h2.t === 'local' ? h2.completedQuery?.resultCount ?? -1 : h2.resultCount ?? -1;
 
-      const resultCount1 = h1.t === 'local'
-        ? h1.completedQuery?.resultCount ?? -1
-        : h1.resultCount ?? -1;
-      const resultCount2 = h2.t === 'local'
-        ? h2.completedQuery?.resultCount ?? -1
-        : h2.resultCount ?? -1;
+          switch (this.sortOrder) {
+            case SortOrder.NameAsc:
+              return h1Label.localeCompare(h2Label, env.language);
 
-      switch (this.sortOrder) {
-        case SortOrder.NameAsc:
-          return h1Label.localeCompare(h2Label, env.language);
+            case SortOrder.NameDesc:
+              return h2Label.localeCompare(h1Label, env.language);
 
-        case SortOrder.NameDesc:
-          return h2Label.localeCompare(h1Label, env.language);
+            case SortOrder.DateAsc:
+              return h1Date - h2Date;
 
-        case SortOrder.DateAsc:
-          return h1Date - h2Date;
+            case SortOrder.DateDesc:
+              return h2Date - h1Date;
 
-        case SortOrder.DateDesc:
-          return h2Date - h1Date;
+            case SortOrder.CountAsc:
+              // If the result counts are equal, sort by name.
+              return resultCount1 - resultCount2 === 0
+                ? h1Label.localeCompare(h2Label, env.language)
+                : resultCount1 - resultCount2;
 
-        case SortOrder.CountAsc:
-          // If the result counts are equal, sort by name.
-          return resultCount1 - resultCount2 === 0
-            ? h1Label.localeCompare(h2Label, env.language)
-            : resultCount1 - resultCount2;
-
-        case SortOrder.CountDesc:
-          // If the result counts are equal, sort by name.
-          return resultCount2 - resultCount1 === 0
-            ? h2Label.localeCompare(h1Label, env.language)
-            : resultCount2 - resultCount1;
-        default:
-          assertNever(this.sortOrder);
-      }
-    });
+            case SortOrder.CountDesc:
+              // If the result counts are equal, sort by name.
+              return resultCount2 - resultCount1 === 0
+                ? h2Label.localeCompare(h1Label, env.language)
+                : resultCount2 - resultCount1;
+            default:
+              assertNever(this.sortOrder);
+          }
+        });
   }
 
   getParent(_element: QueryHistoryInfo): ProviderResult<QueryHistoryInfo> {
@@ -314,7 +300,6 @@ export class HistoryTreeDataProvider extends DisposableObject implements TreeDat
 }
 
 export class QueryHistoryManager extends DisposableObject {
-
   treeDataProvider: HistoryTreeDataProvider;
   treeView: TreeView<QueryHistoryInfo>;
   lastItemClick: { time: Date; item: QueryHistoryInfo } | undefined;
@@ -322,7 +307,9 @@ export class QueryHistoryManager extends DisposableObject {
   queryHistoryScrubber: Disposable | undefined;
   private queryMetadataStorageLocation;
 
-  private readonly _onDidChangeCurrentQueryItem = super.push(new EventEmitter<QueryHistoryInfo | undefined>());
+  private readonly _onDidChangeCurrentQueryItem = super.push(
+    new EventEmitter<QueryHistoryInfo | undefined>()
+  );
   readonly onDidChangeCurrentQueryItem = this._onDidChangeCurrentQueryItem.event;
 
   private readonly _onDidCompleteQuery = super.push(new EventEmitter<LocalQueryInfo>());
@@ -349,28 +336,32 @@ export class QueryHistoryManager extends DisposableObject {
     // This is because the query history is specific to each workspace.
     // For situations where `ctx.storageUri` is undefined (i.e., there is no workspace),
     // we default to global storage.
-    this.queryMetadataStorageLocation = path.join((ctx.storageUri || ctx.globalStorageUri).fsPath, WORKSPACE_QUERY_HISTORY_FILE);
+    this.queryMetadataStorageLocation = path.join(
+      (ctx.storageUri || ctx.globalStorageUri).fsPath,
+      WORKSPACE_QUERY_HISTORY_FILE
+    );
 
-    this.treeDataProvider = this.push(new HistoryTreeDataProvider(
-      ctx.extensionPath,
-      this.labelProvider
-    ));
-    this.treeView = this.push(window.createTreeView('codeQLQueryHistory', {
-      treeDataProvider: this.treeDataProvider,
-      canSelectMany: true,
-    }));
+    this.treeDataProvider = this.push(
+      new HistoryTreeDataProvider(ctx.extensionPath, this.labelProvider)
+    );
+    this.treeView = this.push(
+      window.createTreeView('codeQLQueryHistory', {
+        treeDataProvider: this.treeDataProvider,
+        canSelectMany: true,
+      })
+    );
 
     // Forward any change of current history item from the tree data.
-    this.push(this.treeDataProvider.onDidChangeCurrentQueryItem((item) => {
-      this._onDidChangeCurrentQueryItem.fire(item);
-    }));
+    this.push(
+      this.treeDataProvider.onDidChangeCurrentQueryItem((item) => {
+        this._onDidChangeCurrentQueryItem.fire(item);
+      })
+    );
 
     // Lazily update the tree view selection due to limitations of TreeView API (see
     // `updateTreeViewSelectionIfVisible` doc for details)
     this.push(
-      this.treeView.onDidChangeVisibility(async (_ev) =>
-        this.updateTreeViewSelectionIfVisible()
-      )
+      this.treeView.onDidChangeVisibility(async (_ev) => this.updateTreeViewSelectionIfVisible())
     );
     this.push(
       this.treeView.onDidChangeSelection(async (ev) => {
@@ -380,7 +371,7 @@ export class QueryHistoryManager extends DisposableObject {
         } else {
           this.treeDataProvider.setCurrentItem(ev.selection[0]);
         }
-        if (ev.selection.some(item => item.t !== 'local')) {
+        if (ev.selection.some((item) => item.t !== 'local')) {
           // Don't allow comparison of non-local items
           this.updateCompareWith([]);
         } else {
@@ -390,66 +381,23 @@ export class QueryHistoryManager extends DisposableObject {
     );
 
     void logger.log('Registering query history panel commands.');
+    this.push(commandRunner('codeQLQueryHistory.openQuery', this.handleOpenQuery.bind(this)));
     this.push(
-      commandRunner(
-        'codeQLQueryHistory.openQuery',
-        this.handleOpenQuery.bind(this)
-      )
+      commandRunner('codeQLQueryHistory.removeHistoryItem', this.handleRemoveHistoryItem.bind(this))
     );
-    this.push(
-      commandRunner(
-        'codeQLQueryHistory.removeHistoryItem',
-        this.handleRemoveHistoryItem.bind(this)
-      )
-    );
-    this.push(
-      commandRunner(
-        'codeQLQueryHistory.sortByName',
-        this.handleSortByName.bind(this)
-      )
-    );
-    this.push(
-      commandRunner(
-        'codeQLQueryHistory.sortByDate',
-        this.handleSortByDate.bind(this)
-      )
-    );
-    this.push(
-      commandRunner(
-        'codeQLQueryHistory.sortByCount',
-        this.handleSortByCount.bind(this)
-      )
-    );
-    this.push(
-      commandRunner(
-        'codeQLQueryHistory.setLabel',
-        this.handleSetLabel.bind(this)
-      )
-    );
-    this.push(
-      commandRunner(
-        'codeQLQueryHistory.compareWith',
-        this.handleCompareWith.bind(this)
-      )
-    );
-    this.push(
-      commandRunner(
-        'codeQLQueryHistory.showQueryLog',
-        this.handleShowQueryLog.bind(this)
-      )
-    );
+    this.push(commandRunner('codeQLQueryHistory.sortByName', this.handleSortByName.bind(this)));
+    this.push(commandRunner('codeQLQueryHistory.sortByDate', this.handleSortByDate.bind(this)));
+    this.push(commandRunner('codeQLQueryHistory.sortByCount', this.handleSortByCount.bind(this)));
+    this.push(commandRunner('codeQLQueryHistory.setLabel', this.handleSetLabel.bind(this)));
+    this.push(commandRunner('codeQLQueryHistory.compareWith', this.handleCompareWith.bind(this)));
+    this.push(commandRunner('codeQLQueryHistory.showQueryLog', this.handleShowQueryLog.bind(this)));
     this.push(
       commandRunner(
         'codeQLQueryHistory.openQueryDirectory',
         this.handleOpenQueryDirectory.bind(this)
       )
     );
-    this.push(
-      commandRunner(
-        'codeQLQueryHistory.showEvalLog',
-        this.handleShowEvalLog.bind(this)
-      )
-    );
+    this.push(commandRunner('codeQLQueryHistory.showEvalLog', this.handleShowEvalLog.bind(this)));
     this.push(
       commandRunner(
         'codeQLQueryHistory.showEvalLogSummary',
@@ -457,75 +405,36 @@ export class QueryHistoryManager extends DisposableObject {
       )
     );
     this.push(
-      commandRunner(
-        'codeQLQueryHistory.showEvalLogViewer',
-        this.handleShowEvalLogViewer.bind(this)
-      )
+      commandRunner('codeQLQueryHistory.showEvalLogViewer', this.handleShowEvalLogViewer.bind(this))
+    );
+    this.push(commandRunner('codeQLQueryHistory.cancel', this.handleCancel.bind(this)));
+    this.push(
+      commandRunner('codeQLQueryHistory.showQueryText', this.handleShowQueryText.bind(this))
     );
     this.push(
-      commandRunner(
-        'codeQLQueryHistory.cancel',
-        this.handleCancel.bind(this)
-      )
+      commandRunner('codeQLQueryHistory.exportResults', this.handleExportResults.bind(this))
     );
     this.push(
-      commandRunner(
-        'codeQLQueryHistory.showQueryText',
-        this.handleShowQueryText.bind(this)
-      )
+      commandRunner('codeQLQueryHistory.viewCsvResults', this.handleViewCsvResults.bind(this))
     );
     this.push(
-      commandRunner(
-        'codeQLQueryHistory.exportResults',
-        this.handleExportResults.bind(this)
-      )
+      commandRunner('codeQLQueryHistory.viewCsvAlerts', this.handleViewCsvAlerts.bind(this))
     );
     this.push(
-      commandRunner(
-        'codeQLQueryHistory.viewCsvResults',
-        this.handleViewCsvResults.bind(this)
-      )
+      commandRunner('codeQLQueryHistory.viewSarifAlerts', this.handleViewSarifAlerts.bind(this))
+    );
+    this.push(commandRunner('codeQLQueryHistory.viewDil', this.handleViewDil.bind(this)));
+    this.push(
+      commandRunner('codeQLQueryHistory.itemClicked', async (item: LocalQueryInfo) => {
+        return this.handleItemClicked(item, [item]);
+      })
     );
     this.push(
-      commandRunner(
-        'codeQLQueryHistory.viewCsvAlerts',
-        this.handleViewCsvAlerts.bind(this)
-      )
+      commandRunner('codeQLQueryHistory.openOnGithub', async (item: LocalQueryInfo) => {
+        return this.handleOpenOnGithub(item, [item]);
+      })
     );
-    this.push(
-      commandRunner(
-        'codeQLQueryHistory.viewSarifAlerts',
-        this.handleViewSarifAlerts.bind(this)
-      )
-    );
-    this.push(
-      commandRunner(
-        'codeQLQueryHistory.viewDil',
-        this.handleViewDil.bind(this)
-      )
-    );
-    this.push(
-      commandRunner(
-        'codeQLQueryHistory.itemClicked',
-        async (item: LocalQueryInfo) => {
-          return this.handleItemClicked(item, [item]);
-        }
-      )
-    );
-    this.push(
-      commandRunner(
-        'codeQLQueryHistory.openOnGithub',
-        async (item: LocalQueryInfo) => {
-          return this.handleOpenOnGithub(item, [item]);
-        }
-      )
-    );
-    this.push(
-      commandRunner(
-        'codeQLQueryHistory.copyRepoList',
-        this.handleCopyRepoList.bind(this)
-      )
-    );
+    this.push(commandRunner('codeQLQueryHistory.copyRepoList', this.handleCopyRepoList.bind(this)));
 
     // There are two configuration items that affect the query history:
     // 1. The ttl for query history items.
@@ -539,19 +448,19 @@ export class QueryHistoryManager extends DisposableObject {
     );
 
     // displays query text in a read-only document
-    this.push(workspace.registerTextDocumentContentProvider('codeql', {
-      provideTextDocumentContent(
-        uri: Uri
-      ): ProviderResult<string> {
-        const params = new URLSearchParams(uri.query);
+    this.push(
+      workspace.registerTextDocumentContentProvider('codeql', {
+        provideTextDocumentContent(uri: Uri): ProviderResult<string> {
+          const params = new URLSearchParams(uri.query);
 
-        return (
-          (JSON.parse(params.get('isQuickEval') || '')
-            ? SHOW_QUERY_TEXT_QUICK_EVAL_MSG
-            : SHOW_QUERY_TEXT_MSG) + params.get('queryText')
-        );
-      },
-    }));
+          return (
+            (JSON.parse(params.get('isQuickEval') || '')
+              ? SHOW_QUERY_TEXT_QUICK_EVAL_MSG
+              : SHOW_QUERY_TEXT_MSG) + params.get('queryText')
+          );
+        },
+      })
+    );
 
     this.registerQueryHistoryScrubber(queryHistoryConfigListener, this, ctx);
     this.registerToRemoteQueriesEvents();
@@ -569,7 +478,11 @@ export class QueryHistoryManager extends DisposableObject {
   /**
    * Register and create the history scrubber.
    */
-  private registerQueryHistoryScrubber(queryHistoryConfigListener: QueryHistoryConfig, qhm: QueryHistoryManager, ctx: ExtensionContext) {
+  private registerQueryHistoryScrubber(
+    queryHistoryConfigListener: QueryHistoryConfig,
+    qhm: QueryHistoryManager,
+    ctx: ExtensionContext
+  ) {
     this.queryHistoryScrubber?.dispose();
     // Every hour check if we need to re-run the query history scrubber.
     this.queryHistoryScrubber = this.push(
@@ -597,28 +510,38 @@ export class QueryHistoryManager extends DisposableObject {
       await this.refreshTreeView();
     });
 
-    const queryRemovedSubscription = this.remoteQueriesManager.onRemoteQueryRemoved(async (event) => {
-      const item = this.treeDataProvider.allHistory.find(i => i.t === 'remote' && i.queryId === event.queryId);
-      if (item) {
-        await this.removeRemoteQuery(item as RemoteQueryHistoryItem);
-      }
-    });
-
-    const queryStatusUpdateSubscription = this.remoteQueriesManager.onRemoteQueryStatusUpdate(async (event) => {
-      const item = this.treeDataProvider.allHistory.find(i => i.t === 'remote' && i.queryId === event.queryId);
-      if (item) {
-        const remoteQueryHistoryItem = item as RemoteQueryHistoryItem;
-        remoteQueryHistoryItem.status = event.status;
-        remoteQueryHistoryItem.failureReason = event.failureReason;
-        remoteQueryHistoryItem.resultCount = event.resultCount;
-        if (event.status === QueryStatus.Completed) {
-          remoteQueryHistoryItem.completed = true;
+    const queryRemovedSubscription = this.remoteQueriesManager.onRemoteQueryRemoved(
+      async (event) => {
+        const item = this.treeDataProvider.allHistory.find(
+          (i) => i.t === 'remote' && i.queryId === event.queryId
+        );
+        if (item) {
+          await this.removeRemoteQuery(item as RemoteQueryHistoryItem);
         }
-        await this.refreshTreeView();
-      } else {
-        void logger.log('Variant analysis status update event received for unknown variant analysis');
       }
-    });
+    );
+
+    const queryStatusUpdateSubscription = this.remoteQueriesManager.onRemoteQueryStatusUpdate(
+      async (event) => {
+        const item = this.treeDataProvider.allHistory.find(
+          (i) => i.t === 'remote' && i.queryId === event.queryId
+        );
+        if (item) {
+          const remoteQueryHistoryItem = item as RemoteQueryHistoryItem;
+          remoteQueryHistoryItem.status = event.status;
+          remoteQueryHistoryItem.failureReason = event.failureReason;
+          remoteQueryHistoryItem.resultCount = event.resultCount;
+          if (event.status === QueryStatus.Completed) {
+            remoteQueryHistoryItem.completed = true;
+          }
+          await this.refreshTreeView();
+        } else {
+          void logger.log(
+            'Variant analysis status update event received for unknown variant analysis'
+          );
+        }
+      }
+    );
 
     this.push(queryAddedSubscription);
     this.push(queryRemovedSubscription);
@@ -631,7 +554,11 @@ export class QueryHistoryManager extends DisposableObject {
     this.treeDataProvider.allHistory = history;
     this.treeDataProvider.allHistory.forEach(async (item) => {
       if (item.t === 'remote') {
-        await this.remoteQueriesManager.rehydrateRemoteQuery(item.queryId, item.remoteQuery, item.status);
+        await this.remoteQueriesManager.rehydrateRemoteQuery(
+          item.queryId,
+          item.remoteQuery,
+          item.status
+        );
       }
     });
   }
@@ -649,26 +576,20 @@ export class QueryHistoryManager extends DisposableObject {
       return;
     }
 
-    const queryPath = finalSingleItem.t === 'local'
-      ? finalSingleItem.initialInfo.queryPath
-      : finalSingleItem.remoteQuery.queryFilePath;
+    const queryPath =
+      finalSingleItem.t === 'local'
+        ? finalSingleItem.initialInfo.queryPath
+        : finalSingleItem.remoteQuery.queryFilePath;
 
-    const textDocument = await workspace.openTextDocument(
-      Uri.file(queryPath)
-    );
-    const editor = await window.showTextDocument(
-      textDocument,
-      ViewColumn.One
-    );
+    const textDocument = await workspace.openTextDocument(Uri.file(queryPath));
+    const editor = await window.showTextDocument(textDocument, ViewColumn.One);
 
     if (finalSingleItem.t === 'local') {
       const queryText = finalSingleItem.initialInfo.queryText;
       if (queryText !== undefined && finalSingleItem.initialInfo.isQuickQuery) {
         await editor.edit((edit) =>
           edit.replace(
-            textDocument.validateRange(
-              new Range(0, 0, textDocument.lineCount, 0)
-            ),
+            textDocument.validateRange(new Range(0, 0, textDocument.lineCount, 0)),
             queryText
           )
         );
@@ -681,12 +602,18 @@ export class QueryHistoryManager extends DisposableObject {
   }
 
   async removeDeletedQueries() {
-    await Promise.all(this.treeDataProvider.allHistory.map(async (item) => {
-      if (item.t == 'local' && item.completedQuery && !(await fs.pathExists(item.completedQuery?.query.querySaveDir))) {
-        this.treeDataProvider.remove(item);
-        item.completedQuery?.dispose();
-      }
-    }));
+    await Promise.all(
+      this.treeDataProvider.allHistory.map(async (item) => {
+        if (
+          item.t == 'local' &&
+          item.completedQuery &&
+          !(await fs.pathExists(item.completedQuery?.query.querySaveDir))
+        ) {
+          this.treeDataProvider.remove(item);
+          item.completedQuery?.dispose();
+        }
+      })
+    );
   }
 
   async handleRemoveHistoryItem(
@@ -694,22 +621,24 @@ export class QueryHistoryManager extends DisposableObject {
     multiSelect: QueryHistoryInfo[] = []
   ) {
     const { finalSingleItem, finalMultiSelect } = this.determineSelection(singleItem, multiSelect);
-    const toDelete = (finalMultiSelect || [finalSingleItem]);
-    await Promise.all(toDelete.map(async (item) => {
-      if (item.t === 'local') {
-        // Removing in progress local queries is not supported. They must be cancelled first.
-        if (item.status !== QueryStatus.InProgress) {
-          this.treeDataProvider.remove(item);
-          item.completedQuery?.dispose();
+    const toDelete = finalMultiSelect || [finalSingleItem];
+    await Promise.all(
+      toDelete.map(async (item) => {
+        if (item.t === 'local') {
+          // Removing in progress local queries is not supported. They must be cancelled first.
+          if (item.status !== QueryStatus.InProgress) {
+            this.treeDataProvider.remove(item);
+            item.completedQuery?.dispose();
 
-          // User has explicitly asked for this query to be removed.
-          // We need to delete it from disk as well.
-          await item.completedQuery?.query.deleteQuery();
+            // User has explicitly asked for this query to be removed.
+            // We need to delete it from disk as well.
+            await item.completedQuery?.query.deleteQuery();
+          }
+        } else {
+          await this.removeRemoteQuery(item);
         }
-      } else {
-        await this.removeRemoteQuery(item);
-      }
-    }));
+      })
+    );
 
     await this.writeQueryHistory();
     const current = this.treeDataProvider.getCurrent();
@@ -725,7 +654,9 @@ export class QueryHistoryManager extends DisposableObject {
     this.treeDataProvider.remove(item);
     void logger.log(`Deleted ${this.labelProvider.getLabel(item)}.`);
     if (item.status === QueryStatus.InProgress) {
-      void logger.log('The variant analysis is still running on GitHub Actions. To cancel there, you must go to the workflow run in your browser.');
+      void logger.log(
+        'The variant analysis is still running on GitHub Actions. To cancel there, you must go to the workflow run in your browser.'
+      );
     }
 
     await this.remoteQueriesManager.removeRemoteQuery(item.queryId);
@@ -769,7 +700,8 @@ export class QueryHistoryManager extends DisposableObject {
       placeHolder: `(use default: ${this.queryHistoryConfigListener.format})`,
       value: finalSingleItem.userSpecifiedLabel ?? '',
       title: 'Set query label',
-      prompt: 'Set the query history item label. See the description of the codeQL.queryHistory.format setting for more information.',
+      prompt:
+        'Set the query history item label. See the description of the codeQL.queryHistory.format setting for more information.',
     });
     // undefined response means the user cancelled the dialog; don't change anything
     if (response !== undefined) {
@@ -779,10 +711,7 @@ export class QueryHistoryManager extends DisposableObject {
     }
   }
 
-  async handleCompareWith(
-    singleItem: QueryHistoryInfo,
-    multiSelect: QueryHistoryInfo[]
-  ) {
+  async handleCompareWith(singleItem: QueryHistoryInfo, multiSelect: QueryHistoryInfo[]) {
     const { finalSingleItem, finalMultiSelect } = this.determineSelection(singleItem, multiSelect);
 
     try {
@@ -799,17 +728,17 @@ export class QueryHistoryManager extends DisposableObject {
       const to = await this.findOtherQueryToCompare(from, finalMultiSelect);
 
       if (from.completed && to?.completed) {
-        await this.doCompareCallback(from as CompletedLocalQueryInfo, to as CompletedLocalQueryInfo);
+        await this.doCompareCallback(
+          from as CompletedLocalQueryInfo,
+          to as CompletedLocalQueryInfo
+        );
       }
     } catch (e) {
       void showAndLogErrorMessage(getErrorMessage(e));
     }
   }
 
-  async handleItemClicked(
-    singleItem: QueryHistoryInfo,
-    multiSelect: QueryHistoryInfo[] = []
-  ) {
+  async handleItemClicked(singleItem: QueryHistoryInfo, multiSelect: QueryHistoryInfo[] = []) {
     const { finalSingleItem, finalMultiSelect } = this.determineSelection(singleItem, multiSelect);
     if (!this.assertSingleQuery(finalMultiSelect) || !finalSingleItem) {
       return;
@@ -836,10 +765,7 @@ export class QueryHistoryManager extends DisposableObject {
     }
   }
 
-  async handleShowQueryLog(
-    singleItem: QueryHistoryInfo,
-    multiSelect: QueryHistoryInfo[]
-  ) {
+  async handleShowQueryLog(singleItem: QueryHistoryInfo, multiSelect: QueryHistoryInfo[]) {
     // Local queries only
     if (!this.assertSingleQuery(multiSelect) || singleItem?.t !== 'local') {
       return;
@@ -868,10 +794,7 @@ export class QueryHistoryManager extends DisposableObject {
     throw new Error('Unable to get query directory');
   }
 
-  async handleOpenQueryDirectory(
-    singleItem: QueryHistoryInfo,
-    multiSelect: QueryHistoryInfo[]
-  ) {
+  async handleOpenQueryDirectory(singleItem: QueryHistoryInfo, multiSelect: QueryHistoryInfo[]) {
     const { finalSingleItem, finalMultiSelect } = this.determineSelection(singleItem, multiSelect);
 
     if (!this.assertSingleQuery(finalMultiSelect) || !finalSingleItem) {
@@ -881,7 +804,10 @@ export class QueryHistoryManager extends DisposableObject {
     let externalFilePath: string | undefined;
     if (finalSingleItem.t === 'local') {
       if (finalSingleItem.completedQuery) {
-        externalFilePath = path.join(finalSingleItem.completedQuery.query.querySaveDir, 'timestamp');
+        externalFilePath = path.join(
+          finalSingleItem.completedQuery.query.querySaveDir,
+          'timestamp'
+        );
       }
     } else if (finalSingleItem.t === 'remote') {
       externalFilePath = path.join(this.queryStorageDir, finalSingleItem.queryId, 'timestamp');
@@ -905,25 +831,32 @@ export class QueryHistoryManager extends DisposableObject {
   }
 
   private warnNoEvalLogs() {
-    void showAndLogWarningMessage(`Evaluator log, summary, and viewer are not available for this run. Perhaps it failed before evaluation, or you are running with a version of CodeQL before ' + ${CliVersionConstraint.CLI_VERSION_WITH_PER_QUERY_EVAL_LOG}?`);
+    void showAndLogWarningMessage(
+      `Evaluator log, summary, and viewer are not available for this run. Perhaps it failed before evaluation, or you are running with a version of CodeQL before ' + ${CliVersionConstraint.CLI_VERSION_WITH_PER_QUERY_EVAL_LOG}?`
+    );
   }
 
   private warnInProgressEvalLogSummary() {
-    void showAndLogWarningMessage('The evaluator log summary is still being generated for this run. Please try again later. The summary generation process is tracked in the "CodeQL Extension Log" view.');
+    void showAndLogWarningMessage(
+      'The evaluator log summary is still being generated for this run. Please try again later. The summary generation process is tracked in the "CodeQL Extension Log" view.'
+    );
   }
 
   private warnInProgressEvalLogViewer() {
-    void showAndLogWarningMessage('The viewer\'s data is still being generated for this run. Please try again or re-run the query.');
+    void showAndLogWarningMessage(
+      "The viewer's data is still being generated for this run. Please try again or re-run the query."
+    );
   }
 
-  async handleShowEvalLog(
-    singleItem: QueryHistoryInfo,
-    multiSelect: QueryHistoryInfo[]
-  ) {
+  async handleShowEvalLog(singleItem: QueryHistoryInfo, multiSelect: QueryHistoryInfo[]) {
     const { finalSingleItem, finalMultiSelect } = this.determineSelection(singleItem, multiSelect);
 
     // Only applicable to an individual local query
-    if (!this.assertSingleQuery(finalMultiSelect) || !finalSingleItem || finalSingleItem.t !== 'local') {
+    if (
+      !this.assertSingleQuery(finalMultiSelect) ||
+      !finalSingleItem ||
+      finalSingleItem.t !== 'local'
+    ) {
       return;
     }
 
@@ -934,14 +867,15 @@ export class QueryHistoryManager extends DisposableObject {
     }
   }
 
-  async handleShowEvalLogSummary(
-    singleItem: QueryHistoryInfo,
-    multiSelect: QueryHistoryInfo[]
-  ) {
+  async handleShowEvalLogSummary(singleItem: QueryHistoryInfo, multiSelect: QueryHistoryInfo[]) {
     const { finalSingleItem, finalMultiSelect } = this.determineSelection(singleItem, multiSelect);
 
     // Only applicable to an individual local query
-    if (!this.assertSingleQuery(finalMultiSelect) || !finalSingleItem || finalSingleItem.t !== 'local') {
+    if (
+      !this.assertSingleQuery(finalMultiSelect) ||
+      !finalSingleItem ||
+      finalSingleItem.t !== 'local'
+    ) {
       return;
     }
 
@@ -951,7 +885,7 @@ export class QueryHistoryManager extends DisposableObject {
     }
 
     // Summary log file doesn't exist.
-    if (finalSingleItem.evalLogLocation && await fs.pathExists(finalSingleItem.evalLogLocation)) {
+    if (finalSingleItem.evalLogLocation && (await fs.pathExists(finalSingleItem.evalLogLocation))) {
       // If raw log does exist, then the summary log is still being generated.
       this.warnInProgressEvalLogSummary();
     } else {
@@ -959,13 +893,14 @@ export class QueryHistoryManager extends DisposableObject {
     }
   }
 
-  async handleShowEvalLogViewer(
-    singleItem: QueryHistoryInfo,
-    multiSelect: QueryHistoryInfo[],
-  ) {
+  async handleShowEvalLogViewer(singleItem: QueryHistoryInfo, multiSelect: QueryHistoryInfo[]) {
     const { finalSingleItem, finalMultiSelect } = this.determineSelection(singleItem, multiSelect);
     // Only applicable to an individual local query
-    if (!this.assertSingleQuery(finalMultiSelect) || !finalSingleItem || finalSingleItem.t !== 'local') {
+    if (
+      !this.assertSingleQuery(finalMultiSelect) ||
+      !finalSingleItem ||
+      finalSingleItem.t !== 'local'
+    ) {
       return;
     }
 
@@ -977,22 +912,26 @@ export class QueryHistoryManager extends DisposableObject {
 
     // TODO(angelapwen): Stream the file in.
     try {
-      const evalLogData: EvalLogData[] = await parseViewerData(finalSingleItem.jsonEvalLogSummaryLocation);
-      const evalLogTreeBuilder = new EvalLogTreeBuilder(finalSingleItem.getQueryName(), evalLogData);
+      const evalLogData: EvalLogData[] = await parseViewerData(
+        finalSingleItem.jsonEvalLogSummaryLocation
+      );
+      const evalLogTreeBuilder = new EvalLogTreeBuilder(
+        finalSingleItem.getQueryName(),
+        evalLogData
+      );
       this.evalLogViewer.updateRoots(await evalLogTreeBuilder.getRoots());
     } catch (e) {
-      throw new Error(`Could not read evaluator log summary JSON file to generate viewer data at ${finalSingleItem.jsonEvalLogSummaryLocation}.`);
+      throw new Error(
+        `Could not read evaluator log summary JSON file to generate viewer data at ${finalSingleItem.jsonEvalLogSummaryLocation}.`
+      );
     }
   }
 
-  async handleCancel(
-    singleItem: QueryHistoryInfo,
-    multiSelect: QueryHistoryInfo[]
-  ) {
+  async handleCancel(singleItem: QueryHistoryInfo, multiSelect: QueryHistoryInfo[]) {
     const { finalSingleItem, finalMultiSelect } = this.determineSelection(singleItem, multiSelect);
 
     const selected = finalMultiSelect || [finalSingleItem];
-    const results = selected.map(async item => {
+    const results = selected.map(async (item) => {
       if (item.status === QueryStatus.InProgress) {
         if (item.t === 'local') {
           item.cancel();
@@ -1007,10 +946,7 @@ export class QueryHistoryManager extends DisposableObject {
     await Promise.all(results);
   }
 
-  async handleShowQueryText(
-    singleItem: QueryHistoryInfo,
-    multiSelect: QueryHistoryInfo[] = []
-  ) {
+  async handleShowQueryText(singleItem: QueryHistoryInfo, multiSelect: QueryHistoryInfo[] = []) {
     const { finalSingleItem, finalMultiSelect } = this.determineSelection(singleItem, multiSelect);
 
     if (!this.assertSingleQuery(finalMultiSelect) || !finalSingleItem) {
@@ -1018,53 +954,52 @@ export class QueryHistoryManager extends DisposableObject {
     }
 
     const params = new URLSearchParams({
-      isQuickEval: String(!!(finalSingleItem.t === 'local' && finalSingleItem.initialInfo.quickEvalPosition)),
+      isQuickEval: String(
+        !!(finalSingleItem.t === 'local' && finalSingleItem.initialInfo.quickEvalPosition)
+      ),
       queryText: encodeURIComponent(await this.getQueryText(finalSingleItem)),
     });
-    const queryId = finalSingleItem.t === 'local'
-      ? finalSingleItem.initialInfo.id
-      : finalSingleItem.queryId;
+    const queryId =
+      finalSingleItem.t === 'local' ? finalSingleItem.initialInfo.id : finalSingleItem.queryId;
 
-    const uri = Uri.parse(
-      `codeql:${queryId}?${params.toString()}`, true
-    );
+    const uri = Uri.parse(`codeql:${queryId}?${params.toString()}`, true);
     const doc = await workspace.openTextDocument(uri);
     await window.showTextDocument(doc, { preview: false });
   }
 
-  async handleViewSarifAlerts(
-    singleItem: QueryHistoryInfo,
-    multiSelect: QueryHistoryInfo[]
-  ) {
+  async handleViewSarifAlerts(singleItem: QueryHistoryInfo, multiSelect: QueryHistoryInfo[]) {
     const { finalSingleItem, finalMultiSelect } = this.determineSelection(singleItem, multiSelect);
 
     // Local queries only
-    if (!this.assertSingleQuery(finalMultiSelect) || !finalSingleItem || finalSingleItem.t !== 'local' || !finalSingleItem.completedQuery) {
+    if (
+      !this.assertSingleQuery(finalMultiSelect) ||
+      !finalSingleItem ||
+      finalSingleItem.t !== 'local' ||
+      !finalSingleItem.completedQuery
+    ) {
       return;
     }
 
     const query = finalSingleItem.completedQuery.query;
     const hasInterpretedResults = query.canHaveInterpretedResults();
     if (hasInterpretedResults) {
-      await this.tryOpenExternalFile(
-        query.resultsPaths.interpretedResultsPath
-      );
+      await this.tryOpenExternalFile(query.resultsPaths.interpretedResultsPath);
     } else {
       const label = this.labelProvider.getLabel(finalSingleItem);
-      void showAndLogInformationMessage(
-        `Query ${label} has no interpreted results.`
-      );
+      void showAndLogInformationMessage(`Query ${label} has no interpreted results.`);
     }
   }
 
-  async handleViewCsvResults(
-    singleItem: QueryHistoryInfo,
-    multiSelect: QueryHistoryInfo[]
-  ) {
+  async handleViewCsvResults(singleItem: QueryHistoryInfo, multiSelect: QueryHistoryInfo[]) {
     const { finalSingleItem, finalMultiSelect } = this.determineSelection(singleItem, multiSelect);
 
     // Local queries only
-    if (!this.assertSingleQuery(finalMultiSelect) || !finalSingleItem || finalSingleItem.t !== 'local' || !finalSingleItem.completedQuery) {
+    if (
+      !this.assertSingleQuery(finalMultiSelect) ||
+      !finalSingleItem ||
+      finalSingleItem.t !== 'local' ||
+      !finalSingleItem.completedQuery
+    ) {
       return;
     }
     const query = finalSingleItem.completedQuery.query;
@@ -1073,20 +1008,20 @@ export class QueryHistoryManager extends DisposableObject {
       return;
     }
     if (await query.exportCsvResults(this.qs, query.csvPath)) {
-      void this.tryOpenExternalFile(
-        query.csvPath
-      );
+      void this.tryOpenExternalFile(query.csvPath);
     }
   }
 
-  async handleViewCsvAlerts(
-    singleItem: QueryHistoryInfo,
-    multiSelect: QueryHistoryInfo[]
-  ) {
+  async handleViewCsvAlerts(singleItem: QueryHistoryInfo, multiSelect: QueryHistoryInfo[]) {
     const { finalSingleItem, finalMultiSelect } = this.determineSelection(singleItem, multiSelect);
 
     // Local queries only
-    if (!this.assertSingleQuery(finalMultiSelect) || !finalSingleItem || finalSingleItem.t !== 'local' || !finalSingleItem.completedQuery) {
+    if (
+      !this.assertSingleQuery(finalMultiSelect) ||
+      !finalSingleItem ||
+      finalSingleItem.t !== 'local' ||
+      !finalSingleItem.completedQuery
+    ) {
       return;
     }
 
@@ -1095,14 +1030,16 @@ export class QueryHistoryManager extends DisposableObject {
     );
   }
 
-  async handleViewDil(
-    singleItem: QueryHistoryInfo,
-    multiSelect: QueryHistoryInfo[],
-  ) {
+  async handleViewDil(singleItem: QueryHistoryInfo, multiSelect: QueryHistoryInfo[]) {
     const { finalSingleItem, finalMultiSelect } = this.determineSelection(singleItem, multiSelect);
 
     // Local queries only
-    if (!this.assertSingleQuery(finalMultiSelect) || !finalSingleItem || finalSingleItem.t !== 'local' || !finalSingleItem.completedQuery) {
+    if (
+      !this.assertSingleQuery(finalMultiSelect) ||
+      !finalSingleItem ||
+      finalSingleItem.t !== 'local' ||
+      !finalSingleItem.completedQuery
+    ) {
       return;
     }
 
@@ -1111,18 +1048,22 @@ export class QueryHistoryManager extends DisposableObject {
     );
   }
 
-  async handleOpenOnGithub(
-    singleItem: QueryHistoryInfo,
-    multiSelect: QueryHistoryInfo[],
-  ) {
+  async handleOpenOnGithub(singleItem: QueryHistoryInfo, multiSelect: QueryHistoryInfo[]) {
     const { finalSingleItem, finalMultiSelect } = this.determineSelection(singleItem, multiSelect);
 
     // Remote queries only
-    if (!this.assertSingleQuery(finalMultiSelect) || !finalSingleItem || finalSingleItem.t !== 'remote') {
+    if (
+      !this.assertSingleQuery(finalMultiSelect) ||
+      !finalSingleItem ||
+      finalSingleItem.t !== 'remote'
+    ) {
       return;
     }
 
-    const { actionsWorkflowRunId: workflowRunId, controllerRepository: { owner, name } } = finalSingleItem.remoteQuery;
+    const {
+      actionsWorkflowRunId: workflowRunId,
+      controllerRepository: { owner, name },
+    } = finalSingleItem.remoteQuery;
 
     await commands.executeCommand(
       'vscode.open',
@@ -1130,14 +1071,15 @@ export class QueryHistoryManager extends DisposableObject {
     );
   }
 
-  async handleCopyRepoList(
-    singleItem: QueryHistoryInfo,
-    multiSelect: QueryHistoryInfo[],
-  ) {
+  async handleCopyRepoList(singleItem: QueryHistoryInfo, multiSelect: QueryHistoryInfo[]) {
     const { finalSingleItem, finalMultiSelect } = this.determineSelection(singleItem, multiSelect);
 
     // Remote queries only
-    if (!this.assertSingleQuery(finalMultiSelect) || !finalSingleItem || finalSingleItem.t !== 'remote') {
+    if (
+      !this.assertSingleQuery(finalMultiSelect) ||
+      !finalSingleItem ||
+      finalSingleItem.t !== 'remote'
+    ) {
       return;
     }
 
@@ -1145,9 +1087,7 @@ export class QueryHistoryManager extends DisposableObject {
   }
 
   async getQueryText(item: QueryHistoryInfo): Promise<string> {
-    return item.t === 'local'
-      ? item.initialInfo.queryText
-      : item.remoteQuery.queryText;
+    return item.t === 'local' ? item.initialInfo.queryText : item.remoteQuery.queryText;
   }
 
   async handleExportResults(): Promise<void> {
@@ -1186,9 +1126,7 @@ export class QueryHistoryManager extends DisposableObject {
     } catch (e) {
       const msg = getErrorMessage(e);
       if (
-        msg.includes(
-          'Files above 50MB cannot be synchronized with extensions'
-        ) ||
+        msg.includes('Files above 50MB cannot be synchronized with extensions') ||
         msg.includes('too large to open')
       ) {
         const res = await showBinaryChoiceDialog(
@@ -1217,9 +1155,12 @@ the file in the file explorer and dragging it into the workspace.`
     singleItem: QueryHistoryInfo,
     multiSelect: QueryHistoryInfo[]
   ): Promise<CompletedLocalQueryInfo | undefined> {
-
     // Remote queries cannot be compared
-    if (singleItem.t !== 'local' || multiSelect.some(s => s.t !== 'local') || !singleItem.completedQuery) {
+    if (
+      singleItem.t !== 'local' ||
+      multiSelect.some((s) => s.t !== 'local') ||
+      !singleItem.completedQuery
+    ) {
       return undefined;
     }
     const dbName = singleItem.initialInfo.databaseInfo.name;
@@ -1227,8 +1168,9 @@ the file in the file explorer and dragging it into the workspace.`
     // if exactly 2 queries are selected, use those
     if (multiSelect?.length === 2) {
       // return the query that is not the first selected one
-      const otherQuery =
-        (singleItem === multiSelect[0] ? multiSelect[1] : multiSelect[0]) as LocalQueryInfo;
+      const otherQuery = (singleItem === multiSelect[0]
+        ? multiSelect[1]
+        : multiSelect[0]) as LocalQueryInfo;
       if (!otherQuery.completedQuery) {
         throw new Error('Please select a completed query.');
       }
@@ -1268,11 +1210,12 @@ the file in the file explorer and dragging it into the workspace.`
     return choice?.query;
   }
 
-  private assertSingleQuery(multiSelect: QueryHistoryInfo[] = [], message = 'Please select a single query.') {
+  private assertSingleQuery(
+    multiSelect: QueryHistoryInfo[] = [],
+    message = 'Please select a single query.'
+  ) {
     if (multiSelect.length > 1) {
-      void showAndLogErrorMessage(
-        message
-      );
+      void showAndLogErrorMessage(message);
       return false;
     }
     return true;
@@ -1323,7 +1266,7 @@ the file in the file explorer and dragging it into the workspace.`
     multiSelect: QueryHistoryInfo[]
   ): {
     finalSingleItem: QueryHistoryInfo;
-    finalMultiSelect: QueryHistoryInfo[]
+    finalMultiSelect: QueryHistoryInfo[];
   } {
     if (!singleItem && !multiSelect?.[0]) {
       const selection = this.treeView.selection;
@@ -1331,12 +1274,12 @@ the file in the file explorer and dragging it into the workspace.`
       if (selection?.length) {
         return {
           finalSingleItem: selection[0],
-          finalMultiSelect: [...selection]
+          finalMultiSelect: [...selection],
         };
       } else if (current) {
         return {
           finalSingleItem: current,
-          finalMultiSelect: [current]
+          finalMultiSelect: [current],
         };
       }
     }
@@ -1349,7 +1292,7 @@ the file in the file explorer and dragging it into the workspace.`
     }
     return {
       finalSingleItem: singleItem,
-      finalMultiSelect: multiSelect
+      finalMultiSelect: multiSelect,
     };
   }
 
@@ -1360,9 +1303,12 @@ the file in the file explorer and dragging it into the workspace.`
 
   private async openQueryResults(item: QueryHistoryInfo) {
     if (item.t === 'local') {
-      await this.localQueriesResultsView.showResults(item as CompletedLocalQueryInfo, WebviewReveal.Forced, false);
-    }
-    else if (item.t === 'remote') {
+      await this.localQueriesResultsView.showResults(
+        item as CompletedLocalQueryInfo,
+        WebviewReveal.Forced,
+        false
+      );
+    } else if (item.t === 'remote') {
       await this.remoteQueriesManager.openRemoteQueryResults(item.queryId);
     }
   }

@@ -10,7 +10,7 @@ export interface RemoteQueryHistoryItem {
   resultCount?: number;
   status: QueryStatus;
   completed: boolean;
-  readonly queryId: string,
+  readonly queryId: string;
   remoteQuery: RemoteQuery;
   userSpecifiedLabel?: string;
 }

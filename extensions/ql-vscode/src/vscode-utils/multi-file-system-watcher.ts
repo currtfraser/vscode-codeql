@@ -40,7 +40,9 @@ export class MultiFileSystemWatcher extends DisposableObject {
   /**
    * Event to be fired when any watched file is created, changed, or deleted.
    */
-  public get onDidChange(): Event<Uri> { return this._onDidChange.event; }
+  public get onDidChange(): Event<Uri> {
+    return this._onDidChange.event;
+  }
 
   /**
    * Adds a new pattern to watch.

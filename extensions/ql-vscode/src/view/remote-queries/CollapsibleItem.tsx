@@ -24,20 +24,17 @@ const Button = styled.button`
 
 const CollapsibleItem = ({
   title,
-  children
+  children,
 }: {
   title: React.ReactNode;
-  children: React.ReactNode
+  children: React.ReactNode;
 }) => {
   const [isExpanded, setExpanded] = useState(false);
   return (
     <>
       <Container onClick={() => setExpanded(!isExpanded)}>
         <Button>
-          {isExpanded
-            ? <ChevronDownIcon size={16} />
-            : <ChevronRightIcon size={16} />
-          }
+          {isExpanded ? <ChevronDownIcon size={16} /> : <ChevronRightIcon size={16} />}
         </Button>
         <TitleContainer>{title}</TitleContainer>
       </Container>

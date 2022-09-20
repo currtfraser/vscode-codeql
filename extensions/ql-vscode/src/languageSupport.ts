@@ -18,7 +18,7 @@ export function install() {
   langConfig.onEnterRules = onEnterRules;
   langConfig.indentationRules = {
     decreaseIndentPattern: /^((?!.*?\/\*).*\*\/)?\s*[\}\]].*$/,
-    increaseIndentPattern: /^((?!\/\/).)*(\{[^}"'`]*|\([^)"'`]*|\[[^\]"'`]*)$/
+    increaseIndentPattern: /^((?!\/\/).)*(\{[^}"'`]*|\([^)"'`]*|\[[^\]"'`]*)$/,
   };
 
   languages.setLanguageConfiguration('ql', langConfig);

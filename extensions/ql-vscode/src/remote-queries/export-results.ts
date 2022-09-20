@@ -1,13 +1,18 @@
 import * as path from 'path';
 import * as fs from 'fs-extra';
 
-import { window, commands, Uri, ExtensionContext, QuickPickItem, workspace, ViewColumn } from 'vscode';
+import {
+  window,
+  commands,
+  Uri,
+  ExtensionContext,
+  QuickPickItem,
+  workspace,
+  ViewColumn,
+} from 'vscode';
 import { Credentials } from '../authentication';
 import { UserCancellationException } from '../commandRunner';
-import {
-  showInformationMessageWithAction,
-  pluralize
-} from '../helpers';
+import { showInformationMessageWithAction, pluralize } from '../helpers';
 import { logger } from '../logging';
 import { QueryHistoryManager } from '../query-history';
 import { createGist } from './gh-actions-api-client';
@@ -23,11 +28,13 @@ import { AnalysisResults, sumAnalysesResults } from './shared/analysis-result';
 export async function exportRemoteQueryResults(
   queryHistoryManager: QueryHistoryManager,
   remoteQueriesManager: RemoteQueriesManager,
-  ctx: ExtensionContext,
+  ctx: ExtensionContext
 ): Promise<void> {
   const queryHistoryItem = queryHistoryManager.getCurrentQueryHistoryItem();
   if (!queryHistoryItem || queryHistoryItem.t !== 'remote') {
-    throw new Error('No variant analysis results currently open. To open results, click an item in the query history view.');
+    throw new Error(
+      'No variant analysis results currently open. To open results, click an item in the query history view.'
+    );
   } else if (!queryHistoryItem.completed) {
     throw new Error('Variant analysis results are not yet available.');
   }
@@ -57,17 +64,12 @@ export async function exportRemoteQueryResults(
 /**
  * Determines the format in which to export the results, from the given export options.
  */
-async function determineExportFormat(
-  ...options: { label: string }[]
-): Promise<QuickPickItem> {
-  const exportFormat = await window.showQuickPick(
-    options,
-    {
-      placeHolder: 'Select export format',
-      canPickMany: false,
-      ignoreFocusOut: true,
-    }
-  );
+async function determineExportFormat(...options: { label: string }[]): Promise<QuickPickItem> {
+  const exportFormat = await window.showQuickPick(options, {
+    placeHolder: 'Select export format',
+    canPickMany: false,
+    ignoreFocusOut: true,
+  });
   if (!exportFormat || !exportFormat.label) {
     throw new UserCancellationException('No export format selected', true);
   }
@@ -110,7 +112,9 @@ export async function exportResultsToGist(
 const buildGistDescription = (query: RemoteQuery, analysesResults: AnalysisResults[]) => {
   const resultCount = sumAnalysesResults(analysesResults);
   const resultLabel = pluralize(resultCount, 'result', 'results');
-  const repositoryLabel = query.repositoryCount ? `(${pluralize(query.repositoryCount, 'repository', 'repositories')})` : '';
+  const repositoryLabel = query.repositoryCount
+    ? `(${pluralize(query.repositoryCount, 'repository', 'repositories')})`
+    : '';
   return `${query.queryName} (${query.language}) ${resultLabel} ${repositoryLabel}`;
 };
 

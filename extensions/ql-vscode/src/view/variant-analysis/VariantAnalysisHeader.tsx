@@ -31,7 +31,7 @@ export const VariantAnalysisHeader = ({
   onViewQueryTextClick,
   onStopQueryClick,
   onCopyRepositoryListClick,
-  onExportResultsClick
+  onExportResultsClick,
 }: VariantAnalysisHeaderProps) => {
   return (
     <Container>

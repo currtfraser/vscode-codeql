@@ -9,7 +9,7 @@ import {
   SecretStorage,
   SecretStorageChangeEvent,
   Uri,
-  window
+  window,
 } from 'vscode';
 import * as yaml from 'js-yaml';
 import * as tmp from 'tmp';
@@ -25,7 +25,7 @@ import {
   showBinaryChoiceDialog,
   showBinaryChoiceWithUrlDialog,
   showInformationMessageWithAction,
-  walkDirectory
+  walkDirectory,
 } from '../../helpers';
 import { reportStreamProgress } from '../../commandRunner';
 import Sinon = require('sinon');
@@ -54,8 +54,13 @@ describe('helpers', () => {
       return new Date(currentUnixTime * numMillisecondsPerSecond);
     }
 
-    function createInvocationRateLimiter<T>(funcIdentifier: string, func: () => Promise<T>): InvocationRateLimiter<T> {
-      return new InvocationRateLimiter(new MockExtensionContext(), funcIdentifier, func, s => createDate(s));
+    function createInvocationRateLimiter<T>(
+      funcIdentifier: string,
+      func: () => Promise<T>
+    ): InvocationRateLimiter<T> {
+      return new InvocationRateLimiter(new MockExtensionContext(), funcIdentifier, func, (s) =>
+        createDate(s)
+      );
     }
 
     it('initially invokes function', async () => {
@@ -67,7 +72,7 @@ describe('helpers', () => {
       expect(numTimesFuncCalled).to.equal(1);
     });
 
-    it('doesn\'t invoke function again if no time has passed', async () => {
+    it("doesn't invoke function again if no time has passed", async () => {
       let numTimesFuncCalled = 0;
       const invocationRateLimiter = createInvocationRateLimiter('funcid', async () => {
         numTimesFuncCalled++;
@@ -77,7 +82,7 @@ describe('helpers', () => {
       expect(numTimesFuncCalled).to.equal(1);
     });
 
-    it('doesn\'t invoke function again if requested time since last invocation hasn\'t passed', async () => {
+    it("doesn't invoke function again if requested time since last invocation hasn't passed", async () => {
       let numTimesFuncCalled = 0;
       const invocationRateLimiter = createInvocationRateLimiter('funcid', async () => {
         numTimesFuncCalled++;
@@ -130,7 +135,7 @@ describe('helpers', () => {
     beforeEach(() => {
       dir = tmp.dirSync();
       const contents = yaml.dump({
-        primaryLanguage: 'cpp'
+        primaryLanguage: 'cpp',
       });
       fs.writeFileSync(path.join(dir.name, 'codeql-database.yml'), contents, 'utf8');
     });
@@ -144,7 +149,9 @@ describe('helpers', () => {
     });
 
     it('should get initial query contents when dbscheme is known', () => {
-      expect(getInitialQueryContents('', 'semmlecode.cpp.dbscheme')).to.eq('import cpp\n\nselect ""');
+      expect(getInitialQueryContents('', 'semmlecode.cpp.dbscheme')).to.eq(
+        'import cpp\n\nselect ""'
+      );
     });
 
     it('should get initial query contents when nothing is known', () => {
@@ -192,7 +199,14 @@ describe('helpers', () => {
     get(_variable: string): EnvironmentVariableMutator | undefined {
       throw new Error('Method not implemented.');
     }
-    forEach(_callback: (variable: string, mutator: EnvironmentVariableMutator, collection: EnvironmentVariableCollection) => any, _thisArg?: any): void {
+    forEach(
+      _callback: (
+        variable: string,
+        mutator: EnvironmentVariableMutator,
+        collection: EnvironmentVariableCollection
+      ) => any,
+      _thisArg?: any
+    ): void {
       throw new Error('Method not implemented.');
     }
     delete(_variable: string): void {
@@ -254,10 +268,10 @@ describe('helpers', () => {
   it('should report stream progress', () => {
     const spy = sandbox.spy();
     const mockReadable = {
-      on: sandbox.spy()
+      on: sandbox.spy(),
     };
     const max = 1024 * 1024 * 4;
-    const firstStep = (1024 * 1024) + (1024 * 600);
+    const firstStep = 1024 * 1024 + 1024 * 600;
     const secondStep = 1024 * 1024 * 2;
 
     (reportStreamProgress as any)(mockReadable, 'My prefix', max, spy);
@@ -287,7 +301,7 @@ describe('helpers', () => {
   it('should report stream progress when total bytes unknown', () => {
     const spy = sandbox.spy();
     const mockReadable = {
-      on: sandbox.spy()
+      on: sandbox.spy(),
     };
     (reportStreamProgress as any)(mockReadable, 'My prefix', undefined, spy);
 
@@ -312,40 +326,48 @@ describe('helpers', () => {
       // pretend user chooses 'yes'
       showInformationMessageSpy.onCall(0).resolvesArg(2);
       const res = showBinaryChoiceDialog('xxx');
-      res.then((val) => {
-        expect(val).to.eq(true);
-        done();
-      }).catch(e => fail(e));
+      res
+        .then((val) => {
+          expect(val).to.eq(true);
+          done();
+        })
+        .catch((e) => fail(e));
     });
 
     it('should show a binary choice dialog and return `no`', (done) => {
       // pretend user chooses 'no'
       showInformationMessageSpy.onCall(0).resolvesArg(3);
       const res = showBinaryChoiceDialog('xxx');
-      res.then((val) => {
-        expect(val).to.eq(false);
-        done();
-      }).catch(e => fail(e));
+      res
+        .then((val) => {
+          expect(val).to.eq(false);
+          done();
+        })
+        .catch((e) => fail(e));
     });
 
     it('should show an info dialog and confirm the action', (done) => {
       // pretend user chooses to run action
       showInformationMessageSpy.onCall(0).resolvesArg(1);
       const res = showInformationMessageWithAction('xxx', 'yyy');
-      res.then((val) => {
-        expect(val).to.eq(true);
-        done();
-      }).catch(e => fail(e));
+      res
+        .then((val) => {
+          expect(val).to.eq(true);
+          done();
+        })
+        .catch((e) => fail(e));
     });
 
     it('should show an action dialog and avoid choosing the action', (done) => {
       // pretend user does not choose to run action
       showInformationMessageSpy.onCall(0).resolves(undefined);
       const res = showInformationMessageWithAction('xxx', 'yyy');
-      res.then((val) => {
-        expect(val).to.eq(false);
-        done();
-      }).catch(e => fail(e));
+      res
+        .then((val) => {
+          expect(val).to.eq(false);
+          done();
+        })
+        .catch((e) => fail(e));
     });
 
     it('should show a binary choice dialog with a url and return `yes`', (done) => {
@@ -354,10 +376,12 @@ describe('helpers', () => {
       showInformationMessageSpy.onCall(1).resolvesArg(2);
       showInformationMessageSpy.onCall(2).resolvesArg(3);
       const res = showBinaryChoiceWithUrlDialog('xxx', 'invalid:url');
-      res.then((val) => {
-        expect(val).to.eq(true);
-        done();
-      }).catch(e => fail(e));
+      res
+        .then((val) => {
+          expect(val).to.eq(true);
+          done();
+        })
+        .catch((e) => fail(e));
     });
 
     it('should show a binary choice dialog with a url and return `no`', (done) => {
@@ -366,10 +390,12 @@ describe('helpers', () => {
       showInformationMessageSpy.onCall(1).resolvesArg(2);
       showInformationMessageSpy.onCall(2).resolvesArg(4);
       const res = showBinaryChoiceWithUrlDialog('xxx', 'invalid:url');
-      res.then((val) => {
-        expect(val).to.eq(false);
-        done();
-      }).catch(e => fail(e));
+      res
+        .then((val) => {
+          expect(val).to.eq(false);
+          done();
+        })
+        .catch((e) => fail(e));
     });
 
     it('should show a binary choice dialog and exit after clcking `more info` 5 times', (done) => {
@@ -380,12 +406,14 @@ describe('helpers', () => {
       showInformationMessageSpy.onCall(3).resolvesArg(2);
       showInformationMessageSpy.onCall(4).resolvesArg(2);
       const res = showBinaryChoiceWithUrlDialog('xxx', 'invalid:url');
-      res.then((val) => {
-        // No choie was made
-        expect(val).to.eq(undefined);
-        expect(showInformationMessageSpy.getCalls().length).to.eq(5);
-        done();
-      }).catch(e => fail(e));
+      res
+        .then((val) => {
+          // No choie was made
+          expect(val).to.eq(undefined);
+          expect(showInformationMessageSpy.getCalls().length).to.eq(5);
+          done();
+        })
+        .catch((e) => fail(e));
     });
   });
 });
@@ -405,7 +433,6 @@ describe('walkDirectory', () => {
   afterEach(() => {
     tmpDir.removeCallback();
   });
-
 
   it('should walk a directory', async () => {
     const file1 = path.join(dir, 'file1');

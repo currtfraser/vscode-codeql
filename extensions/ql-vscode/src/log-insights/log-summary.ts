@@ -9,14 +9,14 @@ export interface Ra {
 }
 
 export type EvaluationStrategy =
-  'COMPUTE_SIMPLE' |
-  'COMPUTE_RECURSIVE' |
-  'IN_LAYER' |
-  'COMPUTED_EXTENSIONAL' |
-  'EXTENSIONAL' |
-  'SENTINEL_EMPTY' |
-  'CACHACA' |
-  'CACHE_HIT';
+  | 'COMPUTE_SIMPLE'
+  | 'COMPUTE_RECURSIVE'
+  | 'IN_LAYER'
+  | 'COMPUTED_EXTENSIONAL'
+  | 'EXTENSIONAL'
+  | 'SENTINEL_EMPTY'
+  | 'CACHACA'
+  | 'CACHE_HIT';
 
 interface SummaryEventBase {
   evaluationStrategy: EvaluationStrategy;

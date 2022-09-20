@@ -25,10 +25,14 @@ function predicateSymbolKey(name: string, raHash: string): string {
 class ProblemReporter implements EvaluationLogProblemReporter {
   public readonly diagnostics: Diagnostic[] = [];
 
-  constructor(private readonly symbols: SummarySymbols | undefined) {
-  }
+  constructor(private readonly symbols: SummarySymbols | undefined) {}
 
-  public reportProblem(predicateName: string, raHash: string, iteration: number, message: string): void {
+  public reportProblem(
+    predicateName: string,
+    raHash: string,
+    iteration: number,
+    message: string
+  ): void {
     const nameWithHash = predicateSymbolKey(predicateName, raHash);
     const predicateSymbol = this.symbols?.predicates[nameWithHash];
     let predicateInfo: PipelineInfo | undefined = undefined;
@@ -48,24 +52,30 @@ class ProblemReporter implements EvaluationLogProblemReporter {
 
 export class LogScannerService extends DisposableObject {
   public readonly scanners = new EvaluationLogScannerSet();
-  private readonly diagnosticCollection = this.push(languages.createDiagnosticCollection('ql-eval-log'));
+  private readonly diagnosticCollection = this.push(
+    languages.createDiagnosticCollection('ql-eval-log')
+  );
   private currentItem: QueryHistoryInfo | undefined = undefined;
 
   constructor(qhm: QueryHistoryManager) {
     super();
 
-    this.push(qhm.onDidChangeCurrentQueryItem(async (item) => {
-      if (item !== this.currentItem) {
-        this.currentItem = item;
-        await this.scanEvalLog(item);
-      }
-    }));
+    this.push(
+      qhm.onDidChangeCurrentQueryItem(async (item) => {
+        if (item !== this.currentItem) {
+          this.currentItem = item;
+          await this.scanEvalLog(item);
+        }
+      })
+    );
 
-    this.push(qhm.onDidCompleteQuery(async (item) => {
-      if (item === this.currentItem) {
-        await this.scanEvalLog(item);
-      }
-    }));
+    this.push(
+      qhm.onDidCompleteQuery(async (item) => {
+        if (item === this.currentItem) {
+          await this.scanEvalLog(item);
+        }
+      })
+    );
   }
 
   /**
@@ -73,18 +83,21 @@ export class LogScannerService extends DisposableObject {
    *
    * @param query The query whose log is to be scanned.
    */
-  public async scanEvalLog(
-    query: QueryHistoryInfo | undefined
-  ): Promise<void> {
+  public async scanEvalLog(query: QueryHistoryInfo | undefined): Promise<void> {
     this.diagnosticCollection.clear();
 
-    if ((query?.t !== 'local')
-      || (query.evalLogSummaryLocation === undefined)
-      || (query.jsonEvalLogSummaryLocation === undefined)) {
+    if (
+      query?.t !== 'local' ||
+      query.evalLogSummaryLocation === undefined ||
+      query.jsonEvalLogSummaryLocation === undefined
+    ) {
       return;
     }
 
-    const diagnostics = await this.scanLog(query.jsonEvalLogSummaryLocation, query.evalLogSummarySymbolsLocation);
+    const diagnostics = await this.scanLog(
+      query.jsonEvalLogSummaryLocation,
+      query.evalLogSummarySymbolsLocation
+    );
     const uri = Uri.file(query.evalLogSummaryLocation);
     this.diagnosticCollection.set(uri, diagnostics);
   }
@@ -95,7 +108,10 @@ export class LogScannerService extends DisposableObject {
    * @param symbolsLocation The file path of the symbols file for the human-readable log summary.
    * @returns An array of `Diagnostic`s representing the problems found by scanners.
    */
-  private async scanLog(jsonSummaryLocation: string, symbolsLocation: string | undefined): Promise<Diagnostic[]> {
+  private async scanLog(
+    jsonSummaryLocation: string,
+    symbolsLocation: string | undefined
+  ): Promise<Diagnostic[]> {
     let symbols: SummarySymbols | undefined = undefined;
     if (symbolsLocation !== undefined) {
       symbols = JSON.parse(await fs.readFile(symbolsLocation, { encoding: 'utf-8' }));

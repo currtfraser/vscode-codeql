@@ -1,7 +1,11 @@
 import * as vscode from 'vscode';
 import { Credentials } from '../authentication';
 import { Logger } from '../logging';
-import { getWorkflowStatus, isArtifactAvailable, RESULT_INDEX_ARTIFACT_NAME } from './gh-actions-api-client';
+import {
+  getWorkflowStatus,
+  isArtifactAvailable,
+  RESULT_INDEX_ARTIFACT_NAME,
+} from './gh-actions-api-client';
 import { RemoteQuery } from './remote-query';
 import { RemoteQueryWorkflowResult } from './remote-query-workflow-result';
 
@@ -14,8 +18,7 @@ export class RemoteQueriesMonitor {
   constructor(
     private readonly extensionContext: vscode.ExtensionContext,
     private readonly logger: Logger
-  ) {
-  }
+  ) {}
 
   public async monitorQuery(
     remoteQuery: RemoteQuery,
@@ -40,7 +43,8 @@ export class RemoteQueriesMonitor {
         credentials,
         remoteQuery.controllerRepository.owner,
         remoteQuery.controllerRepository.name,
-        remoteQuery.actionsWorkflowRunId);
+        remoteQuery.actionsWorkflowRunId
+      );
 
       // Even if the workflow indicates it has completed, artifacts
       // might still take a while to become available. So we need to
@@ -72,8 +76,6 @@ export class RemoteQueriesMonitor {
   }
 
   private async sleep(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
-
-

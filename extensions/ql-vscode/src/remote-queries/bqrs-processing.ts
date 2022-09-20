@@ -23,10 +23,7 @@ export async function extractRawResults(
 
   const schema = resultSets[0];
 
-  const chunk = await cliServer.bqrsDecode(
-    filePath,
-    schema.name,
-    { pageSize: MAX_RAW_RESULTS });
+  const chunk = await cliServer.bqrsDecode(filePath, schema.name, { pageSize: MAX_RAW_RESULTS });
 
   const resultSet = transformBqrsResultSet(schema, chunk);
 

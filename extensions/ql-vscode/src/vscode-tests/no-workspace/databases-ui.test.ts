@@ -32,7 +32,7 @@ describe('databases-ui', () => {
       expect(uri.toString()).to.eq(Uri.file(dir).toString());
     });
 
-    it('should choose parent\'s parent direcory when file selected is in db-*', async () => {
+    it("should choose parent's parent direcory when file selected is in db-*", async () => {
       const dir = tmp.dirSync().name;
       const dbDir = path.join(dir, 'db-javascript');
       const file = path.join(dbDir, 'nested');
@@ -65,20 +65,27 @@ describe('databases-ui', () => {
 
     // these two should be deleted
     const db4 = createDatabase(storageDir, 'db2-notimported-with-db-info', 'cpp', '.dbinfo');
-    const db5 = createDatabase(storageDir, 'db2-notimported-with-codeql-database.yml', 'cpp', 'codeql-database.yml');
+    const db5 = createDatabase(
+      storageDir,
+      'db2-notimported-with-codeql-database.yml',
+      'cpp',
+      'codeql-database.yml'
+    );
 
     const databaseUI = new DatabaseUI(
       {
-        databaseItems: [
-          { databaseUri: Uri.file(db1) }
-        ],
-        onDidChangeDatabaseItem: () => { /**/ },
-        onDidChangeCurrentDatabaseItem: () => { /**/ },
+        databaseItems: [{ databaseUri: Uri.file(db1) }],
+        onDidChangeDatabaseItem: () => {
+          /**/
+        },
+        onDidChangeCurrentDatabaseItem: () => {
+          /**/
+        },
       } as any,
       {} as any,
       storageDir,
       storageDir,
-      () => Promise.resolve({} as Credentials),
+      () => Promise.resolve({} as Credentials)
     );
 
     await databaseUI.handleRemoveOrphanedDatabases();
@@ -93,7 +100,12 @@ describe('databases-ui', () => {
     databaseUI.dispose(testDisposeHandler);
   });
 
-  function createDatabase(storageDir: string, dbName: string, language: string, extraFile?: string) {
+  function createDatabase(
+    storageDir: string,
+    dbName: string,
+    language: string,
+    extraFile?: string
+  ) {
     const parentDir = path.join(storageDir, dbName);
     const dbDir = path.join(parentDir, `db-${language}`);
     fs.mkdirsSync(dbDir);

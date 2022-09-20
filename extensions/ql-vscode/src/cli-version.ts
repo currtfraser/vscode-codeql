@@ -6,7 +6,10 @@ import { getErrorMessage } from './pure/helpers-pure';
 /**
  * Get the version of a CodeQL CLI.
  */
-export async function getCodeQlCliVersion(codeQlPath: string, logger: Logger): Promise<semver.SemVer | undefined> {
+export async function getCodeQlCliVersion(
+  codeQlPath: string,
+  logger: Logger
+): Promise<semver.SemVer | undefined> {
   try {
     const output: string = await runCodeQlCliCommand(
       codeQlPath,

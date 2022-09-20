@@ -5,7 +5,9 @@ import { InterpretedResultSet, GraphInterpretationData } from '../../pure/interf
 import { graphviz } from 'd3-graphviz';
 import { jumpToLocation } from './result-table-utils';
 import { tryGetLocationFromString } from '../../pure/bqrs-utils';
-export type GraphProps = ResultTableProps & { resultSet: InterpretedResultSet<GraphInterpretationData> };
+export type GraphProps = ResultTableProps & {
+  resultSet: InterpretedResultSet<GraphInterpretationData>;
+};
 
 const graphClassName = 'vscode-codeql__result-tables-graph';
 const graphId = 'graph-results';
@@ -19,17 +21,24 @@ export class Graph extends React.Component<GraphProps> {
     const graphData = resultSet.interpretation?.data?.dot[offset];
 
     if (!graphData) {
-      return <>
-        <div className={graphClassName}>Graph is not available.</div>
-      </>;
+      return (
+        <>
+          <div className={graphClassName}>Graph is not available.</div>
+        </>
+      );
     }
 
-    return <>
-      <div className={graphClassName}>
-        <strong>Warning:</strong> The Graph Viewer is not a publicly released feature and will crash on large graphs.
-      </div>
-      <div id={graphId} className={graphClassName}><span>Rendering graph...</span></div>
-    </>;
+    return (
+      <>
+        <div className={graphClassName}>
+          <strong>Warning:</strong> The Graph Viewer is not a publicly released feature and will
+          crash on large graphs.
+        </div>
+        <div id={graphId} className={graphClassName}>
+          <span>Rendering graph...</span>
+        </div>
+      </>
+    );
   };
 
   public componentDidMount = () => {
@@ -68,7 +77,7 @@ export class Graph extends React.Component<GraphProps> {
 
     graphviz(`#${graphId}`)
       .options(options)
-      .attributer(function(d) {
+      .attributer(function (d) {
         if (d.tag == 'a') {
           const url = d.attributes['xlink:href'] || d.attributes['href'];
           const loc = tryGetLocationFromString(url);
@@ -76,7 +85,9 @@ export class Graph extends React.Component<GraphProps> {
             d.attributes['xlink:href'] = '#';
             d.attributes['href'] = '#';
             loc.uri = 'file://' + loc.uri;
-            d3.select(this).on('click', function(e) { jumpToLocation(loc, databaseUri); });
+            d3.select(this).on('click', function (e) {
+              jumpToLocation(loc, databaseUri);
+            });
           }
         }
 
@@ -93,7 +104,6 @@ export class Graph extends React.Component<GraphProps> {
             firstPolygon = false;
           }
         }
-
       })
       .renderDot(graphData);
   };

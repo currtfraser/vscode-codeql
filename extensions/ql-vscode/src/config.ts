@@ -1,5 +1,11 @@
 import { DisposableObject } from './pure/disposable-object';
-import { workspace, Event, EventEmitter, ConfigurationChangeEvent, ConfigurationTarget } from 'vscode';
+import {
+  workspace,
+  Event,
+  EventEmitter,
+  ConfigurationChangeEvent,
+  ConfigurationTarget,
+} from 'vscode';
 import { DistributionManager } from './distribution';
 import { logger } from './logging';
 import { ONE_DAY_IN_MS } from './pure/time';
@@ -35,7 +41,6 @@ export class Setting {
     }
     return workspace.getConfiguration(this.parent.qualifiedName).update(this.name, value, target);
   }
-
 }
 
 const ROOT_SETTING = new Setting('codeQL');
@@ -62,7 +67,11 @@ const QUERY_HISTORY_FORMAT_SETTING = new Setting('format', QUERY_HISTORY_SETTING
 const QUERY_HISTORY_TTL = new Setting('ttl', QUERY_HISTORY_SETTING);
 
 /** When these settings change, the distribution should be updated. */
-const DISTRIBUTION_CHANGE_SETTINGS = [CUSTOM_CODEQL_PATH_SETTING, INCLUDE_PRERELEASE_SETTING, PERSONAL_ACCESS_TOKEN_SETTING];
+const DISTRIBUTION_CHANGE_SETTINGS = [
+  CUSTOM_CODEQL_PATH_SETTING,
+  INCLUDE_PRERELEASE_SETTING,
+  PERSONAL_ACCESS_TOKEN_SETTING,
+];
 
 export interface DistributionConfig {
   readonly customCodeQlPath?: string;
@@ -86,7 +95,10 @@ const MAX_PATHS = new Setting('maxPaths', RUNNING_QUERIES_SETTING);
 const RUNNING_TESTS_SETTING = new Setting('runningTests', ROOT_SETTING);
 const RESULTS_DISPLAY_SETTING = new Setting('resultsDisplay', ROOT_SETTING);
 
-export const ADDITIONAL_TEST_ARGUMENTS_SETTING = new Setting('additionalTestArguments', RUNNING_TESTS_SETTING);
+export const ADDITIONAL_TEST_ARGUMENTS_SETTING = new Setting(
+  'additionalTestArguments',
+  RUNNING_TESTS_SETTING
+);
 export const NUMBER_OF_TEST_THREADS_SETTING = new Setting('numberOfThreads', RUNNING_TESTS_SETTING);
 export const MAX_QUERIES = new Setting('maxQueries', RUNNING_QUERIES_SETTING);
 export const AUTOSAVE_SETTING = new Setting('autoSave', RUNNING_QUERIES_SETTING);
@@ -95,8 +107,12 @@ const CUSTOM_LOG_DIRECTORY_SETTING = new Setting('customLogDirectory', RUNNING_Q
 
 /** When these settings change, the running query server should be restarted. */
 const QUERY_SERVER_RESTARTING_SETTINGS = [
-  NUMBER_OF_THREADS_SETTING, SAVE_CACHE_SETTING, CACHE_SIZE_SETTING, MEMORY_SETTING,
-  DEBUG_SETTING, CUSTOM_LOG_DIRECTORY_SETTING,
+  NUMBER_OF_THREADS_SETTING,
+  SAVE_CACHE_SETTING,
+  CACHE_SIZE_SETTING,
+  MEMORY_SETTING,
+  DEBUG_SETTING,
+  CUSTOM_LOG_DIRECTORY_SETTING,
 ];
 
 export interface QueryServerConfig {
@@ -120,7 +136,12 @@ export interface QueryHistoryConfig {
   onDidChangeConfiguration: Event<void>;
 }
 
-const CLI_SETTINGS = [ADDITIONAL_TEST_ARGUMENTS_SETTING, NUMBER_OF_TEST_THREADS_SETTING, NUMBER_OF_THREADS_SETTING, MAX_PATHS];
+const CLI_SETTINGS = [
+  ADDITIONAL_TEST_ARGUMENTS_SETTING,
+  NUMBER_OF_TEST_THREADS_SETTING,
+  NUMBER_OF_THREADS_SETTING,
+  MAX_PATHS,
+];
 
 export interface CliConfig {
   additionalTestArguments: string[];
@@ -129,7 +150,6 @@ export interface CliConfig {
   maxPaths: number;
   onDidChangeConfiguration?: Event<void>;
 }
-
 
 export abstract class ConfigListener extends DisposableObject {
   protected readonly _onDidChangeConfiguration = this.push(new EventEmitter<void>());
@@ -143,7 +163,10 @@ export abstract class ConfigListener extends DisposableObject {
   /**
    * Calls `updateConfiguration` if any of the `relevantSettings` have changed.
    */
-  protected handleDidChangeConfigurationForRelevantSettings(relevantSettings: Setting[], e: ConfigurationChangeEvent): void {
+  protected handleDidChangeConfigurationForRelevantSettings(
+    relevantSettings: Setting[],
+    e: ConfigurationChangeEvent
+  ): void {
     // Check whether any options that affect query running were changed.
     for (const option of relevantSettings) {
       // TODO: compare old and new values, only update if there was actually a change?
@@ -191,15 +214,19 @@ export class QueryServerConfigListener extends ConfigListener implements QuerySe
     super();
   }
 
-  public static async createQueryServerConfigListener(distributionManager: DistributionManager): Promise<QueryServerConfigListener> {
+  public static async createQueryServerConfigListener(
+    distributionManager: DistributionManager
+  ): Promise<QueryServerConfigListener> {
     const codeQlPath = await distributionManager.getCodeQlPathWithoutVersionCheck();
     const config = new QueryServerConfigListener(codeQlPath!);
     if (distributionManager.onDidChangeDistribution) {
-      config.push(distributionManager.onDidChangeDistribution(async () => {
-        const codeQlPath = await distributionManager.getCodeQlPathWithoutVersionCheck();
-        config._codeQlPath = codeQlPath!;
-        config._onDidChangeConfiguration.fire(undefined);
-      }));
+      config.push(
+        distributionManager.onDidChangeDistribution(async () => {
+          const codeQlPath = await distributionManager.getCodeQlPathWithoutVersionCheck();
+          config._codeQlPath = codeQlPath!;
+          config._onDidChangeConfiguration.fire(undefined);
+        })
+      );
     }
     return config;
   }
@@ -234,7 +261,7 @@ export class QueryServerConfigListener extends ConfigListener implements QuerySe
     if (memory === null) {
       return undefined;
     }
-    if (memory == 0 || typeof (memory) !== 'number') {
+    if (memory == 0 || typeof memory !== 'number') {
       void logger.log(`Ignoring value '${memory}' for setting ${MEMORY_SETTING.qualifiedName}`);
       return undefined;
     }
@@ -298,7 +325,6 @@ export function isQuickEvalCodelensEnabled() {
   return QUICK_EVAL_CODELENS_SETTING.getValue<boolean>();
 }
 
-
 // Enable experimental features
 
 /**
@@ -343,12 +369,12 @@ export async function setRemoteRepositoryLists(lists: Record<string, string[]> |
 }
 
 /**
- * Path to a file that contains lists of GitHub repositories that you want to query remotely via 
+ * Path to a file that contains lists of GitHub repositories that you want to query remotely via
  * the "Run Variant Analysis" command.
  * Note: This command is only available for internal users.
- * 
+ *
  * This setting should be a path to a JSON file that contains a JSON object where each key is a
- * user-specified name (string), and the value is an array of GitHub repositories 
+ * user-specified name (string), and the value is an array of GitHub repositories
  * (of the form `<owner>/<repo>`).
  */
 const REPO_LISTS_PATH = new Setting('repositoryListsPath', REMOTE_QUERIES_SETTING);

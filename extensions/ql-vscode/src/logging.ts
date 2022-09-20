@@ -62,7 +62,9 @@ export class OutputChannelLogger extends DisposableObject implements Logger {
 
       if (options.additionalLogLocation) {
         if (!path.isAbsolute(options.additionalLogLocation)) {
-          throw new Error(`Additional Log Location must be an absolute path: ${options.additionalLogLocation}`);
+          throw new Error(
+            `Additional Log Location must be an absolute path: ${options.additionalLogLocation}`
+          );
         }
         const logPath = options.additionalLogLocation;
         let additional = this.additionalLocations.get(logPath);
@@ -111,7 +113,7 @@ class AdditionalLogLocation {
     await fs.ensureFile(this.location);
 
     await fs.appendFile(this.location, message + (options.trailingNewline ? '\n' : ''), {
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
   }
 }
@@ -123,9 +125,7 @@ export const logger = new OutputChannelLogger('CodeQL Extension Log');
 export const queryServerLogger = new OutputChannelLogger('CodeQL Query Server');
 
 /** The logger for messages from the language server. */
-export const ideServerLogger = new OutputChannelLogger(
-  'CodeQL Language Server'
-);
+export const ideServerLogger = new OutputChannelLogger('CodeQL Language Server');
 
 /** The logger for messages from tests. */
 export const testLogger = new OutputChannelLogger('CodeQL Tests');

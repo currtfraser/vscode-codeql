@@ -1,7 +1,4 @@
-import {
-  ExtensionContext,
-  ViewColumn,
-} from 'vscode';
+import { ExtensionContext, ViewColumn } from 'vscode';
 
 import {
   FromCompareViewMessage,
@@ -33,9 +30,7 @@ export class CompareView extends AbstractWebview<ToCompareViewMessage, FromCompa
     private cliServer: CodeQLCliServer,
     private logger: Logger,
     private labelProvider: HistoryItemLabelProvider,
-    private showQueryResultsCallback: (
-      item: CompletedLocalQueryInfo
-    ) => Promise<void>
+    private showQueryResultsCallback: (item: CompletedLocalQueryInfo) => Promise<void>
   ) {
     super(ctx);
   }
@@ -54,11 +49,7 @@ export class CompareView extends AbstractWebview<ToCompareViewMessage, FromCompa
       currentResultSetName,
       fromResultSet,
       toResultSet,
-    ] = await this.findCommonResultSetNames(
-      from,
-      to,
-      selectedResultSetName
-    );
+    ] = await this.findCommonResultSetNames(from, to, selectedResultSetName);
     if (currentResultSetName) {
       let rows: QueryCompareResult | undefined;
       let message: string | undefined;
@@ -140,17 +131,10 @@ export class CompareView extends AbstractWebview<ToCompareViewMessage, FromCompa
     const toSchemas = await this.cliServer.bqrsInfo(
       to.completedQuery.query.resultsPaths.resultsPath
     );
-    const fromSchemaNames = fromSchemas['result-sets'].map(
-      (schema) => schema.name
-    );
-    const toSchemaNames = toSchemas['result-sets'].map(
-      (schema) => schema.name
-    );
-    const commonResultSetNames = fromSchemaNames.filter((name) =>
-      toSchemaNames.includes(name)
-    );
-    const currentResultSetName =
-      selectedResultSetName || commonResultSetNames[0];
+    const fromSchemaNames = fromSchemas['result-sets'].map((schema) => schema.name);
+    const toSchemaNames = toSchemas['result-sets'].map((schema) => schema.name);
+    const commonResultSetNames = fromSchemaNames.filter((name) => toSchemaNames.includes(name));
+    const currentResultSetName = selectedResultSetName || commonResultSetNames[0];
     const fromResultSet = await this.getResultSet(
       fromSchemas,
       currentResultSetName,
@@ -161,23 +145,14 @@ export class CompareView extends AbstractWebview<ToCompareViewMessage, FromCompa
       currentResultSetName,
       to.completedQuery.query.resultsPaths.resultsPath
     );
-    return [
-      commonResultSetNames,
-      currentResultSetName,
-      fromResultSet,
-      toResultSet,
-    ];
+    return [commonResultSetNames, currentResultSetName, fromResultSet, toResultSet];
   }
 
   private async changeTable(newResultSetName: string) {
     if (!this.comparePair?.from || !this.comparePair.to) {
       return;
     }
-    await this.showResults(
-      this.comparePair.from,
-      this.comparePair.to,
-      newResultSetName
-    );
+    await this.showResults(this.comparePair.from, this.comparePair.to, newResultSetName);
   }
 
   private async getResultSet(
@@ -185,30 +160,21 @@ export class CompareView extends AbstractWebview<ToCompareViewMessage, FromCompa
     resultSetName: string,
     resultsPath: string
   ): Promise<RawResultSet> {
-    const schema = bqrsInfo['result-sets'].find(
-      (schema) => schema.name === resultSetName
-    );
+    const schema = bqrsInfo['result-sets'].find((schema) => schema.name === resultSetName);
     if (!schema) {
       throw new Error(`Schema ${resultSetName} not found.`);
     }
-    const chunk = await this.cliServer.bqrsDecode(
-      resultsPath,
-      resultSetName
-    );
+    const chunk = await this.cliServer.bqrsDecode(resultsPath, resultSetName);
     return transformBqrsResultSet(schema, chunk);
   }
 
-  private compareResults(
-    fromResults: RawResultSet,
-    toResults: RawResultSet
-  ): QueryCompareResult {
+  private compareResults(fromResults: RawResultSet, toResults: RawResultSet): QueryCompareResult {
     // Only compare columns that have the same name
     return resultsDiff(fromResults, toResults);
   }
 
   private async openQuery(kind: 'from' | 'to') {
-    const toOpen =
-      kind === 'from' ? this.comparePair?.from : this.comparePair?.to;
+    const toOpen = kind === 'from' ? this.comparePair?.from : this.comparePair?.to;
     if (toOpen) {
       await this.showQueryResultsCallback(toOpen);
     }

@@ -12,7 +12,7 @@ const proxyquire = pq.noPreserveCache().noCallThru();
 chai.use(sinonChai);
 const expect = chai.expect;
 
-describe('OutputChannelLogger tests', function() {
+describe('OutputChannelLogger tests', function () {
   this.timeout(999999);
   let OutputChannelLogger;
   const tempFolders: Record<string, tmp.DirResult> = {};
@@ -56,8 +56,12 @@ describe('OutputChannelLogger tests', function() {
     expect(fs.readdirSync(tempFolders.storagePath.name).length).to.equal(2);
 
     // contents
-    expect(fs.readFileSync(path.join(tempFolders.storagePath.name, 'first'), 'utf8')).to.equal('xxx\nzzz');
-    expect(fs.readFileSync(path.join(tempFolders.storagePath.name, 'second'), 'utf8')).to.equal('yyy\n');
+    expect(fs.readFileSync(path.join(tempFolders.storagePath.name, 'first'), 'utf8')).to.equal(
+      'xxx\nzzz'
+    );
+    expect(fs.readFileSync(path.join(tempFolders.storagePath.name, 'second'), 'utf8')).to.equal(
+      'yyy\n'
+    );
   });
 
   function createModule(): any {
@@ -71,14 +75,14 @@ describe('OutputChannelLogger tests', function() {
     return proxyquire('../../src/logging', {
       vscode: {
         window: {
-          createOutputChannel: () => mockOutputChannel
+          createOutputChannel: () => mockOutputChannel,
         },
-        Disposable: function() {
+        Disposable: function () {
           /**/
         },
         '@noCallThru': true,
-        '@global': true
-      }
+        '@global': true,
+      },
     });
   }
 

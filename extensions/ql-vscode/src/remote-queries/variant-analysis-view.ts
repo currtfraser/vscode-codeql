@@ -14,7 +14,7 @@ export class VariantAnalysisView extends AbstractWebview<WebviewMessage, Webview
       title: 'CodeQL Query Results',
       viewColumn: ViewColumn.Active,
       preserveFocus: true,
-      view: 'variant-analysis'
+      view: 'variant-analysis',
     };
   }
 

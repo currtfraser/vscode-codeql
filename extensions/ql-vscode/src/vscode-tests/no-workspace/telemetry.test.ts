@@ -10,7 +10,7 @@ import { createMockExtensionContext } from './index';
 
 const sandbox = sinon.createSandbox();
 
-describe('telemetry reporting', function() {
+describe('telemetry reporting', function () {
   // setting preferences can trigger lots of background activity
   // so need to bump up the timeout of this test.
   this.timeout(10000);
@@ -35,8 +35,12 @@ describe('telemetry reporting', function() {
       sandbox.stub(TelemetryReporter.prototype, 'sendTelemetryException');
       sandbox.stub(TelemetryReporter.prototype, 'dispose');
 
-      originalTelemetryExtension = workspace.getConfiguration().get<boolean>('codeQL.telemetry.enableTelemetry');
-      originalTelemetryGlobal = workspace.getConfiguration().get<boolean>('telemetry.enableTelemetry');
+      originalTelemetryExtension = workspace
+        .getConfiguration()
+        .get<boolean>('codeQL.telemetry.enableTelemetry');
+      originalTelemetryGlobal = workspace
+        .getConfiguration()
+        .get<boolean>('telemetry.enableTelemetry');
       isCanary = (!!workspace.getConfiguration().get<boolean>('codeQL.canary')).toString();
 
       // each test will default to telemetry being enabled
@@ -154,13 +158,15 @@ describe('telemetry reporting', function() {
 
     telemetryListener.sendCommandUsage('command-id', 1234, undefined);
 
-    expect(TelemetryReporter.prototype.sendTelemetryEvent).to.have.been.calledOnceWith('command-usage',
+    expect(TelemetryReporter.prototype.sendTelemetryEvent).to.have.been.calledOnceWith(
+      'command-usage',
       {
         name: 'command-id',
         status: 'Success',
-        isCanary
+        isCanary,
       },
-      { executionTime: 1234 });
+      { executionTime: 1234 }
+    );
 
     expect(TelemetryReporter.prototype.sendTelemetryException).not.to.have.been.called;
   });
@@ -170,13 +176,15 @@ describe('telemetry reporting', function() {
 
     telemetryListener.sendCommandUsage('command-id', 1234, new UserCancellationException());
 
-    expect(TelemetryReporter.prototype.sendTelemetryEvent).to.have.been.calledOnceWith('command-usage',
+    expect(TelemetryReporter.prototype.sendTelemetryEvent).to.have.been.calledOnceWith(
+      'command-usage',
       {
         name: 'command-id',
         status: 'Cancelled',
-        isCanary
+        isCanary,
       },
-      { executionTime: 1234 });
+      { executionTime: 1234 }
+    );
 
     expect(TelemetryReporter.prototype.sendTelemetryException).not.to.have.been.called;
   });
@@ -199,51 +207,53 @@ describe('telemetry reporting', function() {
 
     telemetryListener.sendCommandUsage('command-id', 1234, undefined);
 
-    expect(TelemetryReporter.prototype.sendTelemetryEvent).to.have.been.calledOnceWith('command-usage',
+    expect(TelemetryReporter.prototype.sendTelemetryEvent).to.have.been.calledOnceWith(
+      'command-usage',
       {
         name: 'command-id',
         status: 'Success',
-        isCanary
+        isCanary,
       },
-      { executionTime: 1234 });
+      { executionTime: 1234 }
+    );
   });
 
   it('should filter undesired properties from telemetry payload', async () => {
     await telemetryListener.initialize();
     // Reach into the internal appInsights client to grab our telemetry processor.
-    const telemetryProcessor: Function =
-      ((telemetryListener._reporter as any).appInsightsClient._telemetryProcessors)[0];
+    const telemetryProcessor: Function = (telemetryListener._reporter as any).appInsightsClient
+      ._telemetryProcessors[0];
     const envelop = {
       tags: {
         'ai.cloud.roleInstance': true,
-        other: true
+        other: true,
       },
       data: {
         baseData: {
           properties: {
             'common.remotename': true,
-            other: true
-          }
-        }
-      }
+            other: true,
+          },
+        },
+      },
     };
     const res = telemetryProcessor(envelop);
     expect(res).to.eq(true);
     expect(envelop).to.deep.eq({
       tags: {
-        other: true
+        other: true,
       },
       data: {
         baseData: {
           properties: {
-            other: true
-          }
-        }
-      }
+            other: true,
+          },
+        },
+      },
     });
   });
 
-  it('should request permission if popup has never been seen before', async function() {
+  it('should request permission if popup has never been seen before', async function () {
     this.timeout(3000);
     sandbox.stub(window, 'showInformationMessage').resolvesArg(3 /* "yes" item */);
     await ctx.globalState.update('telemetry-request-viewed', false);
@@ -345,9 +355,9 @@ describe('telemetry reporting', function() {
   });
 
   async function enableTelemetry(section: string, value: boolean | undefined) {
-    await workspace.getConfiguration(section).update(
-      'enableTelemetry', value, ConfigurationTarget.Global
-    );
+    await workspace
+      .getConfiguration(section)
+      .update('enableTelemetry', value, ConfigurationTarget.Global);
 
     // Need to wait some time since the onDidChangeConfiguration listeners fire
     // asynchronously. Must ensure they to complete in order to have a successful test.
@@ -355,8 +365,6 @@ describe('telemetry reporting', function() {
   }
 
   async function wait(ms = 0) {
-    return new Promise(resolve =>
-      setTimeout(resolve, ms)
-    );
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 });

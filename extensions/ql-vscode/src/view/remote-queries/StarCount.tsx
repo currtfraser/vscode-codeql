@@ -17,20 +17,17 @@ const Count = styled.span`
 
 type Props = { starCount?: number };
 
-const StarCount = ({ starCount }: Props) => (
+const StarCount = ({ starCount }: Props) =>
   Number.isFinite(starCount) ? (
     <>
       <Star>
         <StarIcon size={16} />
       </Star>
-      <Count>
-        {displayStars(starCount!)}
-      </Count>
+      <Count>{displayStars(starCount!)}</Count>
     </>
   ) : (
     <></>
-  )
-);
+  );
 
 function displayStars(starCount: number) {
   if (starCount > 10000) {

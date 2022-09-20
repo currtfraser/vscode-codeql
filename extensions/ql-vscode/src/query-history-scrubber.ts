@@ -37,12 +37,21 @@ export function registerQueryHistoryScubber(
   // optional counter to keep track of how many times the scrubber has run
   counter?: Counter
 ): Disposable {
-  const deregister = setInterval(scrubQueries, wakeInterval, throttleTime, maxQueryTime, queryDirectory, qhm, ctx, counter);
+  const deregister = setInterval(
+    scrubQueries,
+    wakeInterval,
+    throttleTime,
+    maxQueryTime,
+    queryDirectory,
+    qhm,
+    ctx,
+    counter
+  );
 
   return {
     dispose: () => {
       clearInterval(deregister);
-    }
+    },
   };
 }
 
@@ -96,9 +105,13 @@ async function scrubQueries(
   }
 }
 
-async function scrubDirectory(dir: string, now: number, maxQueryTime: number): Promise<{
-  errorMsg?: string,
-  deleted: boolean
+async function scrubDirectory(
+  dir: string,
+  now: number,
+  maxQueryTime: number
+): Promise<{
+  errorMsg?: string;
+  deleted: boolean;
 }> {
   const timestampFile = path.join(dir, 'timestamp');
   try {
@@ -128,12 +141,12 @@ async function scrubDirectory(dir: string, now: number, maxQueryTime: number): P
       }
     }
     return {
-      deleted
+      deleted,
     };
   } catch (err) {
     return {
       errorMsg: `  Could not delete '${dir}': ${err}`,
-      deleted: false
+      deleted: false,
     };
   }
 }

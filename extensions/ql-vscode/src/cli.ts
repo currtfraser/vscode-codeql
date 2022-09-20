@@ -156,8 +156,6 @@ interface BqrsDecodeOptions {
  * by queueing the commands sent to it.
  */
 export class CodeQLCliServer implements Disposable {
-
-
   /** The process for the cli server, or undefined if one doesn't exist yet */
   process?: child_process.ChildProcessWithoutNullStreams;
   /** Queue of future commands*/
@@ -223,7 +221,9 @@ export class CodeQLCliServer implements Disposable {
         void this.logger.log('Sent shutdown request');
       } catch (e) {
         // We are probably fine here, the process has already closed stdin.
-        void this.logger.log(`Shutdown request failed: process stdin may have already closed. The error was ${e}`);
+        void this.logger.log(
+          `Shutdown request failed: process stdin may have already closed. The error was ${e}`
+        );
         void this.logger.log('Stopping the process anyway.');
       }
       // Close the stdin and stdout streams.
@@ -233,7 +233,6 @@ export class CodeQLCliServer implements Disposable {
       this.process.stdout.destroy();
       this.process.stderr.destroy();
       this.process = undefined;
-
     }
   }
 
@@ -256,7 +255,6 @@ export class CodeQLCliServer implements Disposable {
     } else {
       callback();
     }
-
   }
 
   /**
@@ -277,7 +275,9 @@ export class CodeQLCliServer implements Disposable {
     const codeQlPath = await this.getCodeQlPath();
     const args = [];
     if (shouldDebugCliServer()) {
-      args.push('-J=-agentlib:jdwp=transport=dt_socket,address=localhost:9012,server=n,suspend=y,quiet=y');
+      args.push(
+        '-J=-agentlib:jdwp=transport=dt_socket,address=localhost:9012,server=n,suspend=y,quiet=y'
+      );
     }
 
     return await spawnServer(
@@ -286,11 +286,17 @@ export class CodeQLCliServer implements Disposable {
       ['execute', 'cli-server'],
       args,
       this.logger,
-      _data => { /**/ }
+      (_data) => {
+        /**/
+      }
     );
   }
 
-  private async runCodeQlCliInternal(command: string[], commandArgs: string[], description: string): Promise<string> {
+  private async runCodeQlCliInternal(
+    command: string[],
+    commandArgs: string[],
+    description: string
+  ): Promise<string> {
     const stderrBuffers: Buffer[] = [];
     if (this.commandInProcess) {
       throw new Error('runCodeQlCliInternal called while cli was running');
@@ -382,18 +388,14 @@ export class CodeQLCliServer implements Disposable {
    * @param logger Logger to write text output from the command.
    * @returns The sequence of async events produced by the command.
    */
-  private async* runAsyncCodeQlCliCommandInternal(
+  private async *runAsyncCodeQlCliCommandInternal(
     command: string[],
     commandArgs: string[],
     cancellationToken?: CancellationToken,
     logger?: Logger
   ): AsyncGenerator<string, void, unknown> {
     // Add format argument first, in case commandArgs contains positional parameters.
-    const args = [
-      ...command,
-      '--format', 'jsonz',
-      ...commandArgs
-    ];
+    const args = [...command, '--format', 'jsonz', ...commandArgs];
 
     // Spawn the CodeQL process
     const codeqlPath = await this.getCodeQlPath();
@@ -403,7 +405,7 @@ export class CodeQLCliServer implements Disposable {
     let cancellationRegistration: Disposable | undefined = undefined;
     try {
       if (cancellationToken !== undefined) {
-        cancellationRegistration = cancellationToken.onCancellationRequested(_e => {
+        cancellationRegistration = cancellationToken.onCancellationRequested((_e) => {
           tk(child.pid || 0);
         });
       }
@@ -417,8 +419,7 @@ export class CodeQLCliServer implements Disposable {
       }
 
       await childPromise;
-    }
-    finally {
+    } finally {
       if (cancellationRegistration !== undefined) {
         cancellationRegistration.dispose();
       }
@@ -436,19 +437,25 @@ export class CodeQLCliServer implements Disposable {
    * @param logger Logger to write text output from the command.
    * @returns The sequence of async events produced by the command.
    */
-  public async* runAsyncCodeQlCliCommand<EventType>(
+  public async *runAsyncCodeQlCliCommand<EventType>(
     command: string[],
     commandArgs: string[],
     description: string,
     cancellationToken?: CancellationToken,
     logger?: Logger
   ): AsyncGenerator<EventType, void, unknown> {
-    for await (const event of await this.runAsyncCodeQlCliCommandInternal(command, commandArgs,
-      cancellationToken, logger)) {
+    for await (const event of await this.runAsyncCodeQlCliCommandInternal(
+      command,
+      commandArgs,
+      cancellationToken,
+      logger
+    )) {
       try {
         yield JSON.parse(event) as EventType;
       } catch (err) {
-        throw new Error(`Parsing output of ${description} failed: ${(err as any).stderr || getErrorMessage(err)}`);
+        throw new Error(
+          `Parsing output of ${description} failed: ${(err as any).stderr || getErrorMessage(err)}`
+        );
       }
     }
   }
@@ -461,7 +468,12 @@ export class CodeQLCliServer implements Disposable {
    * @param progressReporter Used to output progress messages, e.g. to the status bar.
    * @returns The contents of the command's stdout, if the command succeeded.
    */
-  runCodeQlCliCommand(command: string[], commandArgs: string[], description: string, progressReporter?: ProgressReporter): Promise<string> {
+  runCodeQlCliCommand(
+    command: string[],
+    commandArgs: string[],
+    description: string,
+    progressReporter?: ProgressReporter
+  ): Promise<string> {
     if (progressReporter) {
       progressReporter.report({ message: description });
     }
@@ -494,16 +506,25 @@ export class CodeQLCliServer implements Disposable {
    * @param progressReporter Used to output progress messages, e.g. to the status bar.
    * @returns The contents of the command's stdout, if the command succeeded.
    */
-  async runJsonCodeQlCliCommand<OutputType>(command: string[], commandArgs: string[], description: string, addFormat = true, progressReporter?: ProgressReporter): Promise<OutputType> {
+  async runJsonCodeQlCliCommand<OutputType>(
+    command: string[],
+    commandArgs: string[],
+    description: string,
+    addFormat = true,
+    progressReporter?: ProgressReporter
+  ): Promise<OutputType> {
     let args: string[] = [];
-    if (addFormat) // Add format argument first, in case commandArgs contains positional parameters.
+    if (addFormat)
+      // Add format argument first, in case commandArgs contains positional parameters.
       args = args.concat(['--format', 'json']);
     args = args.concat(commandArgs);
     const result = await this.runCodeQlCliCommand(command, args, description, progressReporter);
     try {
       return JSON.parse(result) as OutputType;
     } catch (err) {
-      throw new Error(`Parsing output of ${description} failed: ${(err as any).stderr || getErrorMessage(err)}`);
+      throw new Error(
+        `Parsing output of ${description} failed: ${(err as any).stderr || getErrorMessage(err)}`
+      );
     }
   }
 
@@ -513,11 +534,12 @@ export class CodeQLCliServer implements Disposable {
    * @param queryPath The path to the query
    */
   async resolveLibraryPath(workspaces: string[], queryPath: string): Promise<QuerySetup> {
-    const subcommandArgs = [
-      '--query', queryPath,
-      ...this.getAdditionalPacksArg(workspaces)
-    ];
-    return await this.runJsonCodeQlCliCommand<QuerySetup>(['resolve', 'library-path'], subcommandArgs, 'Resolving library paths');
+    const subcommandArgs = ['--query', queryPath, ...this.getAdditionalPacksArg(workspaces)];
+    return await this.runJsonCodeQlCliCommand<QuerySetup>(
+      ['resolve', 'library-path'],
+      subcommandArgs,
+      'Resolving library paths'
+    );
   }
 
   /**
@@ -526,11 +548,18 @@ export class CodeQLCliServer implements Disposable {
    */
   async resolveQueryByLanguage(workspaces: string[], queryUri: Uri): Promise<QueryInfoByLanguage> {
     const subcommandArgs = [
-      '--format', 'bylanguage',
+      '--format',
+      'bylanguage',
       queryUri.fsPath,
-      ...this.getAdditionalPacksArg(workspaces)
+      ...this.getAdditionalPacksArg(workspaces),
     ];
-    return JSON.parse(await this.runCodeQlCliCommand(['resolve', 'queries'], subcommandArgs, 'Resolving query by language'));
+    return JSON.parse(
+      await this.runCodeQlCliCommand(
+        ['resolve', 'queries'],
+        subcommandArgs,
+        'Resolving query by language'
+      )
+    );
   }
 
   /**
@@ -539,9 +568,7 @@ export class CodeQLCliServer implements Disposable {
    * @returns The list of tests that were found.
    */
   public async resolveTests(testPath: string): Promise<ResolvedTests> {
-    const subcommandArgs = [
-      testPath
-    ];
+    const subcommandArgs = [testPath];
     return await this.runJsonCodeQlCliCommand<ResolvedTests>(
       ['resolve', 'tests', '--strict-test-discovery'],
       subcommandArgs,
@@ -550,9 +577,7 @@ export class CodeQLCliServer implements Disposable {
   }
 
   public async resolveQlref(qlref: string): Promise<QlrefInfo> {
-    const subcommandArgs = [
-      qlref
-    ];
+    const subcommandArgs = [qlref];
     return await this.runJsonCodeQlCliCommand<QlrefInfo>(
       ['resolve', 'qlref'],
       subcommandArgs,
@@ -578,19 +603,25 @@ export class CodeQLCliServer implements Disposable {
    * @param workspaces Workspace paths to use as search paths for QL packs.
    * @param options Additional options.
    */
-  public async* runTests(
-    testPaths: string[], workspaces: string[], options: TestRunOptions
+  public async *runTests(
+    testPaths: string[],
+    workspaces: string[],
+    options: TestRunOptions
   ): AsyncGenerator<TestCompleted, void, unknown> {
-
     const subcommandArgs = this.cliConfig.additionalTestArguments.concat([
       ...this.getAdditionalPacksArg(workspaces),
       '--threads',
       this.cliConfig.numberTestThreads.toString(),
-      ...testPaths
+      ...testPaths,
     ]);
 
-    for await (const event of await this.runAsyncCodeQlCliCommand<TestCompleted>(['test', 'run'],
-      subcommandArgs, 'Run CodeQL Tests', options.cancellationToken, options.logger)) {
+    for await (const event of await this.runAsyncCodeQlCliCommand<TestCompleted>(
+      ['test', 'run'],
+      subcommandArgs,
+      'Run CodeQL Tests',
+      options.cancellationToken,
+      options.logger
+    )) {
       yield event;
     }
   }
@@ -600,14 +631,18 @@ export class CodeQLCliServer implements Disposable {
    * @param queryPath The path to the query.
    */
   async resolveMetadata(queryPath: string): Promise<QueryMetadata> {
-    return await this.runJsonCodeQlCliCommand<QueryMetadata>(['resolve', 'metadata'], [queryPath], 'Resolving query metadata');
+    return await this.runJsonCodeQlCliCommand<QueryMetadata>(
+      ['resolve', 'metadata'],
+      [queryPath],
+      'Resolving query metadata'
+    );
   }
 
   /** Resolves the ML models that should be available when evaluating a query. */
   async resolveMlModels(additionalPacks: string[], queryPath: string): Promise<MlModelsInfo> {
-    const args = await this.cliConstraints.supportsPreciseResolveMlModels()
-      // use the dirname of the path so that we can handle query libraries
-      ? [...this.getAdditionalPacksArg(additionalPacks), path.dirname(queryPath)]
+    const args = (await this.cliConstraints.supportsPreciseResolveMlModels())
+      ? // use the dirname of the path so that we can handle query libraries
+        [...this.getAdditionalPacksArg(additionalPacks), path.dirname(queryPath)]
       : this.getAdditionalPacksArg(additionalPacks);
     return await this.runJsonCodeQlCliCommand<MlModelsInfo>(
       ['resolve', 'ml-models'],
@@ -625,12 +660,21 @@ export class CodeQLCliServer implements Disposable {
    * @returns String arguments that can be passed to the CodeQL query server,
    * indicating how to split the given RAM limit between heap and off-heap memory.
    */
-  async resolveRam(queryMemoryMb: number | undefined, progressReporter?: ProgressReporter): Promise<string[]> {
+  async resolveRam(
+    queryMemoryMb: number | undefined,
+    progressReporter?: ProgressReporter
+  ): Promise<string[]> {
     const args: string[] = [];
     if (queryMemoryMb !== undefined) {
       args.push('--ram', queryMemoryMb.toString());
     }
-    return await this.runJsonCodeQlCliCommand<string[]>(['resolve', 'ram'], args, 'Resolving RAM settings', true, progressReporter);
+    return await this.runJsonCodeQlCliCommand<string[]>(
+      ['resolve', 'ram'],
+      args,
+      'Resolving RAM settings',
+      true,
+      progressReporter
+    );
   }
   /**
    * Gets the headers (and optionally pagination info) of a bqrs.
@@ -638,12 +682,14 @@ export class CodeQLCliServer implements Disposable {
    * @param pageSize The page size to precompute offsets into the binary file for.
    */
   async bqrsInfo(bqrsPath: string, pageSize?: number): Promise<BQRSInfo> {
-    const subcommandArgs = (
-      pageSize ? ['--paginate-rows', pageSize.toString()] : []
-    ).concat(
+    const subcommandArgs = (pageSize ? ['--paginate-rows', pageSize.toString()] : []).concat(
       bqrsPath
     );
-    return await this.runJsonCodeQlCliCommand<BQRSInfo>(['bqrs', 'info'], subcommandArgs, 'Reading bqrs header');
+    return await this.runJsonCodeQlCliCommand<BQRSInfo>(
+      ['bqrs', 'info'],
+      subcommandArgs,
+      'Reading bqrs header'
+    );
   }
 
   async databaseUnbundle(archivePath: string, target: string, name?: string): Promise<string> {
@@ -652,7 +698,11 @@ export class CodeQLCliServer implements Disposable {
     if (name) subcommandArgs.push('--name', name);
     subcommandArgs.push(archivePath);
 
-    return await this.runCodeQlCliCommand(['database', 'unbundle'], subcommandArgs, `Extracting ${archivePath} to directory ${target}`);
+    return await this.runCodeQlCliCommand(
+      ['database', 'unbundle'],
+      subcommandArgs,
+      `Extracting ${archivePath} to directory ${target}`
+    );
   }
 
   /**
@@ -666,108 +716,129 @@ export class CodeQLCliServer implements Disposable {
     if (outputDirectory) subcommandArgs.push('--output', outputDirectory);
     subcommandArgs.push(pathToQhelp);
 
-    return await this.runCodeQlCliCommand(['generate', 'query-help'], subcommandArgs, `Generating qhelp in markdown format at ${outputDirectory}`);
+    return await this.runCodeQlCliCommand(
+      ['generate', 'query-help'],
+      subcommandArgs,
+      `Generating qhelp in markdown format at ${outputDirectory}`
+    );
   }
 
   /**
-  * Generate a summary of an evaluation log.
-  * @param endSummaryPath The path to write only the end of query part of the human-readable summary to.
-  * @param inputPath The path of an evaluation event log.
-  * @param outputPath The path to write a human-readable summary of it to.
-  */
+   * Generate a summary of an evaluation log.
+   * @param endSummaryPath The path to write only the end of query part of the human-readable summary to.
+   * @param inputPath The path of an evaluation event log.
+   * @param outputPath The path to write a human-readable summary of it to.
+   */
   async generateLogSummary(
     inputPath: string,
     outputPath: string,
-    endSummaryPath: string,
+    endSummaryPath: string
   ): Promise<string> {
     const subcommandArgs = [
       '--format=text',
       `--end-summary=${endSummaryPath}`,
-      ...(await this.cliConstraints.supportsSourceMap() ? ['--sourcemap'] : []),
+      ...((await this.cliConstraints.supportsSourceMap()) ? ['--sourcemap'] : []),
       inputPath,
-      outputPath
+      outputPath,
     ];
-    return await this.runCodeQlCliCommand(['generate', 'log-summary'], subcommandArgs, 'Generating log summary');
+    return await this.runCodeQlCliCommand(
+      ['generate', 'log-summary'],
+      subcommandArgs,
+      'Generating log summary'
+    );
   }
 
   /**
-  * Generate a JSON summary of an evaluation log.
-  * @param inputPath The path of an evaluation event log.
-  * @param outputPath The path to write a JSON summary of it to.
-  */
-  async generateJsonLogSummary(
-    inputPath: string,
-    outputPath: string,
-  ): Promise<string> {
-    const subcommandArgs = [
-      '--format=predicates',
-      inputPath,
-      outputPath
-    ];
-    return await this.runCodeQlCliCommand(['generate', 'log-summary'], subcommandArgs, 'Generating JSON log summary');
+   * Generate a JSON summary of an evaluation log.
+   * @param inputPath The path of an evaluation event log.
+   * @param outputPath The path to write a JSON summary of it to.
+   */
+  async generateJsonLogSummary(inputPath: string, outputPath: string): Promise<string> {
+    const subcommandArgs = ['--format=predicates', inputPath, outputPath];
+    return await this.runCodeQlCliCommand(
+      ['generate', 'log-summary'],
+      subcommandArgs,
+      'Generating JSON log summary'
+    );
   }
 
   /**
-  * Gets the results from a bqrs.
-  * @param bqrsPath The path to the bqrs.
-  * @param resultSet The result set to get.
-  * @param options Optional BqrsDecodeOptions arguments
-  */
+   * Gets the results from a bqrs.
+   * @param bqrsPath The path to the bqrs.
+   * @param resultSet The result set to get.
+   * @param options Optional BqrsDecodeOptions arguments
+   */
   async bqrsDecode(
     bqrsPath: string,
     resultSet: string,
     { pageSize, offset, entities = ['url', 'string'] }: BqrsDecodeOptions = {}
   ): Promise<DecodedBqrsChunk> {
-
-    const subcommandArgs = [
-      `--entities=${entities.join(',')}`,
-      '--result-set', resultSet,
-    ].concat(
-      pageSize ? ['--rows', pageSize.toString()] : []
-    ).concat(
-      offset ? ['--start-at', offset.toString()] : []
-    ).concat([bqrsPath]);
-    return await this.runJsonCodeQlCliCommand<DecodedBqrsChunk>(['bqrs', 'decode'], subcommandArgs, 'Reading bqrs data');
+    const subcommandArgs = [`--entities=${entities.join(',')}`, '--result-set', resultSet]
+      .concat(pageSize ? ['--rows', pageSize.toString()] : [])
+      .concat(offset ? ['--start-at', offset.toString()] : [])
+      .concat([bqrsPath]);
+    return await this.runJsonCodeQlCliCommand<DecodedBqrsChunk>(
+      ['bqrs', 'decode'],
+      subcommandArgs,
+      'Reading bqrs data'
+    );
   }
 
-  async runInterpretCommand(format: string, additonalArgs: string[], metadata: QueryMetadata, resultsPath: string, interpretedResultsPath: string, sourceInfo?: SourceInfo) {
+  async runInterpretCommand(
+    format: string,
+    additonalArgs: string[],
+    metadata: QueryMetadata,
+    resultsPath: string,
+    interpretedResultsPath: string,
+    sourceInfo?: SourceInfo
+  ) {
     const args = [
-      '--output', interpretedResultsPath,
-      '--format', format,
+      '--output',
+      interpretedResultsPath,
+      '--format',
+      format,
       // Forward all of the query metadata.
-      ...Object.entries(metadata).map(([key, value]) => `-t=${key}=${value}`)
+      ...Object.entries(metadata).map(([key, value]) => `-t=${key}=${value}`),
     ].concat(additonalArgs);
     if (sourceInfo !== undefined) {
       args.push(
-        '--source-archive', sourceInfo.sourceArchive,
-        '--source-location-prefix', sourceInfo.sourceLocationPrefix
+        '--source-archive',
+        sourceInfo.sourceArchive,
+        '--source-location-prefix',
+        sourceInfo.sourceLocationPrefix
       );
     }
 
-    args.push(
-      '--threads',
-      this.cliConfig.numberThreads.toString(),
-    );
+    args.push('--threads', this.cliConfig.numberThreads.toString());
 
-    args.push(
-      '--max-paths',
-      this.cliConfig.maxPaths.toString(),
-    );
+    args.push('--max-paths', this.cliConfig.maxPaths.toString());
 
     args.push(resultsPath);
     await this.runCodeQlCliCommand(['bqrs', 'interpret'], args, 'Interpreting query results');
   }
 
-  async interpretBqrsSarif(metadata: QueryMetadata, resultsPath: string, interpretedResultsPath: string, sourceInfo?: SourceInfo): Promise<sarif.Log> {
+  async interpretBqrsSarif(
+    metadata: QueryMetadata,
+    resultsPath: string,
+    interpretedResultsPath: string,
+    sourceInfo?: SourceInfo
+  ): Promise<sarif.Log> {
     const additionalArgs = [
       // TODO: This flag means that we don't group interpreted results
       // by primary location. We may want to revisit whether we call
       // interpretation with and without this flag, or do some
       // grouping client-side.
-      '--no-group-results'
+      '--no-group-results',
     ];
 
-    await this.runInterpretCommand(SARIF_FORMAT, additionalArgs, metadata, resultsPath, interpretedResultsPath, sourceInfo);
+    await this.runInterpretCommand(
+      SARIF_FORMAT,
+      additionalArgs,
+      metadata,
+      resultsPath,
+      interpretedResultsPath,
+      sourceInfo
+    );
     return await sarifParser(interpretedResultsPath);
   }
 
@@ -782,12 +853,29 @@ export class CodeQLCliServer implements Disposable {
     return Promise.all(dotFiles);
   }
 
-  async interpretBqrsGraph(metadata: QueryMetadata, resultsPath: string, interpretedResultsPath: string, sourceInfo?: SourceInfo): Promise<string[]> {
+  async interpretBqrsGraph(
+    metadata: QueryMetadata,
+    resultsPath: string,
+    interpretedResultsPath: string,
+    sourceInfo?: SourceInfo
+  ): Promise<string[]> {
     const additionalArgs = sourceInfo
-      ? ['--dot-location-url-format', 'file://' + sourceInfo.sourceLocationPrefix + '{path}:{start:line}:{start:column}:{end:line}:{end:column}']
+      ? [
+          '--dot-location-url-format',
+          'file://' +
+            sourceInfo.sourceLocationPrefix +
+            '{path}:{start:line}:{start:column}:{end:line}:{end:column}',
+        ]
       : [];
 
-    await this.runInterpretCommand('dot', additionalArgs, metadata, resultsPath, interpretedResultsPath, sourceInfo);
+    await this.runInterpretCommand(
+      'dot',
+      additionalArgs,
+      metadata,
+      resultsPath,
+      interpretedResultsPath,
+      sourceInfo
+    );
 
     try {
       const dot = await this.readDotFiles(interpretedResultsPath);
@@ -797,12 +885,23 @@ export class CodeQLCliServer implements Disposable {
     }
   }
 
-  async generateResultsCsv(metadata: QueryMetadata, resultsPath: string, csvPath: string, sourceInfo?: SourceInfo): Promise<void> {
+  async generateResultsCsv(
+    metadata: QueryMetadata,
+    resultsPath: string,
+    csvPath: string,
+    sourceInfo?: SourceInfo
+  ): Promise<void> {
     await this.runInterpretCommand(CSV_FORMAT, [], metadata, resultsPath, csvPath, sourceInfo);
   }
 
-  async sortBqrs(resultsPath: string, sortedResultsPath: string, resultSet: string, sortKeys: number[], sortDirections: SortDirection[]): Promise<void> {
-    const sortDirectionStrings = sortDirections.map(direction => {
+  async sortBqrs(
+    resultsPath: string,
+    sortedResultsPath: string,
+    resultSet: string,
+    sortKeys: number[],
+    sortDirections: SortDirection[]
+  ): Promise<void> {
+    const sortDirectionStrings = sortDirections.map((direction) => {
       switch (direction) {
         case SortDirection.asc:
           return 'asc';
@@ -813,26 +912,30 @@ export class CodeQLCliServer implements Disposable {
       }
     });
 
-    await this.runCodeQlCliCommand(['bqrs', 'decode'],
+    await this.runCodeQlCliCommand(
+      ['bqrs', 'decode'],
       [
         '--format=bqrs',
         `--result-set=${resultSet}`,
         `--output=${sortedResultsPath}`,
         `--sort-key=${sortKeys.join(',')}`,
         `--sort-direction=${sortDirectionStrings.join(',')}`,
-        resultsPath
+        resultsPath,
       ],
-      'Sorting query results');
+      'Sorting query results'
+    );
   }
-
 
   /**
    * Returns the `DbInfo` for a database.
    * @param databasePath Path to the CodeQL database to obtain information from.
    */
   resolveDatabase(databasePath: string): Promise<DbInfo> {
-    return this.runJsonCodeQlCliCommand(['resolve', 'database'], [databasePath],
-      'Resolving database');
+    return this.runJsonCodeQlCliCommand(
+      ['resolve', 'database'],
+      [databasePath],
+      'Resolving database'
+    );
   }
 
   /**
@@ -843,18 +946,23 @@ export class CodeQLCliServer implements Disposable {
    * @param targetDbScheme The dbscheme to try to upgrade to.
    * @returns A list of database upgrade script directories
    */
-  async resolveUpgrades(dbScheme: string, searchPath: string[], allowDowngradesIfPossible: boolean, targetDbScheme?: string): Promise<UpgradesInfo> {
+  async resolveUpgrades(
+    dbScheme: string,
+    searchPath: string[],
+    allowDowngradesIfPossible: boolean,
+    targetDbScheme?: string
+  ): Promise<UpgradesInfo> {
     const args = [...this.getAdditionalPacksArg(searchPath), '--dbscheme', dbScheme];
     if (targetDbScheme) {
       args.push('--target-dbscheme', targetDbScheme);
-      if (allowDowngradesIfPossible && await this.cliConstraints.supportsDowngrades()) {
+      if (allowDowngradesIfPossible && (await this.cliConstraints.supportsDowngrades())) {
         args.push('--allow-downgrades');
       }
     }
     return await this.runJsonCodeQlCliCommand<UpgradesInfo>(
       ['resolve', 'upgrades'],
       args,
-      'Resolving database upgrade scripts',
+      'Resolving database upgrade scripts'
     );
   }
 
@@ -874,7 +982,7 @@ export class CodeQLCliServer implements Disposable {
     return this.runJsonCodeQlCliCommand<QlpacksInfo>(
       ['resolve', 'qlpacks'],
       args,
-      'Resolving qlpack information',
+      'Resolving qlpack information'
     );
   }
 
@@ -883,7 +991,11 @@ export class CodeQLCliServer implements Disposable {
    * @returns A dictionary mapping language name to the directory it comes from
    */
   async resolveLanguages(): Promise<LanguagesInfo> {
-    return await this.runJsonCodeQlCliCommand<LanguagesInfo>(['resolve', 'languages'], [], 'Resolving languages');
+    return await this.runJsonCodeQlCliCommand<LanguagesInfo>(
+      ['resolve', 'languages'],
+      [],
+      'Resolving languages'
+    );
   }
 
   /**
@@ -898,7 +1010,9 @@ export class CodeQLCliServer implements Disposable {
       const resolvedLanguages = Object.keys(await this.resolveLanguages());
       const hardcodedLanguages = Object.values(dbSchemeToLanguage);
 
-      this._supportedLanguages = resolvedLanguages.filter(lang => hardcodedLanguages.includes(lang));
+      this._supportedLanguages = resolvedLanguages.filter((lang) =>
+        hardcodedLanguages.includes(lang)
+      );
     }
     return this._supportedLanguages;
   }
@@ -911,7 +1025,11 @@ export class CodeQLCliServer implements Disposable {
    *   the default CLI search path is used.
    * @returns A list of query files found.
    */
-  async resolveQueriesInSuite(suite: string, additionalPacks: string[], searchPath?: string[]): Promise<string[]> {
+  async resolveQueriesInSuite(
+    suite: string,
+    additionalPacks: string[],
+    searchPath?: string[]
+  ): Promise<string[]> {
     const args = this.getAdditionalPacksArg(additionalPacks);
     if (searchPath !== undefined) {
       args.push('--search-path', path.join(...searchPath));
@@ -924,7 +1042,7 @@ export class CodeQLCliServer implements Disposable {
     return this.runJsonCodeQlCliCommand<string[]>(
       ['resolve', 'queries'],
       args,
-      'Resolving queries',
+      'Resolving queries'
     );
   }
 
@@ -944,14 +1062,14 @@ export class CodeQLCliServer implements Disposable {
     return this.runJsonCodeQlCliCommand(['pack', 'install'], args, 'Installing pack dependencies');
   }
 
-  async packBundle(dir: string, workspaceFolders: string[], outputPath: string, precompile = true): Promise<void> {
-    const args = [
-      '-o',
-      outputPath,
-      dir,
-      ...this.getAdditionalPacksArg(workspaceFolders)
-    ];
-    if (!precompile && await this.cliConstraints.supportsNoPrecompile()) {
+  async packBundle(
+    dir: string,
+    workspaceFolders: string[],
+    outputPath: string,
+    precompile = true
+  ): Promise<void> {
+    const args = ['-o', outputPath, dir, ...this.getAdditionalPacksArg(workspaceFolders)];
+    if (!precompile && (await this.cliConstraints.supportsNoPrecompile())) {
       args.push('--no-precompile');
     }
 
@@ -962,7 +1080,11 @@ export class CodeQLCliServer implements Disposable {
     const args = includeQueries ? [dir] : ['--no-include-queries', dir];
     // since 2.7.1, packlist returns an object with a "paths" property that is a list of packs.
     // previous versions return a list of packs.
-    const results: { paths: string[] } | string[] = await this.runJsonCodeQlCliCommand(['pack', 'packlist'], args, 'Generating the pack list');
+    const results: { paths: string[] } | string[] = await this.runJsonCodeQlCliCommand(
+      ['pack', 'packlist'],
+      args,
+      'Generating the pack list'
+    );
 
     // Once we no longer need to support 2.7.0 or earlier, we can remove this and assume all versions return an object.
     if ('paths' in results) {
@@ -973,14 +1095,10 @@ export class CodeQLCliServer implements Disposable {
   }
 
   async generateDil(qloFile: string, outFile: string): Promise<void> {
-    const extraArgs = await this.cliConstraints.supportsDecompileDil()
+    const extraArgs = (await this.cliConstraints.supportsDecompileDil())
       ? ['--kind', 'dil', '-o', outFile, qloFile]
       : ['-o', outFile, qloFile];
-    await this.runCodeQlCliCommand(
-      ['query', 'decompile'],
-      extraArgs,
-      'Generating DIL',
-    );
+    await this.runCodeQlCliCommand(['query', 'decompile'], extraArgs, 'Generating DIL');
   }
 
   public async getVersion() {
@@ -988,7 +1106,9 @@ export class CodeQLCliServer implements Disposable {
       this._version = this.refreshVersion();
       // this._version is only undefined upon config change, so we reset CLI-based context key only when necessary.
       await commands.executeCommand(
-        'setContext', 'codeql.supportsEvalLog', await this.cliConstraints.supportsPerQueryEvalLog()
+        'setContext',
+        'codeql.supportsEvalLog',
+        await this.cliConstraints.supportsPerQueryEvalLog()
       );
     }
     return await this._version;
@@ -1010,9 +1130,7 @@ export class CodeQLCliServer implements Disposable {
   }
 
   private getAdditionalPacksArg(paths: string[]): string[] {
-    return paths.length
-      ? ['--additional-packs', paths.join(path.delimiter)]
-      : [];
+    return paths.length ? ['--additional-packs', paths.join(path.delimiter)] : [];
   }
 }
 
@@ -1114,7 +1232,7 @@ class SplitBuffer {
   private searchIndex = 0;
 
   constructor(private readonly separators: readonly string[]) {
-    this.maxSeparatorLength = separators.map(s => s.length).reduce((a, b) => Math.max(a, b), 0);
+    this.maxSeparatorLength = separators.map((s) => s.length).reduce((a, b) => Math.max(a, b), 0);
   }
 
   /**
@@ -1130,7 +1248,7 @@ class SplitBuffer {
    */
   public end(): void {
     this.buffer += this.decoder.end();
-    this.buffer += this.separators[0];  // Append a separator to the end to ensure the last line is returned.
+    this.buffer += this.separators[0]; // Append a separator to the end to ensure the last line is returned.
   }
 
   /**
@@ -1153,7 +1271,7 @@ class SplitBuffer {
    * line is available.
    */
   public getNextLine(): string | undefined {
-    while (this.searchIndex <= (this.buffer.length - this.maxSeparatorLength)) {
+    while (this.searchIndex <= this.buffer.length - this.maxSeparatorLength) {
       for (const separator of this.separators) {
         if (SplitBuffer.startsWith(this.buffer, separator, this.searchIndex)) {
           const line = this.buffer.slice(0, this.searchIndex);
@@ -1176,9 +1294,9 @@ class SplitBuffer {
  * @returns A sequence of lines (not including separators).
  */
 async function* splitStreamAtSeparators(
-  stream: Readable, separators: string[]
+  stream: Readable,
+  separators: string[]
 ): AsyncGenerator<string, void, unknown> {
-
   const buffer = new SplitBuffer(separators);
   for await (const chunk of stream) {
     buffer.addChunk(chunk);
@@ -1217,27 +1335,31 @@ async function logStream(stream: Readable, logger: Logger): Promise<void> {
   }
 }
 
-
 export function shouldDebugIdeServer() {
-  return 'IDE_SERVER_JAVA_DEBUG' in process.env
-    && process.env.IDE_SERVER_JAVA_DEBUG !== '0'
-    && process.env.IDE_SERVER_JAVA_DEBUG?.toLocaleLowerCase() !== 'false';
+  return (
+    'IDE_SERVER_JAVA_DEBUG' in process.env &&
+    process.env.IDE_SERVER_JAVA_DEBUG !== '0' &&
+    process.env.IDE_SERVER_JAVA_DEBUG?.toLocaleLowerCase() !== 'false'
+  );
 }
 
 export function shouldDebugQueryServer() {
-  return 'QUERY_SERVER_JAVA_DEBUG' in process.env
-    && process.env.QUERY_SERVER_JAVA_DEBUG !== '0'
-    && process.env.QUERY_SERVER_JAVA_DEBUG?.toLocaleLowerCase() !== 'false';
+  return (
+    'QUERY_SERVER_JAVA_DEBUG' in process.env &&
+    process.env.QUERY_SERVER_JAVA_DEBUG !== '0' &&
+    process.env.QUERY_SERVER_JAVA_DEBUG?.toLocaleLowerCase() !== 'false'
+  );
 }
 
 export function shouldDebugCliServer() {
-  return 'CLI_SERVER_JAVA_DEBUG' in process.env
-    && process.env.CLI_SERVER_JAVA_DEBUG !== '0'
-    && process.env.CLI_SERVER_JAVA_DEBUG?.toLocaleLowerCase() !== 'false';
+  return (
+    'CLI_SERVER_JAVA_DEBUG' in process.env &&
+    process.env.CLI_SERVER_JAVA_DEBUG !== '0' &&
+    process.env.CLI_SERVER_JAVA_DEBUG?.toLocaleLowerCase() !== 'false'
+  );
 }
 
 export class CliVersionConstraint {
-
   /**
    * CLI version where --kind=DIL was introduced
    */
@@ -1270,7 +1392,6 @@ export class CliVersionConstraint {
    * This was landed in multiple parts so this is the version where all necessary feature were supported.
    */
   public static CLI_VERSION_WITH_NON_DESTRUCTIVE_UPGRADES = new SemVer('2.4.2');
-
 
   /**
    * CLI version where the `--allow-library-packs` option to `codeql resolve queries` was
@@ -1360,7 +1481,9 @@ export class CliVersionConstraint {
   }
 
   public async supportsAllowLibraryPacksInResolveQueries() {
-    return this.isVersionAtLeast(CliVersionConstraint.CLI_VERSION_WITH_ALLOW_LIBRARY_PACKS_IN_RESOLVE_QUERIES);
+    return this.isVersionAtLeast(
+      CliVersionConstraint.CLI_VERSION_WITH_ALLOW_LIBRARY_PACKS_IN_RESOLVE_QUERIES
+    );
   }
 
   async supportsDatabaseRegistration() {

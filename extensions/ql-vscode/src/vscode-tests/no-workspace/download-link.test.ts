@@ -10,7 +10,7 @@ describe('createDownloadPath', () => {
       id: 'abc',
       urlPath: '',
       innerFilePath: '',
-      queryId: 'def'
+      queryId: 'def',
     };
     const expectedPath = path.join('storage', 'def', 'abc');
 
@@ -24,7 +24,7 @@ describe('createDownloadPath', () => {
       id: 'abc',
       urlPath: '',
       innerFilePath: '',
-      queryId: 'def'
+      queryId: 'def',
     };
 
     const expectedPath = path.join('storage', 'def', 'abc.zip');

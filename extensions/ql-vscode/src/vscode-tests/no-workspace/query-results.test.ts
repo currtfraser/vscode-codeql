@@ -43,7 +43,7 @@ describe('query-results', () => {
       (fqi.initialInfo as any).quickEvalPosition = {
         line: 1,
         endLine: 2,
-        fileName: '/home/users/yz'
+        fileName: '/home/users/yz',
       };
       expect(fqi.getQueryName()).to.eq('Quick evaluation of yz:1-2');
       (fqi.initialInfo as any).quickEvalPosition.endLine = 1;
@@ -60,7 +60,7 @@ describe('query-results', () => {
       (fqi.initialInfo as any).quickEvalPosition = {
         line: 1,
         endLine: 2,
-        fileName: '/home/users/yz'
+        fileName: '/home/users/yz',
       };
       expect(fqi.getQueryFileName()).to.eq('yz:1-2');
       (fqi.initialInfo as any).quickEvalPosition.endLine = 1;
@@ -77,7 +77,7 @@ describe('query-results', () => {
       expect(completedQuery.getResultsPath('zxa', false)).to.eq(expectedResultsPath);
 
       completedQuery.sortedResultsInfo['zxa'] = {
-        resultsPath: 'bxa'
+        resultsPath: 'bxa',
       } as SortedResultSetInfo;
 
       // still from results path
@@ -117,12 +117,12 @@ describe('query-results', () => {
       const completedQuery = fqi.completedQuery!;
 
       const spy = sandbox.spy();
-      const mockServer = {
-        sortBqrs: spy
-      } as unknown as CodeQLCliServer;
+      const mockServer = ({
+        sortBqrs: spy,
+      } as unknown) as CodeQLCliServer;
       const sortState = {
         columnIndex: 1,
-        sortDirection: SortDirection.desc
+        sortDirection: SortDirection.desc,
       };
 
       // test
@@ -130,18 +130,21 @@ describe('query-results', () => {
 
       // verify
       const expectedResultsPath = path.join(queryPath, 'results.bqrs');
-      const expectedSortedResultsPath = path.join(queryPath, 'sortedResults-a-result-set-name.bqrs');
+      const expectedSortedResultsPath = path.join(
+        queryPath,
+        'sortedResults-a-result-set-name.bqrs'
+      );
       expect(spy).to.have.been.calledWith(
         expectedResultsPath,
         expectedSortedResultsPath,
         'a-result-set-name',
         [sortState.columnIndex],
-        [sortState.sortDirection],
+        [sortState.sortDirection]
       );
 
       expect(completedQuery.sortedResultsInfo['a-result-set-name']).to.deep.equal({
         resultsPath: expectedSortedResultsPath,
-        sortState
+        sortState,
       });
 
       // delete the sort state
@@ -153,9 +156,9 @@ describe('query-results', () => {
   it('should interpretResultsSarif', async () => {
     const spy = sandbox.mock();
     spy.returns({ a: '1234' });
-    const mockServer = {
-      interpretBqrsSarif: spy
-    } as unknown as CodeQLCliServer;
+    const mockServer = ({
+      interpretBqrsSarif: spy,
+    } as unknown) as CodeQLCliServer;
 
     const interpretedResultsPath = path.join(tmpDir.name, 'interpreted.json');
     const resultsPath = '123';
@@ -163,22 +166,20 @@ describe('query-results', () => {
     const metadata = {
       kind: 'my-kind',
       id: 'my-id' as string | undefined,
-      scored: undefined
+      scored: undefined,
     };
     const results1 = await interpretResultsSarif(
       mockServer,
       metadata,
       {
-        resultsPath, interpretedResultsPath
+        resultsPath,
+        interpretedResultsPath,
       },
       sourceInfo as SourceInfo
     );
 
     expect(results1).to.deep.eq({ a: '1234', t: 'SarifInterpretationData' });
-    expect(spy).to.have.been.calledWith(
-      metadata,
-      resultsPath, interpretedResultsPath, sourceInfo
-    );
+    expect(spy).to.have.been.calledWith(metadata, resultsPath, interpretedResultsPath, sourceInfo);
 
     // Try again, but with no id
     spy.reset();
@@ -188,26 +189,34 @@ describe('query-results', () => {
       mockServer,
       metadata,
       {
-        resultsPath, interpretedResultsPath
+        resultsPath,
+        interpretedResultsPath,
       },
       sourceInfo as SourceInfo
     );
     expect(results2).to.deep.eq({ a: '1234', t: 'SarifInterpretationData' });
     expect(spy).to.have.been.calledWith(
       { kind: 'my-kind', id: 'dummy-id', scored: undefined },
-      resultsPath, interpretedResultsPath, sourceInfo
+      resultsPath,
+      interpretedResultsPath,
+      sourceInfo
     );
 
     // try a third time, but this time we get from file
     spy.reset();
-    fs.writeFileSync(interpretedResultsPath, JSON.stringify({
-      a: 6
-    }), 'utf8');
+    fs.writeFileSync(
+      interpretedResultsPath,
+      JSON.stringify({
+        a: 6,
+      }),
+      'utf8'
+    );
     const results3 = await interpretResultsSarif(
       mockServer,
       metadata,
       {
-        resultsPath, interpretedResultsPath
+        resultsPath,
+        interpretedResultsPath,
       },
       sourceInfo as SourceInfo
     );
@@ -215,7 +224,6 @@ describe('query-results', () => {
   });
 
   describe('splat and slurp', () => {
-
     let infoSuccessRaw: LocalQueryInfo;
     let infoSuccessInterpreted: LocalQueryInfo;
     let infoEarlyFailure: LocalQueryInfo;
@@ -224,27 +232,32 @@ describe('query-results', () => {
     let allHistory: LocalQueryInfo[];
 
     beforeEach(() => {
-      infoSuccessRaw = createMockFullQueryInfo('a', createMockQueryWithResults(`${queryPath}-a`, false, false, '/a/b/c/a', false));
-      infoSuccessInterpreted = createMockFullQueryInfo('b', createMockQueryWithResults(`${queryPath}-b`, true, true, '/a/b/c/b', false));
+      infoSuccessRaw = createMockFullQueryInfo(
+        'a',
+        createMockQueryWithResults(`${queryPath}-a`, false, false, '/a/b/c/a', false)
+      );
+      infoSuccessInterpreted = createMockFullQueryInfo(
+        'b',
+        createMockQueryWithResults(`${queryPath}-b`, true, true, '/a/b/c/b', false)
+      );
       infoEarlyFailure = createMockFullQueryInfo('c', undefined, true);
-      infoLateFailure = createMockFullQueryInfo('d', createMockQueryWithResults(`${queryPath}-c`, false, false, '/a/b/c/d', false));
+      infoLateFailure = createMockFullQueryInfo(
+        'd',
+        createMockQueryWithResults(`${queryPath}-c`, false, false, '/a/b/c/d', false)
+      );
       infoInprogress = createMockFullQueryInfo('e');
       allHistory = [
         infoSuccessRaw,
         infoSuccessInterpreted,
         infoEarlyFailure,
         infoLateFailure,
-        infoInprogress
+        infoInprogress,
       ];
     });
 
     it('should splat and slurp query history', async () => {
       // the expected results only contains the history with completed queries
-      const expectedHistory = [
-        infoSuccessRaw,
-        infoSuccessInterpreted,
-        infoLateFailure,
-      ];
+      const expectedHistory = [infoSuccessRaw, infoSuccessInterpreted, infoLateFailure];
 
       const allHistoryPath = path.join(tmpDir.name, 'workspace-query-history.json');
 
@@ -253,7 +266,7 @@ describe('query-results', () => {
       const allHistoryActual = await slurpQueryHistory(allHistoryPath);
 
       // the dispose methods will be different. Ignore them.
-      allHistoryActual.forEach(info => {
+      allHistoryActual.forEach((info) => {
         if (info.t === 'local' && info.completedQuery) {
           const completedQuery = info.completedQuery;
           (completedQuery as any).dispose = undefined;
@@ -272,7 +285,7 @@ describe('query-results', () => {
           }
         }
       });
-      expectedHistory.forEach(info => {
+      expectedHistory.forEach((info) => {
         if (info.completedQuery) {
           (info.completedQuery as any).dispose = undefined;
         }
@@ -287,10 +300,14 @@ describe('query-results', () => {
 
     it('should handle an invalid query history version', async () => {
       const badPath = path.join(tmpDir.name, 'bad-query-history.json');
-      fs.writeFileSync(badPath, JSON.stringify({
-        version: 2,
-        queries: allHistory
-      }), 'utf8');
+      fs.writeFileSync(
+        badPath,
+        JSON.stringify({
+          version: 2,
+          queries: allHistory,
+        }),
+        'utf8'
+      );
 
       const allHistoryActual = await slurpQueryHistory(badPath);
       // version number is invalid. Should return an empty array.
@@ -317,17 +334,15 @@ describe('query-results', () => {
       'queryDbscheme',
       undefined,
       {
-        name: 'vwx'
-      },
+        name: 'vwx',
+      }
     );
 
     const result = {
       query,
       result: {
         evaluationTime: 12340,
-        resultType: didRunSuccessfully
-          ? QueryResultType.SUCCESS
-          : QueryResultType.OTHER_ERROR
+        resultType: didRunSuccessfully ? QueryResultType.SUCCESS : QueryResultType.OTHER_ERROR,
       } as EvaluationResult,
       dispose: disposeSpy,
     };
@@ -339,13 +354,17 @@ describe('query-results', () => {
     return result;
   }
 
-  function createMockFullQueryInfo(dbName = 'a', queryWitbResults?: QueryWithResults, isFail = false): LocalQueryInfo {
+  function createMockFullQueryInfo(
+    dbName = 'a',
+    queryWitbResults?: QueryWithResults,
+    isFail = false
+  ): LocalQueryInfo {
     const fqi = new LocalQueryInfo(
       {
-        databaseInfo: {
+        databaseInfo: ({
           name: dbName,
-          databaseUri: Uri.parse(`/a/b/c/${dbName}`).fsPath
-        } as unknown as DatabaseInfo,
+          databaseUri: Uri.parse(`/a/b/c/${dbName}`).fsPath,
+        } as unknown) as DatabaseInfo,
         start: new Date(),
         queryPath: 'path/to/hucairz',
         queryText: 'some query',
@@ -354,7 +373,9 @@ describe('query-results', () => {
         id: `some-id-${dbName}`,
       } as InitialQueryInfo,
       {
-        dispose: () => { /**/ },
+        dispose: () => {
+          /**/
+        },
       } as CancellationTokenSource
     );
 

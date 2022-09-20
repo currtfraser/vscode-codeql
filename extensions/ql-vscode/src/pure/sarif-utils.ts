@@ -16,25 +16,21 @@ interface NoLocation {
 
 type ParsedSarifLocation =
   | (ResolvableLocationValue & {
-
-    userVisibleFile: string;
-  })
+      userVisibleFile: string;
+    })
   // Resolvable locations have a `uri` field, but it will sometimes include
   // a source location prefix, which contains build-specific information the user
   // doesn't really need to see. We ensure that `userVisibleFile` will not contain
   // that, and is appropriate for display in the UI.
   | NoLocation;
 
-export type SarifMessageComponent = string | SarifLink
+export type SarifMessageComponent = string | SarifLink;
 
 /**
  * Unescape "[", "]" and "\\" like in sarif plain text messages
  */
 export function unescapeSarifText(message: string): string {
-  return message
-    .replace(/\\\[/g, '[')
-    .replace(/\\\]/g, ']')
-    .replace(/\\\\/g, '\\');
+  return message.replace(/\\\[/g, '[').replace(/\\\]/g, ']').replace(/\\\\/g, '\\');
 }
 
 export function parseSarifPlainTextMessage(message: string): SarifMessageComponent[] {
@@ -57,7 +53,6 @@ export function parseSarifPlainTextMessage(message: string): SarifMessageCompone
   results.push(unescapeSarifText(message.substring(curIndex, message.length)));
   return results;
 }
-
 
 /**
  * Computes a path normalized to reflect conventional normalization
@@ -82,10 +77,8 @@ export function getPathRelativeToSourceLocationPrefix(
     prefix = sourceLocationPrefix.substring(0, 2);
     sourceLocationPrefix = sourceLocationPrefix.substring(2);
   }
-  const normalizedSourceLocationPrefix = prefix + sourceLocationPrefix.replace(/\\/g, '/')
-    .split('/')
-    .map(encodeURIComponent)
-    .join('/');
+  const normalizedSourceLocationPrefix =
+    prefix + sourceLocationPrefix.replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/');
   const slashPrefix = normalizedSourceLocationPrefix.startsWith('/') ? '' : '/';
   return `file:${slashPrefix + normalizedSourceLocationPrefix}/${sarifRelativeUri}`;
 }
@@ -100,10 +93,8 @@ export function parseSarifLocation(
   sourceLocationPrefix: string
 ): ParsedSarifLocation {
   const physicalLocation = loc.physicalLocation;
-  if (physicalLocation === undefined)
-    return { hint: 'no physical location' };
-  if (physicalLocation.artifactLocation === undefined)
-    return { hint: 'no artifact location' };
+  if (physicalLocation === undefined) return { hint: 'no physical location' };
+  if (physicalLocation.artifactLocation === undefined) return { hint: 'no artifact location' };
   if (physicalLocation.artifactLocation.uri === undefined)
     return { hint: 'artifact location has no uri' };
 
@@ -116,16 +107,14 @@ export function parseSarifLocation(
   const effectiveLocation = hasFilePrefix
     ? uri
     : getPathRelativeToSourceLocationPrefix(sourceLocationPrefix, uri);
-  const userVisibleFile = decodeURIComponent(hasFilePrefix
-    ? uri.replace(fileUriRegex, '')
-    : uri);
+  const userVisibleFile = decodeURIComponent(hasFilePrefix ? uri.replace(fileUriRegex, '') : uri);
 
   if (physicalLocation.region === undefined) {
     // If the region property is absent, the physicalLocation object refers to the entire file.
     // Source: https://docs.oasis-open.org/sarif/sarif/v2.1.0/cs01/sarif-v2.1.0-cs01.html#_Toc16012638.
     return {
       uri: effectiveLocation,
-      userVisibleFile
+      userVisibleFile,
     } as ParsedSarifLocation;
   } else {
     const region = parseSarifRegion(physicalLocation.region);
@@ -133,7 +122,7 @@ export function parseSarifLocation(
     return {
       uri: effectiveLocation,
       userVisibleFile,
-      ...region
+      ...region,
     };
   }
 }
@@ -141,10 +130,10 @@ export function parseSarifLocation(
 export function parseSarifRegion(
   region: Sarif.Region
 ): {
-  startLine: number,
-  endLine: number,
-  startColumn: number,
-  endColumn: number
+  startLine: number;
+  endLine: number;
+  startColumn: number;
+  endColumn: number;
 } {
   // The SARIF we're given should have a startLine, but we
   // fall back to 1, just in case something has gone wrong.
@@ -155,7 +144,7 @@ export function parseSarifRegion(
   const endLine = region.endLine === undefined ? startLine : region.endLine;
   const startColumn = region.startColumn === undefined ? 1 : region.startColumn;
 
-  // Our tools should always supply `endColumn` field, which is fortunate, since 
+  // Our tools should always supply `endColumn` field, which is fortunate, since
   // the SARIF spec says that it defaults to the end of the line, whose
   // length we don't know at this point in the code. We fall back to 1,
   // just in case something has gone wrong.
@@ -167,7 +156,7 @@ export function parseSarifRegion(
     startLine,
     startColumn,
     endLine,
-    endColumn
+    endColumn,
   };
 }
 
@@ -221,14 +210,14 @@ export function parseHighlightedLine(
   const highlightStartColumn = isSingleLineHighlight
     ? highlightedRegion.startColumn
     : isFirstHighlightedLine
-      ? highlightedRegion.startColumn
-      : 0;
+    ? highlightedRegion.startColumn
+    : 0;
 
   const highlightEndColumn = isSingleLineHighlight
     ? highlightedRegion.endColumn
     : isLastHighlightedLine
-      ? highlightedRegion.endColumn
-      : line.length + 1;
+    ? highlightedRegion.endColumn
+    : line.length + 1;
 
   const plainSection1 = line.substring(0, highlightStartColumn - 1);
   const highlightedSection = line.substring(highlightStartColumn - 1, highlightEndColumn - 1);

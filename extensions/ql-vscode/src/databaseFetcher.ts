@@ -1,12 +1,7 @@
 import fetch, { Response } from 'node-fetch';
 import { zip } from 'zip-a-folder';
 import * as unzipper from 'unzipper';
-import {
-  Uri,
-  CancellationToken,
-  commands,
-  window,
-} from 'vscode';
+import { Uri, CancellationToken, commands, window } from 'vscode';
 import { CodeQLCliServer } from './cli';
 import * as fs from 'fs-extra';
 import * as path from 'path';
@@ -14,13 +9,8 @@ import * as Octokit from '@octokit/rest';
 import { retry } from '@octokit/plugin-retry';
 
 import { DatabaseManager, DatabaseItem } from './databases';
-import {
-  showAndLogInformationMessage,
-} from './helpers';
-import {
-  reportStreamProgress,
-  ProgressCallback,
-} from './commandRunner';
+import { showAndLogInformationMessage } from './helpers';
+import { reportStreamProgress, ProgressCallback } from './commandRunner';
 import { logger } from './logging';
 import { tmpDir } from './helpers';
 import { Credentials } from './authentication';
@@ -64,7 +54,6 @@ export async function promptImportInternetDatabase(
     void showAndLogInformationMessage('Database downloaded and imported successfully.');
   }
   return item;
-
 }
 
 /**
@@ -86,10 +75,11 @@ export async function promptImportGithubDatabase(
   progress({
     message: 'Choose repository',
     step: 1,
-    maxStep: 2
+    maxStep: 2,
   });
   const githubRepo = await window.showInputBox({
-    title: 'Enter a GitHub repository URL or "name with owner" (e.g. https://github.com/github/codeql or github/codeql)',
+    title:
+      'Enter a GitHub repository URL or "name with owner" (e.g. https://github.com/github/codeql or github/codeql)',
     placeHolder: 'https://github.com/<owner>/<repo> or <owner>/<repo>',
     ignoreFocusOut: true,
   });
@@ -120,10 +110,10 @@ export async function promptImportGithubDatabase(
    * }
    * We only need the actual token string.
    */
-  const octokitToken = (await octokit.auth() as { token: string })?.token;
+  const octokitToken = ((await octokit.auth()) as { token: string })?.token;
   const item = await databaseArchiveFetcher(
     databaseUrl,
-    { 'Accept': 'application/zip', 'Authorization': octokitToken ? `Bearer ${octokitToken}` : '' },
+    { Accept: 'application/zip', Authorization: octokitToken ? `Bearer ${octokitToken}` : '' },
     databaseManager,
     storagePath,
     `${owner}/${name}`,
@@ -157,7 +147,7 @@ export async function promptImportLgtmDatabase(
   progress({
     message: 'Choose project',
     step: 1,
-    maxStep: 2
+    maxStep: 2,
   });
   const lgtmUrl = await window.showInputBox({
     prompt:
@@ -194,7 +184,10 @@ export async function promptImportLgtmDatabase(
 
 export async function retrieveCanonicalRepoName(lgtmUrl: string) {
   const givenRepoName = extractProjectSlug(lgtmUrl);
-  const response = await checkForFailingResponse(await fetch(`https://api.github.com/repos/${givenRepoName}`), 'Failed to locate the repository on github');
+  const response = await checkForFailingResponse(
+    await fetch(`https://api.github.com/repos/${givenRepoName}`),
+    'Failed to locate the repository on github'
+  );
   const repo = await response.json();
   if (!repo || !repo.full_name) {
     return;
@@ -215,7 +208,7 @@ export async function importArchiveDatabase(
   storagePath: string,
   progress: ProgressCallback,
   token: CancellationToken,
-  cli?: CodeQLCliServer,
+  cli?: CodeQLCliServer
 ): Promise<DatabaseItem | undefined> {
   try {
     const item = await databaseArchiveFetcher(
@@ -235,7 +228,9 @@ export async function importArchiveDatabase(
     return item;
   } catch (e) {
     if (getErrorMessage(e).includes('unexpected end of file')) {
-      throw new Error('Database is corrupt or too large. Try unzipping outside of VS Code and importing the unzipped folder instead.');
+      throw new Error(
+        'Database is corrupt or too large. Try unzipping outside of VS Code and importing the unzipped folder instead.'
+      );
     } else {
       // delegate
       throw e;
@@ -263,7 +258,7 @@ async function databaseArchiveFetcher(
   nameOverride: string | undefined,
   progress: ProgressCallback,
   token: CancellationToken,
-  cli?: CodeQLCliServer,
+  cli?: CodeQLCliServer
 ): Promise<DatabaseItem> {
   progress({
     message: 'Getting database',
@@ -289,11 +284,7 @@ async function databaseArchiveFetcher(
   });
 
   // find the path to the database. The actual database might be in a sub-folder
-  const dbPath = await findDirWithFile(
-    unzipPath,
-    '.dbinfo',
-    'codeql-database.yml'
-  );
+  const dbPath = await findDirWithFile(unzipPath, '.dbinfo', 'codeql-database.yml');
   if (dbPath) {
     progress({
       message: 'Validating and fixing source location',
@@ -302,7 +293,12 @@ async function databaseArchiveFetcher(
     });
     await ensureZippedSourceLocation(dbPath);
 
-    const item = await databaseManager.openDatabase(progress, token, Uri.file(dbPath), nameOverride);
+    const item = await databaseManager.openDatabase(
+      progress,
+      token,
+      Uri.file(dbPath),
+      nameOverride
+    );
     await databaseManager.setCurrentDatabaseItem(item);
     return item;
   } else {
@@ -362,9 +358,9 @@ async function readAndUnzip(
   progress?.({
     maxStep: 10,
     step: 9,
-    message: `Unzipping into ${path.basename(unzipPath)}`
+    message: `Unzipping into ${path.basename(unzipPath)}`,
   });
-  if (cli && await cli.cliConstraints.supportsDatabaseUnbundle()) {
+  if (cli && (await cli.cliConstraints.supportsDatabaseUnbundle())) {
     // Use the `database unbundle` command if the installed cli version supports it
     await cli.databaseUnbundle(zipFile, unzipPath);
   } else {
@@ -408,9 +404,7 @@ async function fetchAndUnzip(
   reportStreamProgress(response.body, 'Downloading database', totalNumBytes, progress);
 
   await new Promise((resolve, reject) =>
-    response.body.pipe(archiveFileStream)
-      .on('finish', resolve)
-      .on('error', reject)
+    response.body.pipe(archiveFileStream).on('finish', resolve).on('error', reject)
   );
 
   await readAndUnzip(Uri.file(archivePath).toString(true), unzipPath, cli, progress);
@@ -419,7 +413,10 @@ async function fetchAndUnzip(
   await fs.remove(archivePath);
 }
 
-async function checkForFailingResponse(response: Response, errorMessage: string): Promise<Response | never> {
+async function checkForFailingResponse(
+  response: Response,
+  errorMessage: string
+): Promise<Response | never> {
   if (response.ok) {
     return response;
   }
@@ -480,9 +477,7 @@ export async function findDirWithFile(
  *
  * @return true if this looks like a valid GitHub repository URL or NWO
  */
-export function looksLikeGithubRepo(
-  githubRepo: string | undefined
-): githubRepo is string {
+export function looksLikeGithubRepo(githubRepo: string | undefined): githubRepo is string {
   if (!githubRepo) {
     return false;
   }
@@ -522,16 +517,23 @@ function convertGitHubUrlToNwo(githubUrl: string): string | undefined {
 export async function convertGithubNwoToDatabaseUrl(
   githubRepo: string,
   octokit: Octokit.Octokit,
-  progress: ProgressCallback): Promise<{
-    databaseUrl: string,
-    owner: string,
-    name: string
-  } | undefined> {
+  progress: ProgressCallback
+): Promise<
+  | {
+      databaseUrl: string;
+      owner: string;
+      name: string;
+    }
+  | undefined
+> {
   try {
     const nwo = convertGitHubUrlToNwo(githubRepo) || githubRepo;
     const [owner, repo] = nwo.split('/');
 
-    const response = await octokit.request('GET /repos/:owner/:repo/code-scanning/codeql/databases', { owner, repo });
+    const response = await octokit.request(
+      'GET /repos/:owner/:repo/code-scanning/codeql/databases',
+      { owner, repo }
+    );
 
     const languages = response.data.map((db: any) => db.language);
 
@@ -543,9 +545,8 @@ export async function convertGithubNwoToDatabaseUrl(
     return {
       databaseUrl: `https://api.github.com/repos/${owner}/${repo}/code-scanning/codeql/databases/${language}`,
       owner,
-      name: repo
+      name: repo,
     };
-
   } catch (e) {
     void logger.log(`Error: ${getErrorMessage(e)}`);
     throw new Error(`Unable to get database for '${githubRepo}'`);
@@ -617,9 +618,7 @@ function extractProjectSlug(lgtmUrl: string): string | undefined {
 }
 
 // exported for testing
-export async function convertLgtmUrlToDatabaseUrl(
-  lgtmUrl: string,
-  progress: ProgressCallback) {
+export async function convertLgtmUrlToDatabaseUrl(lgtmUrl: string, progress: ProgressCallback) {
   try {
     lgtmUrl = convertRawLgtmSlug(lgtmUrl) || lgtmUrl;
     let projectJson = await downloadLgtmProjectMetadata(lgtmUrl);
@@ -638,19 +637,14 @@ export async function convertLgtmUrlToDatabaseUrl(
       }
     }
 
-    const languages = projectJson?.languages?.map((lang: { language: string }) => lang.language) || [];
+    const languages =
+      projectJson?.languages?.map((lang: { language: string }) => lang.language) || [];
 
     const language = await promptForLanguage(languages, progress);
     if (!language) {
       return;
     }
-    return `https://lgtm.com/${[
-      'api',
-      'v1.0',
-      'snapshots',
-      projectJson.id,
-      language,
-    ].join('/')}`;
+    return `https://lgtm.com/${['api', 'v1.0', 'snapshots', projectJson.id, language].join('/')}`;
   } catch (e) {
     void logger.log(`Error: ${getErrorMessage(e)}`);
     throw new Error(`Invalid LGTM URL: ${lgtmUrl}`);
@@ -659,9 +653,9 @@ export async function convertLgtmUrlToDatabaseUrl(
 
 async function downloadLgtmProjectMetadata(lgtmUrl: string): Promise<any> {
   const uri = Uri.parse(lgtmUrl, true);
-  const paths = ['api', 'v1.0'].concat(
-    uri.path.split('/').filter((segment: string) => segment)
-  ).slice(0, 6);
+  const paths = ['api', 'v1.0']
+    .concat(uri.path.split('/').filter((segment: string) => segment))
+    .slice(0, 6);
   const projectUrl = `https://lgtm.com/${paths.join('/')}`;
   const projectResponse = await fetch(projectUrl);
   return projectResponse.json();
@@ -674,7 +668,7 @@ async function promptForLanguage(
   progress({
     message: 'Choose language',
     step: 2,
-    maxStep: 2
+    maxStep: 2,
   });
   if (!languages.length) {
     throw new Error('No databases found');
@@ -683,13 +677,10 @@ async function promptForLanguage(
     return languages[0];
   }
 
-  return await window.showQuickPick(
-    languages,
-    {
-      placeHolder: 'Select the database language to download:',
-      ignoreFocusOut: true,
-    }
-  );
+  return await window.showQuickPick(languages, {
+    placeHolder: 'Select the database language to download:',
+    ignoreFocusOut: true,
+  });
 }
 
 /**

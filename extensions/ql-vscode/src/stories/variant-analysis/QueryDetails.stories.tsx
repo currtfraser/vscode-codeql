@@ -13,7 +13,7 @@ export default {
       <VariantAnalysisContainer>
         <Story />
       </VariantAnalysisContainer>
-    )
+    ),
   ],
   argTypes: {
     onOpenQueryFileClick: {
@@ -28,7 +28,7 @@ export default {
         disable: true,
       },
     },
-  }
+  },
 } as ComponentMeta<typeof QueryDetailsComponent>;
 
 const Template: ComponentStory<typeof QueryDetailsComponent> = (args) => (

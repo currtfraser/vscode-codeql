@@ -11,7 +11,7 @@ import {
   DatabaseItemImpl,
   DatabaseContents,
   FullDatabaseOptions,
-  findSourceArchive
+  findSourceArchive,
 } from '../../databases';
 import { Logger } from '../../logging';
 import { QueryServerClient } from '../../queryserver-client';
@@ -22,11 +22,10 @@ import { encodeArchiveBasePath, encodeSourceArchiveUri } from '../../archive-fil
 import { testDisposeHandler } from '../test-dispose-handler';
 
 describe('databases', () => {
-
   const MOCK_DB_OPTIONS: FullDatabaseOptions = {
     dateAdded: 123,
     ignoreSourceArchive: false,
-    language: ''
+    language: '',
   };
 
   let databaseManager: DatabaseManager;
@@ -55,27 +54,29 @@ describe('databases', () => {
     supportsLanguageNameSpy = sandbox.stub();
     resolveDatabaseSpy = sandbox.stub();
     databaseManager = new DatabaseManager(
-      {
+      ({
         workspaceState: {
           update: updateSpy,
-          get: getSpy
+          get: getSpy,
         },
         // pretend like databases added in the temp dir are controlled by the extension
         // so that they are deleted upon removal
-        storagePath: dir.name
-      } as unknown as ExtensionContext,
-      {
+        storagePath: dir.name,
+      } as unknown) as ExtensionContext,
+      ({
         sendRequest: sendRequestSpy,
-        onDidStartQueryServer: () => { /**/ }
-      } as unknown as QueryServerClient,
-      {
+        onDidStartQueryServer: () => {
+          /**/
+        },
+      } as unknown) as QueryServerClient,
+      ({
         cliConstraints: {
           supportsLanguageName: supportsLanguageNameSpy,
           supportsDatabaseRegistration: supportsDatabaseRegistrationSpy,
         },
-        resolveDatabase: resolveDatabaseSpy
-      } as unknown as CodeQLCliServer,
-      {} as Logger,
+        resolveDatabase: resolveDatabaseSpy,
+      } as unknown) as CodeQLCliServer,
+      {} as Logger
     );
 
     // Unfortunately, during a test it is not possible to convert from
@@ -102,13 +103,15 @@ describe('databases', () => {
     );
 
     expect((databaseManager as any)._databaseItems).to.deep.eq([mockDbItem]);
-    expect(updateSpy).to.have.been.calledWith('databaseList', [{
-      options: MOCK_DB_OPTIONS,
-      uri: dbLocationUri().toString(true)
-    }]);
+    expect(updateSpy).to.have.been.calledWith('databaseList', [
+      {
+        options: MOCK_DB_OPTIONS,
+        uri: dbLocationUri().toString(true),
+      },
+    ]);
     expect(spy).to.have.been.calledWith({
       item: undefined,
-      kind: DatabaseEventKind.Add
+      kind: DatabaseEventKind.Add,
     });
 
     sinon.reset();
@@ -117,13 +120,13 @@ describe('databases', () => {
     await databaseManager.removeDatabaseItem(
       {} as ProgressCallback,
       {} as CancellationToken,
-      mockDbItem,
+      mockDbItem
     );
     expect((databaseManager as any)._databaseItems).to.deep.eq([]);
     expect(updateSpy).to.have.been.calledWith('databaseList', []);
     expect(spy).to.have.been.calledWith({
       item: undefined,
-      kind: DatabaseEventKind.Remove
+      kind: DatabaseEventKind.Remove,
     });
   });
 
@@ -142,14 +145,16 @@ describe('databases', () => {
     await databaseManager.renameDatabaseItem(mockDbItem, 'new name');
 
     expect(mockDbItem.name).to.eq('new name');
-    expect(updateSpy).to.have.been.calledWith('databaseList', [{
-      options: { ...MOCK_DB_OPTIONS, displayName: 'new name' },
-      uri: dbLocationUri().toString(true)
-    }]);
+    expect(updateSpy).to.have.been.calledWith('databaseList', [
+      {
+        options: { ...MOCK_DB_OPTIONS, displayName: 'new name' },
+        uri: dbLocationUri().toString(true),
+      },
+    ]);
 
     expect(spy).to.have.been.calledWith({
       item: undefined,
-      kind: DatabaseEventKind.Rename
+      kind: DatabaseEventKind.Rename,
     });
   });
 
@@ -166,19 +171,21 @@ describe('databases', () => {
       );
 
       expect(databaseManager.databaseItems).to.deep.eq([mockDbItem]);
-      expect(updateSpy).to.have.been.calledWith('databaseList', [{
-        uri: dbLocationUri().toString(true),
-        options: MOCK_DB_OPTIONS
-      }]);
+      expect(updateSpy).to.have.been.calledWith('databaseList', [
+        {
+          uri: dbLocationUri().toString(true),
+          options: MOCK_DB_OPTIONS,
+        },
+      ]);
 
       const mockEvent = {
         item: undefined,
-        kind: DatabaseEventKind.Add
+        kind: DatabaseEventKind.Add,
       };
       expect(spy).to.have.been.calledWith(mockEvent);
     });
 
-    it('should add a database item source archive', async function() {
+    it('should add a database item source archive', async function () {
       const mockDbItem = createMockDB();
       mockDbItem.name = 'xxx';
       await (databaseManager as any).addDatabaseSourceArchiveFolder(mockDbItem);
@@ -189,7 +196,7 @@ describe('databases', () => {
         name: '[xxx source archive]',
         // must use a matcher here since vscode URIs with the same path
         // are not always equal due to internal state.
-        uri: sinon.match.has('fsPath', encodeArchiveBasePath(sourceLocationUri().fsPath).fsPath)
+        uri: sinon.match.has('fsPath', encodeArchiveBasePath(sourceLocationUri().fsPath).fsPath),
       });
     });
 
@@ -260,10 +267,12 @@ describe('databases', () => {
       // registration messages.
       const mockDbItem = createMockDB();
       const registration = {
-        databases: [{
-          dbDir: mockDbItem.contents!.datasetUri.fsPath,
-          workingSet: 'default'
-        }]
+        databases: [
+          {
+            dbDir: mockDbItem.contents!.datasetUri.fsPath,
+            workingSet: 'default',
+          },
+        ],
       };
 
       sandbox.stub(fs, 'remove').resolves();
@@ -342,40 +351,50 @@ describe('databases', () => {
 
     describe('zipped source archive', () => {
       it('should encode a source archive url', () => {
-        const db = createMockDB(encodeSourceArchiveUri({
-          sourceArchiveZipPath: 'sourceArchive-uri',
-          pathWithinSourceArchive: 'def'
-        }));
+        const db = createMockDB(
+          encodeSourceArchiveUri({
+            sourceArchiveZipPath: 'sourceArchive-uri',
+            pathWithinSourceArchive: 'def',
+          })
+        );
         const resolved = db.resolveSourceFile(Uri.file('abc').toString());
 
         // must recreate an encoded archive uri instead of typing out the
         // text since the uris will be different on windows and ubuntu.
-        expect(resolved.toString()).to.eq(encodeSourceArchiveUri({
-          sourceArchiveZipPath: 'sourceArchive-uri',
-          pathWithinSourceArchive: 'def/abc'
-        }).toString());
+        expect(resolved.toString()).to.eq(
+          encodeSourceArchiveUri({
+            sourceArchiveZipPath: 'sourceArchive-uri',
+            pathWithinSourceArchive: 'def/abc',
+          }).toString()
+        );
       });
 
       it('should encode a source archive url with trailing slash', () => {
-        const db = createMockDB(encodeSourceArchiveUri({
-          sourceArchiveZipPath: 'sourceArchive-uri',
-          pathWithinSourceArchive: 'def/'
-        }));
+        const db = createMockDB(
+          encodeSourceArchiveUri({
+            sourceArchiveZipPath: 'sourceArchive-uri',
+            pathWithinSourceArchive: 'def/',
+          })
+        );
         const resolved = db.resolveSourceFile(Uri.file('abc').toString());
 
         // must recreate an encoded archive uri instead of typing out the
         // text since the uris will be different on windows and ubuntu.
-        expect(resolved.toString()).to.eq(encodeSourceArchiveUri({
-          sourceArchiveZipPath: 'sourceArchive-uri',
-          pathWithinSourceArchive: 'def/abc'
-        }).toString());
+        expect(resolved.toString()).to.eq(
+          encodeSourceArchiveUri({
+            sourceArchiveZipPath: 'sourceArchive-uri',
+            pathWithinSourceArchive: 'def/abc',
+          }).toString()
+        );
       });
 
       it('should encode an empty source archive url', () => {
-        const db = createMockDB(encodeSourceArchiveUri({
-          sourceArchiveZipPath: 'sourceArchive-uri',
-          pathWithinSourceArchive: 'def'
-        }));
+        const db = createMockDB(
+          encodeSourceArchiveUri({
+            sourceArchiveZipPath: 'sourceArchive-uri',
+            pathWithinSourceArchive: 'def',
+          })
+        );
         const resolved = db.resolveSourceFile('file:');
         expect(resolved.toString()).to.eq('codeql-zip-archive://1-18/sourceArchive-uri/def/');
       });
@@ -391,25 +410,25 @@ describe('databases', () => {
   it('should not support the primary language', async () => {
     supportsLanguageNameSpy.resolves(false);
 
-    const result = (await (databaseManager as any).getPrimaryLanguage('hucairz'));
+    const result = await (databaseManager as any).getPrimaryLanguage('hucairz');
     expect(result).to.be.undefined;
   });
 
   it('should get the primary language', async () => {
     supportsLanguageNameSpy.resolves(true);
     resolveDatabaseSpy.resolves({
-      languages: ['python']
+      languages: ['python'],
     });
-    const result = (await (databaseManager as any).getPrimaryLanguage('hucairz'));
+    const result = await (databaseManager as any).getPrimaryLanguage('hucairz');
     expect(result).to.eq('python');
   });
 
   it('should handle missing the primary language', async () => {
     supportsLanguageNameSpy.resolves(true);
     resolveDatabaseSpy.resolves({
-      languages: []
+      languages: [],
     });
-    const result = (await (databaseManager as any).getPrimaryLanguage('hucairz'));
+    const result = await (databaseManager as any).getPrimaryLanguage('hucairz');
     expect(result).to.eq('');
   });
 
@@ -477,14 +496,13 @@ describe('databases', () => {
       const db = createMockDB(sourceLocationUri(), Uri.file('/path/to/dir/dir.testproj'));
       expect(await db.isAffectedByTest('/path/to/test.ql')).to.false;
     });
-
   });
 
-  describe('findSourceArchive', function() {
+  describe('findSourceArchive', function () {
     // not sure why, but some of these tests take more than two seconds to run.
     this.timeout(5000);
 
-    ['src', 'output/src_archive'].forEach(name => {
+    ['src', 'output/src_archive'].forEach((name) => {
       it(`should find source folder in ${name}`, async () => {
         const uri = Uri.file(path.join(dir.name, name));
         fs.createFileSync(path.join(uri.fsPath, 'hucairz.txt'));
@@ -528,15 +546,14 @@ describe('databases', () => {
     sourceArchiveUri = sourceLocationUri(),
     databaseUri = dbLocationUri()
   ): DatabaseItemImpl {
-
     return new DatabaseItemImpl(
       databaseUri,
       {
         sourceArchiveUri,
-        datasetUri: databaseUri
+        datasetUri: databaseUri,
       } as DatabaseContents,
       MOCK_DB_OPTIONS,
-      dbChangedHandler,
+      dbChangedHandler
     );
   }
 

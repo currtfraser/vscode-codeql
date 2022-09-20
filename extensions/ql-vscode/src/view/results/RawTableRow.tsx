@@ -17,10 +17,7 @@ export default function RawTableRow(props: Props) {
 
       {props.row.map((value, columnIndex) => (
         <td key={columnIndex}>
-          <RawTableValue
-            value={value}
-            databaseUri={props.databaseUri}
-          />
+          <RawTableValue value={value} databaseUri={props.databaseUri} />
         </td>
       ))}
     </tr>

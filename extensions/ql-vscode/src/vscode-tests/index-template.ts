@@ -4,9 +4,8 @@ import * as glob from 'glob';
 import { ensureCli } from './ensureCli';
 import { env } from 'vscode';
 
-
 // Use this handler to avoid swallowing unhandled rejections.
-process.on('unhandledRejection', e => {
+process.on('unhandledRejection', (e) => {
   console.error('Unhandled rejection.');
   console.error(e);
   // Must use a setTimeout in order to ensure the log is fully flushed before exiting
@@ -52,7 +51,9 @@ export async function runTestsInDirectory(testsRoot: string, useCli = false): Pr
     // convert this function into an noop since it should not run during tests.
     // If it does run during tests, then it can cause some testing environments
     // to hang.
-    (env as any).openExternal = () => { /**/ }
+    ((env as any).openExternal = () => {
+      /**/
+    })
   );
 
   await ensureCli(useCli);
@@ -67,8 +68,8 @@ export async function runTestsInDirectory(testsRoot: string, useCli = false): Pr
       try {
         // Add test files to the test suite
         files
-          .filter(f => f.endsWith('.test.js'))
-          .forEach(f => {
+          .filter((f) => f.endsWith('.test.js'))
+          .forEach((f) => {
             console.log(`Adding test file ${f}`);
             mocha.addFile(path.resolve(testsRoot, f));
           });
@@ -76,8 +77,8 @@ export async function runTestsInDirectory(testsRoot: string, useCli = false): Pr
         // Add helpers. Helper files add global setup and teardown blocks
         // for a test run.
         files
-          .filter(f => f.endsWith('.helper.js'))
-          .forEach(f => {
+          .filter((f) => f.endsWith('.helper.js'))
+          .forEach((f) => {
             console.log(`Executing helper ${f}`);
             // eslint-disable-next-line @typescript-eslint/no-var-requires
             const helper = require(path.resolve(testsRoot, f)).default;
@@ -85,7 +86,7 @@ export async function runTestsInDirectory(testsRoot: string, useCli = false): Pr
           });
 
         // Run the mocha test
-        mocha.run(failures => {
+        mocha.run((failures) => {
           if (failures > 0) {
             reject(new Error(`${failures} tests failed.`));
           } else {

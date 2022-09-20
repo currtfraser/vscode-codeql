@@ -12,7 +12,7 @@ import {
   showAndLogInformationMessage,
   tryGetQueryMetadata,
   pluralize,
-  tmpDir
+  tmpDir,
 } from '../helpers';
 import { Credentials } from '../authentication';
 import * as cli from '../cli';
@@ -24,7 +24,11 @@ import { RemoteQuery } from './remote-query';
 import { RemoteQuerySubmissionResult } from './remote-query-submission-result';
 import { QueryMetadata } from '../pure/interface-types';
 import { getErrorMessage, REPO_REGEX } from '../pure/helpers-pure';
-import { getRepositorySelection, isValidSelection, RepositorySelection } from './repository-selection';
+import {
+  getRepositorySelection,
+  isValidSelection,
+  RepositorySelection,
+} from './repository-selection';
 
 export interface QlPack {
   name: string;
@@ -35,15 +39,15 @@ export interface QlPack {
 }
 
 interface QueriesResponse {
-  workflow_run_id: number,
+  workflow_run_id: number;
   errors?: {
-    invalid_repositories?: string[],
-    repositories_without_database?: string[],
-    private_repositories?: string[],
-    cutoff_repositories?: string[],
-    cutoff_repositories_count?: number,
-  },
-  repositories_queried: string[],
+    invalid_repositories?: string[];
+    repositories_without_database?: string[];
+    private_repositories?: string[];
+    cutoff_repositories?: string[];
+    cutoff_repositories_count?: number;
+  };
+  repositories_queried: string[];
 }
 
 /**
@@ -58,9 +62,13 @@ const QUERY_PACK_NAME = 'codeql-remote/query';
  *
  * @returns the entire qlpack as a base64 string.
  */
-async function generateQueryPack(cliServer: cli.CodeQLCliServer, queryFile: string, queryPackDir: string): Promise<{
-  base64Pack: string,
-  language: string
+async function generateQueryPack(
+  cliServer: cli.CodeQLCliServer,
+  queryFile: string,
+  queryPackDir: string
+): Promise<{
+  base64Pack: string;
+  language: string;
 }> {
   const originalPackRoot = await findPackRoot(queryFile);
   const packRelativePath = path.relative(originalPackRoot, queryFile);
@@ -72,18 +80,21 @@ async function generateQueryPack(cliServer: cli.CodeQLCliServer, queryFile: stri
     const toCopy = await cliServer.packPacklist(originalPackRoot, false);
 
     // also copy the lock file (either new name or old name) and the query file itself. These are not included in the packlist.
-    [path.join(originalPackRoot, 'qlpack.lock.yml'), path.join(originalPackRoot, 'codeql-pack.lock.yml'), queryFile]
-      .forEach(absolutePath => {
-        if (absolutePath) {
-          toCopy.push(absolutePath);
-        }
-      });
+    [
+      path.join(originalPackRoot, 'qlpack.lock.yml'),
+      path.join(originalPackRoot, 'codeql-pack.lock.yml'),
+      queryFile,
+    ].forEach((absolutePath) => {
+      if (absolutePath) {
+        toCopy.push(absolutePath);
+      }
+    });
 
     let copiedCount = 0;
     await fs.copy(originalPackRoot, queryPackDir, {
       filter: (file: string) =>
         // copy file if it is in the packlist, or it is a parent directory of a file in the packlist
-        !!toCopy.find(f => {
+        !!toCopy.find((f) => {
           // Normalized paths ensure that Windows drive letters are capitalized consistently.
           const normalizedPath = Uri.file(f).fsPath;
           const matches = normalizedPath === file || normalizedPath.startsWith(file + path.sep);
@@ -91,13 +102,12 @@ async function generateQueryPack(cliServer: cli.CodeQLCliServer, queryFile: stri
             copiedCount++;
           }
           return matches;
-        })
+        }),
     });
 
     void logger.log(`Copied ${copiedCount} files to ${queryPackDir}`);
 
     language = await findLanguage(cliServer, Uri.file(targetQueryFileName));
-
   } else {
     // open popup to ask for language if not already hardcoded
     language = await askForLanguage(cliServer);
@@ -112,7 +122,7 @@ async function generateQueryPack(cliServer: cli.CodeQLCliServer, queryFile: stri
       version: '0.0.0',
       dependencies: {
         [`codeql/${language}-all`]: '*',
-      }
+      },
     };
     await fs.writeFile(path.join(queryPackDir, 'qlpack.yml'), yaml.dump(syntheticQueryPack));
   }
@@ -126,14 +136,16 @@ async function generateQueryPack(cliServer: cli.CodeQLCliServer, queryFile: stri
   await cliServer.clearCache();
 
   const bundlePath = await getPackedBundlePath(queryPackDir);
-  void logger.log(`Compiling and bundling query pack from ${queryPackDir} to ${bundlePath}. (This may take a while.)`);
+  void logger.log(
+    `Compiling and bundling query pack from ${queryPackDir} to ${bundlePath}. (This may take a while.)`
+  );
   await cliServer.packInstall(queryPackDir);
   const workspaceFolders = getOnDiskWorkspaceFolders();
   await cliServer.packBundle(queryPackDir, workspaceFolders, bundlePath, false);
   const base64Pack = (await fs.readFile(bundlePath)).toString('base64');
   return {
     base64Pack,
-    language
+    language,
   };
 }
 
@@ -181,8 +193,9 @@ export async function runRemoteQuery(
   token: CancellationToken
 ): Promise<void | RemoteQuerySubmissionResult> {
   if (!(await cliServer.cliConstraints.supportsRemoteQueries())) {
-    throw new Error(`Variant analysis is not supported by this version of CodeQL. Please upgrade to v${cli.CliVersionConstraint.CLI_VERSION_REMOTE_QUERIES
-      } or later.`);
+    throw new Error(
+      `Variant analysis is not supported by this version of CodeQL. Please upgrade to v${cli.CliVersionConstraint.CLI_VERSION_REMOTE_QUERIES} or later.`
+    );
   }
 
   const { remoteQueryDir, queryPackDir } = await createRemoteQueriesTempDirectory();
@@ -196,7 +209,7 @@ export async function runRemoteQuery(
     progress({
       maxStep: 4,
       step: 1,
-      message: 'Determining query target language'
+      message: 'Determining query target language',
     });
 
     const repoSelection = await getRepositorySelection();
@@ -207,7 +220,7 @@ export async function runRemoteQuery(
     progress({
       maxStep: 4,
       step: 2,
-      message: 'Determining controller repo'
+      message: 'Determining controller repo',
     });
 
     // Get the controller repo from the config, if it exists.
@@ -215,9 +228,12 @@ export async function runRemoteQuery(
     let controllerRepo: string | undefined;
     controllerRepo = getRemoteControllerRepo();
     if (!controllerRepo || !REPO_REGEX.test(controllerRepo)) {
-      void logger.log(controllerRepo ? 'Invalid controller repository name.' : 'No controller repository defined.');
+      void logger.log(
+        controllerRepo ? 'Invalid controller repository name.' : 'No controller repository defined.'
+      );
       controllerRepo = await window.showInputBox({
-        title: 'Controller repository in which to run the GitHub Actions workflow for this variant analysis',
+        title:
+          'Controller repository in which to run the GitHub Actions workflow for this variant analysis',
         placeHolder: '<owner>/<repo>',
         prompt: 'Enter the name of a GitHub repository in the format <owner>/<repo>',
         ignoreFocusOut: true,
@@ -225,8 +241,11 @@ export async function runRemoteQuery(
       if (!controllerRepo) {
         void showAndLogErrorMessage('No controller repository entered.');
         return;
-      } else if (!REPO_REGEX.test(controllerRepo)) { // Check if user entered invalid input
-        void showAndLogErrorMessage('Invalid repository format. Must be a valid GitHub repository in the format <owner>/<repo>.');
+      } else if (!REPO_REGEX.test(controllerRepo)) {
+        // Check if user entered invalid input
+        void showAndLogErrorMessage(
+          'Invalid repository format. Must be a valid GitHub repository in the format <owner>/<repo>.'
+        );
         return;
       }
       void logger.log(`Setting the controller repository as: ${controllerRepo}`);
@@ -239,7 +258,7 @@ export async function runRemoteQuery(
     progress({
       maxStep: 4,
       step: 3,
-      message: 'Bundling the query pack'
+      message: 'Bundling the query pack',
     });
 
     if (token.isCancellationRequested) {
@@ -255,11 +274,20 @@ export async function runRemoteQuery(
     progress({
       maxStep: 4,
       step: 4,
-      message: 'Sending request'
+      message: 'Sending request',
     });
 
     const actionBranch = getActionBranch();
-    const apiResponse = await runRemoteQueriesApiRequest(credentials, actionBranch, language, repoSelection, owner, repo, base64Pack, dryRun);
+    const apiResponse = await runRemoteQueriesApiRequest(
+      credentials,
+      actionBranch,
+      language,
+      repoSelection,
+      owner,
+      repo,
+      base64Pack,
+      dryRun
+    );
     const queryStartTime = Date.now();
     const queryMetadata = await tryGetQueryMetadata(cliServer, queryFile);
 
@@ -280,12 +308,12 @@ export async function runRemoteQuery(
         queryStartTime,
         workflowRunId,
         language,
-        repositoryCount);
+        repositoryCount
+      );
 
       // don't return the path because it has been deleted
       return { query: remoteQuery };
     }
-
   } finally {
     if (dryRun) {
       // If we are in a dry run keep the data around for debugging purposes.
@@ -316,15 +344,20 @@ async function runRemoteQueriesApiRequest(
   };
 
   if (dryRun) {
-    void showAndLogInformationMessage('[DRY RUN] Would have sent request. See extension log for the payload.');
-    void logger.log(JSON.stringify({
-      owner,
-      repo,
-      data: {
-        ...data,
-        queryPackBase64: queryPackBase64.substring(0, 100) + '... ' + queryPackBase64.length + ' bytes'
-      }
-    }));
+    void showAndLogInformationMessage(
+      '[DRY RUN] Would have sent request. See extension log for the payload.'
+    );
+    void logger.log(
+      JSON.stringify({
+        owner,
+        repo,
+        data: {
+          ...data,
+          queryPackBase64:
+            queryPackBase64.substring(0, 100) + '... ' + queryPackBase64.length + ' bytes',
+        },
+      })
+    );
     return;
   }
 
@@ -335,15 +368,17 @@ async function runRemoteQueriesApiRequest(
       {
         owner,
         repo,
-        data
+        data,
       }
     );
     const { popupMessage, logMessage } = parseResponse(owner, repo, response.data);
     void showAndLogInformationMessage(popupMessage, { fullMessage: logMessage });
     return response.data;
-  } catch (error: any) {
+  } catch (error) {
     if (error.status === 404) {
-      void showAndLogErrorMessage(`Controller repository was not found. Please make sure it's a valid repo name.${eol}`);
+      void showAndLogErrorMessage(
+        `Controller repository was not found. Please make sure it's a valid repo name.${eol}`
+      );
     } else {
       void showAndLogErrorMessage(getErrorMessage(error));
     }
@@ -358,32 +393,73 @@ export function parseResponse(owner: string, repo: string, response: QueriesResp
   const repositoriesQueried = response.repositories_queried;
   const repositoryCount = repositoriesQueried.length;
 
-  const popupMessage = `Successfully scheduled runs on ${pluralize(repositoryCount, 'repository', 'repositories')}. [Click here to see the progress](https://github.com/${owner}/${repo}/actions/runs/${response.workflow_run_id}).`
-    + (response.errors ? `${eol2}Some repositories could not be scheduled. See extension log for details.` : '');
+  const popupMessage =
+    `Successfully scheduled runs on ${pluralize(
+      repositoryCount,
+      'repository',
+      'repositories'
+    )}. [Click here to see the progress](https://github.com/${owner}/${repo}/actions/runs/${
+      response.workflow_run_id
+    }).` +
+    (response.errors
+      ? `${eol2}Some repositories could not be scheduled. See extension log for details.`
+      : '');
 
-  let logMessage = `Successfully scheduled runs on ${pluralize(repositoryCount, 'repository', 'repositories')}. See https://github.com/${owner}/${repo}/actions/runs/${response.workflow_run_id}.`;
+  let logMessage = `Successfully scheduled runs on ${pluralize(
+    repositoryCount,
+    'repository',
+    'repositories'
+  )}. See https://github.com/${owner}/${repo}/actions/runs/${response.workflow_run_id}.`;
   logMessage += `${eol2}Repositories queried:${eol}${repositoriesQueried.join(', ')}`;
   if (response.errors) {
-    const { invalid_repositories, repositories_without_database, private_repositories, cutoff_repositories, cutoff_repositories_count } = response.errors;
+    const {
+      invalid_repositories,
+      repositories_without_database,
+      private_repositories,
+      cutoff_repositories,
+      cutoff_repositories_count,
+    } = response.errors;
     logMessage += `${eol2}Some repositories could not be scheduled.`;
     if (invalid_repositories?.length) {
-      logMessage += `${eol2}${pluralize(invalid_repositories.length, 'repository', 'repositories')} invalid and could not be found:${eol}${invalid_repositories.join(', ')}`;
+      logMessage += `${eol2}${pluralize(
+        invalid_repositories.length,
+        'repository',
+        'repositories'
+      )} invalid and could not be found:${eol}${invalid_repositories.join(', ')}`;
     }
     if (repositories_without_database?.length) {
-      logMessage += `${eol2}${pluralize(repositories_without_database.length, 'repository', 'repositories')} did not have a CodeQL database available:${eol}${repositories_without_database.join(', ')}`;
+      logMessage += `${eol2}${pluralize(
+        repositories_without_database.length,
+        'repository',
+        'repositories'
+      )} did not have a CodeQL database available:${eol}${repositories_without_database.join(
+        ', '
+      )}`;
       logMessage += `${eol}For each public repository that has not yet been added to the database service, we will try to create a database next time the store is updated.`;
     }
     if (private_repositories?.length) {
-      logMessage += `${eol2}${pluralize(private_repositories.length, 'repository', 'repositories')} not public:${eol}${private_repositories.join(', ')}`;
+      logMessage += `${eol2}${pluralize(
+        private_repositories.length,
+        'repository',
+        'repositories'
+      )} not public:${eol}${private_repositories.join(', ')}`;
       logMessage += `${eol}When using a public controller repository, only public repositories can be queried.`;
     }
     if (cutoff_repositories_count) {
-      logMessage += `${eol2}${pluralize(cutoff_repositories_count, 'repository', 'repositories')} over the limit for a single request`;
+      logMessage += `${eol2}${pluralize(
+        cutoff_repositories_count,
+        'repository',
+        'repositories'
+      )} over the limit for a single request`;
       if (cutoff_repositories) {
         logMessage += `:${eol}${cutoff_repositories.join(', ')}`;
         if (cutoff_repositories_count !== cutoff_repositories.length) {
           const moreRepositories = cutoff_repositories_count - cutoff_repositories.length;
-          logMessage += `${eol}...${eol}And another ${pluralize(moreRepositories, 'repository', 'repositories')}.`;
+          logMessage += `${eol}...${eol}And another ${pluralize(
+            moreRepositories,
+            'repository',
+            'repositories'
+          )}.`;
         }
       } else {
         logMessage += '.';
@@ -394,7 +470,7 @@ export function parseResponse(owner: string, repo: string, response: QueriesResp
 
   return {
     popupMessage,
-    logMessage
+    logMessage,
   };
 }
 
@@ -414,11 +490,14 @@ async function ensureNameAndSuite(queryPackDir: string, packRelativePath: string
 
   qlpack.name = QUERY_PACK_NAME;
 
-  qlpack.defaultSuite = [{
-    description: 'Query suite for variant analysis'
-  }, {
-    query: packRelativePath.replace(/\\/g, '/')
-  }];
+  qlpack.defaultSuite = [
+    {
+      description: 'Query suite for variant analysis',
+    },
+    {
+      query: packRelativePath.replace(/\\/g, '/'),
+    },
+  ];
   await fs.writeFile(packPath, yaml.dump(qlpack));
 }
 

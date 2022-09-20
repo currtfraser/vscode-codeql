@@ -1,6 +1,12 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { CodeSnippet, FileLink, HighlightedRegion, AnalysisMessage, ResultSeverity } from '../../remote-queries/shared/analysis-result';
+import {
+  CodeSnippet,
+  FileLink,
+  HighlightedRegion,
+  AnalysisMessage,
+  ResultSeverity,
+} from '../../remote-queries/shared/analysis-result';
 import { createRemoteFileRef } from '../../pure/location-link-utils';
 import { parseHighlightedLine, shouldHighlightLine } from '../../pure/sarif-utils';
 import { VSCodeLink } from '@vscode/webview-ui-toolkit/react';
@@ -21,7 +27,8 @@ const getSeverityColor = (severity: ResultSeverity) => {
   }
 };
 
-const replaceSpaceAndTabChar = (text: string) => text.replaceAll(' ', '\u00a0').replaceAll('\t', '\u00a0\u00a0\u00a0\u00a0');
+const replaceSpaceAndTabChar = (text: string) =>
+  text.replaceAll(' ', '\u00a0').replaceAll('\t', '\u00a0\u00a0\u00a0\u00a0');
 
 const Container = styled.div`
   font-family: var(--vscode-editor-font-family);
@@ -66,57 +73,66 @@ const HighlightedCode = ({ text }: { text: string }) => {
 const Message = ({
   message,
   borderLeftColor,
-  children
+  children,
 }: {
-  message: AnalysisMessage,
-  borderLeftColor: string,
-  children: React.ReactNode
+  message: AnalysisMessage;
+  borderLeftColor: string;
+  children: React.ReactNode;
 }) => {
-  return <div style={{
-    borderColor: borderColor,
-    borderWidth: '0.1em',
-    borderStyle: 'solid',
-    borderLeftColor: borderLeftColor,
-    borderLeftWidth: '0.3em',
-    paddingTop: '1em',
-    paddingBottom: '1em'
-  }}>
-    <MessageText>
-      {message.tokens.map((token, index) => {
-        switch (token.t) {
-          case 'text':
-            return <span key={`token-${index}`}>{token.text}</span>;
-          case 'location':
-            return <VSCodeLink
-              style={{ fontFamily: 'var(--vscode-editor-font-family)' }}
-              key={`token-${index}`}
-              href={createRemoteFileRef(
-                token.location.fileLink,
-                token.location.highlightedRegion?.startLine,
-                token.location.highlightedRegion?.endLine)}>
-              {token.text}
-            </VSCodeLink>;
-          default:
-            return <></>;
-        }
-      })}
-      {children && <>
-        <VerticalSpace size={2} />
-        {children}
-      </>
-      }
-    </MessageText>
-  </div>;
+  return (
+    <div
+      style={{
+        borderColor: borderColor,
+        borderWidth: '0.1em',
+        borderStyle: 'solid',
+        borderLeftColor: borderLeftColor,
+        borderLeftWidth: '0.3em',
+        paddingTop: '1em',
+        paddingBottom: '1em',
+      }}
+    >
+      <MessageText>
+        {message.tokens.map((token, index) => {
+          switch (token.t) {
+            case 'text':
+              return <span key={`token-${index}`}>{token.text}</span>;
+            case 'location':
+              return (
+                <VSCodeLink
+                  style={{ fontFamily: 'var(--vscode-editor-font-family)' }}
+                  key={`token-${index}`}
+                  href={createRemoteFileRef(
+                    token.location.fileLink,
+                    token.location.highlightedRegion?.startLine,
+                    token.location.highlightedRegion?.endLine
+                  )}
+                >
+                  {token.text}
+                </VSCodeLink>
+              );
+            default:
+              return <></>;
+          }
+        })}
+        {children && (
+          <>
+            <VerticalSpace size={2} />
+            {children}
+          </>
+        )}
+      </MessageText>
+    </div>
+  );
 };
 
 const Code = ({
   line,
   lineNumber,
-  highlightedRegion
+  highlightedRegion,
 }: {
-  line: string,
-  lineNumber: number,
-  highlightedRegion?: HighlightedRegion
+  line: string;
+  lineNumber: number;
+  highlightedRegion?: HighlightedRegion;
 }) => {
   if (!highlightedRegion || !shouldHighlightLine(lineNumber, highlightedRegion)) {
     return <PlainCode text={line} />;
@@ -140,57 +156,63 @@ const Line = ({
   highlightedRegion,
   severity,
   message,
-  messageChildren
+  messageChildren,
 }: {
-  line: string,
-  lineIndex: number,
-  startingLineIndex: number,
-  highlightedRegion?: HighlightedRegion,
-  severity?: ResultSeverity,
-  message?: AnalysisMessage,
-  messageChildren?: React.ReactNode,
+  line: string;
+  lineIndex: number;
+  startingLineIndex: number;
+  highlightedRegion?: HighlightedRegion;
+  severity?: ResultSeverity;
+  message?: AnalysisMessage;
+  messageChildren?: React.ReactNode;
 }) => {
-  const shouldShowMessage = message &&
+  const shouldShowMessage =
+    message &&
     severity &&
     highlightedRegion &&
     highlightedRegion.endLine == startingLineIndex + lineIndex;
 
-  return <div>
-    <div style={{ display: 'flex' }} >
-      <div style={{
-        borderStyle: 'none',
-        paddingTop: '0.01em',
-        paddingLeft: '0.5em',
-        paddingRight: '0.5em',
-        paddingBottom: '0.2em'
-      }}>
-        {startingLineIndex + lineIndex}
+  return (
+    <div>
+      <div style={{ display: 'flex' }}>
+        <div
+          style={{
+            borderStyle: 'none',
+            paddingTop: '0.01em',
+            paddingLeft: '0.5em',
+            paddingRight: '0.5em',
+            paddingBottom: '0.2em',
+          }}
+        >
+          {startingLineIndex + lineIndex}
+        </div>
+        <div
+          style={{
+            flexGrow: 1,
+            borderStyle: 'none',
+            paddingTop: '0.01em',
+            paddingLeft: '1.5em',
+            paddingRight: '0.5em',
+            paddingBottom: '0.2em',
+            wordBreak: 'break-word',
+          }}
+        >
+          <Code
+            line={line}
+            lineNumber={startingLineIndex + lineIndex}
+            highlightedRegion={highlightedRegion}
+          />
+        </div>
       </div>
-      <div style={{
-        flexGrow: 1,
-        borderStyle: 'none',
-        paddingTop: '0.01em',
-        paddingLeft: '1.5em',
-        paddingRight: '0.5em',
-        paddingBottom: '0.2em',
-        wordBreak: 'break-word'
-      }}>
-        <Code
-          line={line}
-          lineNumber={startingLineIndex + lineIndex}
-          highlightedRegion={highlightedRegion} />
-      </div>
+      {shouldShowMessage && (
+        <MessageContainer>
+          <Message message={message} borderLeftColor={getSeverityColor(severity)}>
+            {messageChildren}
+          </Message>
+        </MessageContainer>
+      )}
     </div>
-    {shouldShowMessage &&
-      <MessageContainer>
-        <Message
-          message={message}
-          borderLeftColor={getSeverityColor(severity)}>
-          {messageChildren}
-        </Message>
-      </MessageContainer>
-    }
-  </div>;
+  );
 };
 
 const FileCodeSnippet = ({
@@ -201,21 +223,21 @@ const FileCodeSnippet = ({
   message,
   messageChildren,
 }: {
-  fileLink: FileLink,
-  codeSnippet?: CodeSnippet,
-  highlightedRegion?: HighlightedRegion,
-  severity?: ResultSeverity,
-  message?: AnalysisMessage,
-  messageChildren?: React.ReactNode,
+  fileLink: FileLink;
+  codeSnippet?: CodeSnippet;
+  highlightedRegion?: HighlightedRegion;
+  severity?: ResultSeverity;
+  message?: AnalysisMessage;
+  messageChildren?: React.ReactNode;
 }) => {
-
   const startingLine = codeSnippet?.startLine || 0;
   const endingLine = codeSnippet?.endLine || 0;
 
   const titleFileUri = createRemoteFileRef(
     fileLink,
     highlightedRegion?.startLine || startingLine,
-    highlightedRegion?.endLine || endingLine);
+    highlightedRegion?.endLine || endingLine
+  );
 
   if (!codeSnippet) {
     return (
@@ -223,12 +245,11 @@ const FileCodeSnippet = ({
         <TitleContainer>
           <VSCodeLink href={titleFileUri}>{fileLink.filePath}</VSCodeLink>
         </TitleContainer>
-        {message && severity &&
-          <Message
-            message={message}
-            borderLeftColor={getSeverityColor(severity)}>
+        {message && severity && (
+          <Message message={message} borderLeftColor={getSeverityColor(severity)}>
             {messageChildren}
-          </Message>}
+          </Message>
+        )}
       </Container>
     );
   }

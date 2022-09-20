@@ -4,7 +4,15 @@ import { createRemoteFileRef } from '../pure/location-link-utils';
 import { parseHighlightedLine, shouldHighlightLine } from '../pure/sarif-utils';
 import { convertNonPrintableChars } from '../text-utils';
 import { RemoteQuery } from './remote-query';
-import { AnalysisAlert, AnalysisRawResults, AnalysisResults, CodeSnippet, FileLink, getAnalysisResultCount, HighlightedRegion } from './shared/analysis-result';
+import {
+  AnalysisAlert,
+  AnalysisRawResults,
+  AnalysisResults,
+  CodeSnippet,
+  FileLink,
+  getAnalysisResultCount,
+  HighlightedRegion,
+} from './shared/analysis-result';
 
 export type MarkdownLinkType = 'local' | 'gist';
 
@@ -37,12 +45,12 @@ export function generateMarkdown(
     summaryFile.content.push(`| ${nwo} | [${resultsCount} result(s)](${link}) |`);
 
     // Generate individual markdown file for each repository
-    const resultsFileContent = [
-      `### ${analysisResult.nwo}`,
-      ''
-    ];
+    const resultsFileContent = [`### ${analysisResult.nwo}`, ''];
     for (const interpretedResult of analysisResult.interpretedResults) {
-      const individualResult = generateMarkdownForInterpretedResult(interpretedResult, query.language);
+      const individualResult = generateMarkdownForInterpretedResult(
+        interpretedResult,
+        query.language
+      );
       resultsFileContent.push(...individualResult);
     }
     if (analysisResult.rawResults) {
@@ -60,55 +68,41 @@ export function generateMarkdown(
 export function generateMarkdownSummary(query: RemoteQuery): MarkdownFile {
   const lines: string[] = [];
   // Title
-  lines.push(
-    `### Results for "${query.queryName}"`,
-    ''
-  );
+  lines.push(`### Results for "${query.queryName}"`, '');
 
   // Expandable section containing query text
-  const queryCodeBlock = [
-    '```ql',
-    ...query.queryText.split('\n'),
-    '```',
-  ];
-  lines.push(
-    ...buildExpandableMarkdownSection('Query', queryCodeBlock)
-  );
+  const queryCodeBlock = ['```ql', ...query.queryText.split('\n'), '```'];
+  lines.push(...buildExpandableMarkdownSection('Query', queryCodeBlock));
 
   // Padding between sections
-  lines.push(
-    '<br />',
-    '',
-  );
+  lines.push('<br />', '');
 
   // Summary table
-  lines.push(
-    '### Summary',
-    '',
-    '| Repository | Results |',
-    '| --- | --- |',
-  );
+  lines.push('### Summary', '', '| Repository | Results |', '| --- | --- |');
   // nwo and result count will be appended to this table
   return {
     fileName: '_summary',
-    content: lines
+    content: lines,
   };
 }
 
-function generateMarkdownForInterpretedResult(interpretedResult: AnalysisAlert, language: string): string[] {
+function generateMarkdownForInterpretedResult(
+  interpretedResult: AnalysisAlert,
+  language: string
+): string[] {
   const lines: string[] = [];
-  lines.push(createMarkdownRemoteFileRef(
-    interpretedResult.fileLink,
-    interpretedResult.highlightedRegion?.startLine,
-    interpretedResult.highlightedRegion?.endLine
-  ));
+  lines.push(
+    createMarkdownRemoteFileRef(
+      interpretedResult.fileLink,
+      interpretedResult.highlightedRegion?.startLine,
+      interpretedResult.highlightedRegion?.endLine
+    )
+  );
   lines.push('');
   const codeSnippet = interpretedResult.codeSnippet;
   const highlightedRegion = interpretedResult.highlightedRegion;
   if (codeSnippet) {
-    lines.push(
-      ...generateMarkdownForCodeSnippet(codeSnippet, language, highlightedRegion),
-    );
+    lines.push(...generateMarkdownForCodeSnippet(codeSnippet, language, highlightedRegion));
   }
   const alertMessage = generateMarkdownForAlertMessage(interpretedResult);
   lines.push(alertMessage, '');
@@ -121,10 +115,7 @@ function generateMarkdownForInterpretedResult(interpretedResult: AnalysisAlert, 
   }
 
   // Padding between results
-  lines.push(
-    '----------------------------------------',
-    '',
-  );
+  lines.push('----------------------------------------', '');
   return lines;
 }
 
@@ -144,12 +135,11 @@ function generateMarkdownForCodeSnippet(
   // Make sure there are no extra newlines before or after the <code> block:
   const codeLinesWrapped = [...codeLines];
   codeLinesWrapped[0] = `<pre><code class="${language}">${codeLinesWrapped[0]}`;
-  codeLinesWrapped[codeLinesWrapped.length - 1] = `${codeLinesWrapped[codeLinesWrapped.length - 1]}</code></pre>`;
+  codeLinesWrapped[codeLinesWrapped.length - 1] = `${
+    codeLinesWrapped[codeLinesWrapped.length - 1]
+  }</code></pre>`;
 
-  lines.push(
-    ...codeLinesWrapped,
-    '',
-  );
+  lines.push(...codeLinesWrapped, '');
   return lines;
 }
 
@@ -161,11 +151,7 @@ function highlightAndEscapeCodeLines(
   if (!highlightedRegion || !shouldHighlightLine(lineNumber, highlightedRegion)) {
     return escapeHtmlCharacters(line);
   }
-  const partiallyHighlightedLine = parseHighlightedLine(
-    line,
-    lineNumber,
-    highlightedRegion
-  );
+  const partiallyHighlightedLine = parseHighlightedLine(line, lineNumber, highlightedRegion);
 
   const plainSection1 = escapeHtmlCharacters(partiallyHighlightedLine.plainSection1);
   const highlightedSection = escapeHtmlCharacters(partiallyHighlightedLine.highlightedSection);
@@ -174,9 +160,7 @@ function highlightAndEscapeCodeLines(
   return `${plainSection1}<strong>${highlightedSection}</strong>${plainSection2}`;
 }
 
-function generateMarkdownForAlertMessage(
-  interpretedResult: AnalysisAlert
-): string {
+function generateMarkdownForAlertMessage(interpretedResult: AnalysisAlert): string {
   let alertMessage = '';
   for (const token of interpretedResult.message.tokens) {
     if (token.t === 'text') {
@@ -220,22 +204,16 @@ function generateMarkdownForPathResults(
       const codeSnippetIndented = codeSnippet.map((line) => `    ${line}`);
       pathLines.push(`${i + 1}. ${link}`, ...codeSnippetIndented);
     }
-    lines.push(
-      ...buildExpandableMarkdownSection(title, pathLines)
-    );
+    lines.push(...buildExpandableMarkdownSection(title, pathLines));
   }
   return lines;
 }
 
-function generateMarkdownForRawResults(
-  analysisRawResults: AnalysisRawResults
-): string[] {
+function generateMarkdownForRawResults(analysisRawResults: AnalysisRawResults): string[] {
   const tableRows: string[] = [];
   const columnCount = analysisRawResults.schema.columns.length;
   // Table headers are the column names if they exist, and empty otherwise
-  const headers = analysisRawResults.schema.columns.map(
-    (column) => column.name || ''
-  );
+  const headers = analysisRawResults.schema.columns.map((column) => column.name || '');
   const tableHeader = `| ${headers.join(' | ')} |`;
 
   tableRows.push(tableHeader);
@@ -243,7 +221,11 @@ function generateMarkdownForRawResults(
 
   for (const row of analysisRawResults.resultSet.rows) {
     const cells = row.map((cell) =>
-      generateMarkdownForRawTableCell(cell, analysisRawResults.fileLinkPrefix, analysisRawResults.sourceLocationPrefix)
+      generateMarkdownForRawTableCell(
+        cell,
+        analysisRawResults.fileLinkPrefix,
+        analysisRawResults.sourceLocationPrefix
+      )
     );
     tableRows.push(`| ${cells.join(' | ')} |`);
   }
@@ -277,7 +259,6 @@ function generateMarkdownForRawTableCell(
   return cellValue.replaceAll('|', '\\|');
 }
 
-
 /**
  * Creates a markdown link to a remote file.
  * If the "link text" is not provided, we use the file path.
@@ -286,19 +267,23 @@ export function createMarkdownRemoteFileRef(
   fileLink: FileLink,
   startLine?: number,
   endLine?: number,
-  linkText?: string,
+  linkText?: string
 ): string {
-  const markdownLink = `[${linkText || fileLink.filePath}](${createRemoteFileRef(fileLink, startLine, endLine)})`;
+  const markdownLink = `[${linkText || fileLink.filePath}](${createRemoteFileRef(
+    fileLink,
+    startLine,
+    endLine
+  )})`;
   return markdownLink;
 }
 
 /**
  * Builds an expandable markdown section of the form:
- * <details> 
+ * <details>
  * <summary>title</summary>
- * 
+ *
  * contents
- * 
+ *
  * </details>
  */
 function buildExpandableMarkdownSection(title: string, contents: string[]): string[] {

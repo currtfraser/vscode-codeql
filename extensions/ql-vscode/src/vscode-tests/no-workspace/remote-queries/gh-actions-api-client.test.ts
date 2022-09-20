@@ -2,7 +2,10 @@ import { fail } from 'assert';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Credentials } from '../../../authentication';
-import { cancelRemoteQuery, getRepositoriesMetadata } from '../../../remote-queries/gh-actions-api-client';
+import {
+  cancelRemoteQuery,
+  getRepositoriesMetadata,
+} from '../../../remote-queries/gh-actions-api-client';
 import { RemoteQuery } from '../../../remote-queries/remote-query';
 
 describe('gh-actions-api-client mock responses', () => {
@@ -12,11 +15,12 @@ describe('gh-actions-api-client mock responses', () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-    mockCredentials = {
-      getOctokit: () => Promise.resolve({
-        request: mockResponse
-      })
-    } as unknown as Credentials;
+    mockCredentials = ({
+      getOctokit: () =>
+        Promise.resolve({
+          request: mockResponse,
+        }),
+    } as unknown) as Credentials;
   });
 
   afterEach(() => {
@@ -29,30 +33,36 @@ describe('gh-actions-api-client mock responses', () => {
       await cancelRemoteQuery(mockCredentials, createMockRemoteQuery());
 
       expect(mockResponse.calledOnce).to.be.true;
-      expect(mockResponse.firstCall.args[0]).to.equal('POST /repos/github/codeql/actions/runs/123/cancel');
+      expect(mockResponse.firstCall.args[0]).to.equal(
+        'POST /repos/github/codeql/actions/runs/123/cancel'
+      );
     });
 
     it('should fail to cancel a remote query', async () => {
       mockResponse = sinon.stub().resolves({ status: 409, data: { message: 'Uh oh!' } });
 
-      await expect(cancelRemoteQuery(mockCredentials, createMockRemoteQuery())).to.be.rejectedWith(/Error cancelling variant analysis: 409 Uh oh!/);
+      await expect(cancelRemoteQuery(mockCredentials, createMockRemoteQuery())).to.be.rejectedWith(
+        /Error cancelling variant analysis: 409 Uh oh!/
+      );
       expect(mockResponse.calledOnce).to.be.true;
-      expect(mockResponse.firstCall.args[0]).to.equal('POST /repos/github/codeql/actions/runs/123/cancel');
+      expect(mockResponse.firstCall.args[0]).to.equal(
+        'POST /repos/github/codeql/actions/runs/123/cancel'
+      );
     });
 
     function createMockRemoteQuery(): RemoteQuery {
-      return {
+      return ({
         actionsWorkflowRunId: 123,
         controllerRepository: {
           owner: 'github',
-          name: 'codeql'
-        }
-      } as unknown as RemoteQuery;
+          name: 'codeql',
+        },
+      } as unknown) as RemoteQuery;
     }
   });
 });
 
-describe('gh-actions-api-client real responses', function() {
+describe('gh-actions-api-client real responses', function () {
   this.timeout(10000);
 
   it('should get the stargazers for repos', async () => {
@@ -60,16 +70,21 @@ describe('gh-actions-api-client real responses', function() {
       return;
     }
 
-    const credentials = await Credentials.initializeWithToken(process.env.VSCODE_CODEQL_GITHUB_TOKEN!);
-    const stargazers = await getRepositoriesMetadata(credentials, [
-      'github/codeql',
-      'github/vscode-codeql',
-      'rails/rails',
-      'angular/angular',
-      'github/hucairz' // This one should not be in the list
-    ],
+    const credentials = await Credentials.initializeWithToken(
+      process.env.VSCODE_CODEQL_GITHUB_TOKEN!
+    );
+    const stargazers = await getRepositoriesMetadata(
+      credentials,
+      [
+        'github/codeql',
+        'github/vscode-codeql',
+        'rails/rails',
+        'angular/angular',
+        'github/hucairz', // This one should not be in the list
+      ],
       // choose a page size that is small enough to ensure we make multiple requests
-      2);
+      2
+    );
 
     const stargazersKeys = Object.keys(stargazers).sort();
     expect(stargazersKeys).to.deep.eq([
@@ -85,7 +100,9 @@ describe('gh-actions-api-client real responses', function() {
       if (process.env.CI) {
         fail('The VSCODE_CODEQL_GITHUB_TOKEN must be set to a valid GITHUB token on CI');
       } else {
-        console.log('Skipping gh-actions-api-client real responses tests. To run these tests, set the value VSCODE_CODEQL_GITHUB_TOKEN to a GitHub token.');
+        console.log(
+          'Skipping gh-actions-api-client real responses tests. To run these tests, set the value VSCODE_CODEQL_GITHUB_TOKEN to a GitHub token.'
+        );
       }
       return true;
     }

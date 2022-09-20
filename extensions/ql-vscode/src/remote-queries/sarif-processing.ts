@@ -9,7 +9,7 @@ import {
   ResultSeverity,
   ThreadFlow,
   CodeSnippet,
-  HighlightedRegion
+  HighlightedRegion,
 } from './shared/analysis-result';
 
 const defaultSeverity = 'Warning';
@@ -18,8 +18,8 @@ export function extractAnalysisAlerts(
   sarifLog: sarif.Log,
   fileLinkPrefix: string
 ): {
-  alerts: AnalysisAlert[],
-  errors: string[]
+  alerts: AnalysisAlert[];
+  errors: string[];
 } {
   const alerts: AnalysisAlert[] = [];
   const errors: string[] = [];
@@ -69,7 +69,7 @@ function extractResultAlerts(
       severity,
       codeSnippet,
       highlightedRegion,
-      codeFlows: codeFlows
+      codeFlows: codeFlows,
     };
 
     alerts.push(analysisAlert);
@@ -80,13 +80,13 @@ function extractResultAlerts(
 
 function getShortDescription(
   rule: sarif.ReportingDescriptor | undefined,
-  message: AnalysisMessage,
+  message: AnalysisMessage
 ): string {
   if (rule?.shortDescription?.text) {
     return rule.shortDescription.text;
   }
 
-  return message.tokens.map(token => token.text).join('');
+  return message.tokens.map((token) => token.text).join('');
 }
 
 export function tryGetSeverity(
@@ -134,7 +134,7 @@ export function tryGetRule(
 
   const ruleId = resultRule.id;
   if (ruleId) {
-    const rule = sarifRun.tool.driver.rules?.find(r => r.id === ruleId);
+    const rule = sarifRun.tool.driver.rules?.find((r) => r.id === ruleId);
     if (rule) {
       return rule;
     }
@@ -156,7 +156,10 @@ export function tryGetRule(
   return undefined;
 }
 
-function getCodeSnippet(region?: sarif.Region, alternateRegion?: sarif.Region): CodeSnippet | undefined {
+function getCodeSnippet(
+  region?: sarif.Region,
+  alternateRegion?: sarif.Region
+): CodeSnippet | undefined {
   region = region ?? alternateRegion;
 
   if (!region) {
@@ -169,7 +172,7 @@ function getCodeSnippet(region?: sarif.Region, alternateRegion?: sarif.Region): 
   return {
     startLine,
     endLine,
-    text
+    text,
   };
 }
 
@@ -183,14 +186,11 @@ function getHighlightedRegion(region: sarif.Region): HighlightedRegion {
 
     // parseSarifRegion currently shifts the end column by 1 to account
     // for the way vscode counts columns so we need to shift it back.
-    endColumn: endColumn + 1
+    endColumn: endColumn + 1,
   };
 }
 
-function getCodeFlows(
-  result: sarif.Result,
-  fileLinkPrefix: string
-): CodeFlow[] {
+function getCodeFlows(result: sarif.Result, fileLinkPrefix: string): CodeFlow[] {
   const codeFlows = [];
 
   if (result.codeFlows) {
@@ -201,7 +201,10 @@ function getCodeFlows(
         for (const threadFlowLocation of threadFlow.locations) {
           const physicalLocation = threadFlowLocation!.location!.physicalLocation!;
           const filePath = physicalLocation!.artifactLocation!.uri!;
-          const codeSnippet = getCodeSnippet(physicalLocation.contextRegion, physicalLocation.region);
+          const codeSnippet = getCodeSnippet(
+            physicalLocation.contextRegion,
+            physicalLocation.region
+          );
           const highlightedRegion = physicalLocation.region
             ? getHighlightedRegion(physicalLocation.region)
             : undefined;
@@ -212,7 +215,7 @@ function getCodeFlows(
               filePath,
             },
             codeSnippet,
-            highlightedRegion
+            highlightedRegion,
           } as ThreadFlow);
         }
       }
@@ -234,7 +237,7 @@ function getMessage(result: sarif.Result, fileLinkPrefix: string): AnalysisMessa
     if (typeof messagePart === 'string') {
       tokens.push({ t: 'text', text: messagePart });
     } else {
-      const relatedLocation = result.relatedLocations!.find(rl => rl.id === messagePart.dest);
+      const relatedLocation = result.relatedLocations!.find((rl) => rl.id === messagePart.dest);
       tokens.push({
         t: 'location',
         text: messagePart.text,
@@ -244,7 +247,7 @@ function getMessage(result: sarif.Result, fileLinkPrefix: string): AnalysisMessa
             filePath: relatedLocation!.physicalLocation!.artifactLocation!.uri!,
           },
           highlightedRegion: getHighlightedRegion(relatedLocation!.physicalLocation!.region!),
-        }
+        },
       });
     }
   }

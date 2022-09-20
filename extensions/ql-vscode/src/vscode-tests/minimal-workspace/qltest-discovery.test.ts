@@ -21,21 +21,20 @@ describe('qltest-discovery', () => {
     beforeEach(() => {
       sandbox = sinon.createSandbox();
       qlTestDiscover = new QLTestDiscovery(
-        {
+        ({
           uri: baseUri,
-          name: 'My tests'
-        } as unknown as WorkspaceFolder,
+          name: 'My tests',
+        } as unknown) as WorkspaceFolder,
         {
           resolveTests() {
             return [
               Uri.parse('file:/a/b/c/d.ql').fsPath,
               Uri.parse('file:/a/b/c/e.ql').fsPath,
-              Uri.parse('file:/a/b/c/f/g/h/i.ql').fsPath
+              Uri.parse('file:/a/b/c/f/g/h/i.ql').fsPath,
             ];
-          }
+          },
         } as any
       );
-
     });
 
     afterEach(() => {

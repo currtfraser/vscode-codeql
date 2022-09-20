@@ -11,7 +11,7 @@ import {
   TextEditorSelectionChangeKind,
   Location,
   Range,
-  Uri
+  Uri,
 } from 'vscode';
 import * as path from 'path';
 
@@ -37,22 +37,18 @@ export interface ChildAstItem extends AstItem {
 }
 
 class AstViewerDataProvider extends DisposableObject implements TreeDataProvider<AstItem> {
-
   public roots: AstItem[] = [];
   public db: DatabaseItem | undefined;
 
-  private _onDidChangeTreeData =
-    this.push(new EventEmitter<AstItem | undefined>());
-  readonly onDidChangeTreeData: Event<AstItem | undefined> =
-    this._onDidChangeTreeData.event;
+  private _onDidChangeTreeData = this.push(new EventEmitter<AstItem | undefined>());
+  readonly onDidChangeTreeData: Event<AstItem | undefined> = this._onDidChangeTreeData.event;
 
   constructor() {
     super();
     this.push(
-      commandRunner('codeQLAstViewer.gotoCode',
-        async (item: AstItem) => {
-          await showLocation(item.fileLocation);
-        })
+      commandRunner('codeQLAstViewer.gotoCode', async (item: AstItem) => {
+        await showLocation(item.fileLocation);
+      })
     );
   }
 
@@ -61,7 +57,7 @@ class AstViewerDataProvider extends DisposableObject implements TreeDataProvider
   }
   getChildren(item?: AstItem): ProviderResult<AstItem[]> {
     const children = item ? item.children : this.roots;
-    return children.sort((c1, c2) => (c1.order - c2.order));
+    return children.sort((c1, c2) => c1.order - c2.order);
   }
 
   getParent(item: ChildAstItem): ProviderResult<AstItem> {
@@ -82,7 +78,7 @@ class AstViewerDataProvider extends DisposableObject implements TreeDataProvider
       command: 'codeQLAstViewer.gotoCode',
       title: 'Go To Code',
       tooltip: `Go To ${item.location}`,
-      arguments: [item]
+      arguments: [item],
     };
     return treeItem;
   }
@@ -113,7 +109,7 @@ export class AstViewer extends DisposableObject {
     this.treeDataProvider = new AstViewerDataProvider();
     this.treeView = window.createTreeView('codeQLAstViewer', {
       treeDataProvider: this.treeDataProvider,
-      showCollapseAll: true
+      showCollapseAll: true,
     });
 
     this.push(this.treeView);
@@ -135,8 +131,10 @@ export class AstViewer extends DisposableObject {
     // Handle error on reveal. This could happen if
     // the tree view is disposed during the reveal.
     this.treeView.reveal(roots[0], { focus: false })?.then(
-      () => { /**/ },
-      err => showAndLogErrorMessage(err)
+      () => {
+        /**/
+      },
+      (err) => showAndLogErrorMessage(err)
     );
   }
 
@@ -188,8 +186,10 @@ export class AstViewer extends DisposableObject {
         // Handle error on reveal. This could happen if
         // the tree view is disposed during the reveal.
         this.treeView.reveal(targetItem)?.then(
-          () => { /**/ },
-          err => showAndLogErrorMessage(err)
+          () => {
+            /**/
+          },
+          (err) => showAndLogErrorMessage(err)
         );
       }
     }

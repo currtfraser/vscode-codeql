@@ -10,4 +10,3 @@ export default {
 } as ComponentMeta<typeof DownloadSpinnerComponent>;
 
 export const DownloadSpinner = <DownloadSpinnerComponent />;
-

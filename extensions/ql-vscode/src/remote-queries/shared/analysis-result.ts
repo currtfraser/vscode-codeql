@@ -7,9 +7,9 @@ export interface AnalysisResults {
   status: AnalysisResultStatus;
   interpretedResults: AnalysisAlert[];
   rawResults?: AnalysisRawResults;
-  resultCount: number,
-  starCount?: number,
-  lastUpdated?: number,
+  resultCount: number;
+  starCount?: number;
+  lastUpdated?: number;
 }
 
 export interface AnalysisRawResults {
@@ -60,12 +60,10 @@ export interface ThreadFlow {
 }
 
 export interface AnalysisMessage {
-  tokens: AnalysisMessageToken[]
+  tokens: AnalysisMessageToken[];
 }
 
-export type AnalysisMessageToken =
-  | AnalysisMessageTextToken
-  | AnalysisMessageLocationToken;
+export type AnalysisMessageToken = AnalysisMessageTextToken | AnalysisMessageLocationToken;
 
 export interface AnalysisMessageTextToken {
   t: 'text';

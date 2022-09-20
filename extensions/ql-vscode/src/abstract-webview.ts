@@ -5,7 +5,7 @@ import {
   ViewColumn,
   Uri,
   WebviewPanelOptions,
-  WebviewOptions
+  WebviewOptions,
 } from 'vscode';
 import * as path from 'path';
 
@@ -20,16 +20,17 @@ export type WebviewPanelConfig = {
   view: WebviewView;
   preserveFocus?: boolean;
   additionalOptions?: WebviewPanelOptions & WebviewOptions;
-}
+};
 
-export abstract class AbstractWebview<ToMessage extends WebviewMessage, FromMessage extends WebviewMessage> extends DisposableObject {
+export abstract class AbstractWebview<
+  ToMessage extends WebviewMessage,
+  FromMessage extends WebviewMessage
+> extends DisposableObject {
   protected panel: WebviewPanel | undefined;
   protected panelLoaded = false;
   protected panelLoadedCallBacks: (() => void)[] = [];
 
-  constructor(
-    protected readonly ctx: ExtensionContext
-  ) {
+  constructor(protected readonly ctx: ExtensionContext) {
     super();
   }
 
@@ -55,7 +56,7 @@ export abstract class AbstractWebview<ToMessage extends WebviewMessage, FromMess
           localResourceRoots: [
             ...(config.additionalOptions?.localResourceRoots ?? []),
             Uri.file(tmpDir.name),
-            Uri.file(path.join(ctx.extensionPath, 'out'))
+            Uri.file(path.join(ctx.extensionPath, 'out')),
           ],
         }
       );
@@ -71,14 +72,9 @@ export abstract class AbstractWebview<ToMessage extends WebviewMessage, FromMess
         )
       );
 
-      this.panel.webview.html = getHtmlForWebview(
-        ctx,
-        this.panel.webview,
-        config.view,
-        {
-          allowInlineStyles: true,
-        }
-      );
+      this.panel.webview.html = getHtmlForWebview(ctx, this.panel.webview, config.view, {
+        allowInlineStyles: true,
+      });
       this.push(
         this.panel.webview.onDidReceiveMessage(
           async (e) => this.onMessage(e),

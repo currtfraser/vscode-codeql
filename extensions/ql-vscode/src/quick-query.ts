@@ -1,13 +1,7 @@
 import * as fs from 'fs-extra';
 import * as yaml from 'js-yaml';
 import * as path from 'path';
-import {
-  CancellationToken,
-  ExtensionContext,
-  window as Window,
-  workspace,
-  Uri
-} from 'vscode';
+import { CancellationToken, ExtensionContext, window as Window, workspace, Uri } from 'vscode';
 import { ErrorCodes, ResponseError } from 'vscode-languageclient';
 import { CodeQLCliServer } from './cli';
 import { DatabaseUI } from './databases-ui';
@@ -17,10 +11,7 @@ import {
   getQlPackForDbscheme,
   showBinaryChoiceDialog,
 } from './helpers';
-import {
-  ProgressCallback,
-  UserCancellationException
-} from './commandRunner';
+import { ProgressCallback, UserCancellationException } from './commandRunner';
 import { getErrorMessage } from './pure/helpers-pure';
 
 const QUICK_QUERIES_DIR_NAME = 'quick-queries';
@@ -43,16 +34,15 @@ async function getQuickQueriesDir(ctx: ExtensionContext): Promise<string> {
 }
 
 function updateQuickQueryDir(queriesDir: string, index: number, len: number) {
-  workspace.updateWorkspaceFolders(
-    index,
-    len,
-    { uri: Uri.file(queriesDir), name: QUICK_QUERY_WORKSPACE_FOLDER_NAME }
-  );
+  workspace.updateWorkspaceFolders(index, len, {
+    uri: Uri.file(queriesDir),
+    name: QUICK_QUERY_WORKSPACE_FOLDER_NAME,
+  });
 }
 
 function findExistingQuickQueryEditor() {
-  return Window.visibleTextEditors.find(editor =>
-    path.basename(editor.document.uri.fsPath) === QUICK_QUERY_QUERY_NAME
+  return Window.visibleTextEditors.find(
+    (editor) => path.basename(editor.document.uri.fsPath) === QUICK_QUERY_QUERY_NAME
   );
 }
 
@@ -66,7 +56,6 @@ export async function displayQuickQuery(
   progress: ProgressCallback,
   token: CancellationToken
 ) {
-
   try {
     // If there is already a quick query open, don't clobber it, just
     // show it.
@@ -89,14 +78,18 @@ export async function displayQuickQuery(
     // being undefined) just let the user know that they're in for a
     // restart.
     if (workspace.workspaceFile === undefined) {
-      const makeMultiRoot = await showBinaryChoiceDialog('Quick query requires multiple folders in the workspace. Reload workspace as multi-folder workspace?');
+      const makeMultiRoot = await showBinaryChoiceDialog(
+        'Quick query requires multiple folders in the workspace. Reload workspace as multi-folder workspace?'
+      );
       if (makeMultiRoot) {
         updateQuickQueryDir(queriesDir, workspaceFolders.length, 0);
       }
       return;
     }
 
-    const index = workspaceFolders.findIndex(folder => folder.name === QUICK_QUERY_WORKSPACE_FOLDER_NAME);
+    const index = workspaceFolders.findIndex(
+      (folder) => folder.name === QUICK_QUERY_WORKSPACE_FOLDER_NAME
+    );
     if (index === -1) {
       updateQuickQueryDir(queriesDir, workspaceFolders.length, 0);
     } else {
@@ -106,7 +99,7 @@ export async function displayQuickQuery(
     // We're going to infer which qlpack to use from the current database
     const dbItem = await databaseUI.getDatabaseItem(progress, token);
     if (dbItem === undefined) {
-      throw new Error('Can\'t start quick query without a selected database');
+      throw new Error("Can't start quick query without a selected database");
     }
 
     const datasetFolder = await dbItem.getDatasetFolder(cliServer);
@@ -122,8 +115,8 @@ export async function displayQuickQuery(
         name: 'vscode/quick-query',
         version: '1.0.0',
         dependencies: {
-          [qlpack]: '*'
-        }
+          [qlpack]: '*',
+        },
       };
       await fs.writeFile(qlPackFile, QLPACK_FILE_HEADER + yaml.dump(quickQueryQlpackYaml), 'utf8');
     }

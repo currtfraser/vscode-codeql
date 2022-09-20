@@ -74,7 +74,7 @@ describe('AstViewer', () => {
     const spy = sandbox.spy();
     (viewer as any).treeView.reveal = spy;
     Object.defineProperty((viewer as any).treeView, 'visible', {
-      value: true
+      value: true,
     });
 
     const mockEvent = createMockEvent(selectionRange, fileUri);
@@ -86,22 +86,21 @@ describe('AstViewer', () => {
     }
   }
 
-  function createMockEvent(
-    selectionRange: Range | undefined,
-    uri: Uri,
-  ) {
+  function createMockEvent(selectionRange: Range | undefined, uri: Uri) {
     return {
-      selections: [{
-        anchor: selectionRange?.start,
-        active: selectionRange?.end
-      }],
+      selections: [
+        {
+          anchor: selectionRange?.start,
+          active: selectionRange?.end,
+        },
+      ],
       textEditor: {
         document: {
           uri: {
-            fsPath: uri.fsPath
-          }
-        }
-      }
+            fsPath: uri.fsPath,
+          },
+        },
+      },
     };
   }
 
@@ -113,7 +112,6 @@ describe('AstViewer', () => {
           return candidate;
         }
       }
-
     } else if (typeof ast === 'object' && ast) {
       if (ast.id === id) {
         return ast;
@@ -131,22 +129,26 @@ describe('AstViewer', () => {
   }
 
   async function buildAst() {
-    const astRoots = yaml.load(await fs.readFile(`${__dirname}/data/astViewer.yml`, 'utf8')) as AstItem[];
+    const astRoots = yaml.load(
+      await fs.readFile(`${__dirname}/data/astViewer.yml`, 'utf8')
+    ) as AstItem[];
 
     // convert range properties into vscode.Range instances
     function convertToRangeInstances(obj: any) {
       if (Array.isArray(obj)) {
-        obj.forEach(elt => convertToRangeInstances(elt));
+        obj.forEach((elt) => convertToRangeInstances(elt));
       } else if (typeof obj === 'object' && obj) {
         if ('range' in obj && '_start' in obj.range && '_end' in obj.range) {
           obj.range = new Range(
             obj.range._start._line,
             obj.range._start._character,
             obj.range._end._line,
-            obj.range._end._character,
+            obj.range._end._character
           );
         } else {
-          Object.entries(obj).forEach(([name, prop]) => name !== 'parent' && convertToRangeInstances(prop));
+          Object.entries(obj).forEach(
+            ([name, prop]) => name !== 'parent' && convertToRangeInstances(prop)
+          );
         }
       }
     }

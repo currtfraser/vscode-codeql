@@ -2,7 +2,7 @@ import {
   UrlValue,
   ResolvableLocationValue,
   LineColumnLocation,
-  WholeFileLocation
+  WholeFileLocation,
 } from './bqrs-cli-types';
 import { createRemoteFileRef } from './location-link-utils';
 
@@ -36,9 +36,7 @@ export function tryGetResolvableLocation(
   return resolvedLoc;
 }
 
-export function tryGetLocationFromString(
-  loc: string
-): ResolvableLocationValue | undefined {
+export function tryGetLocationFromString(loc: string): ResolvableLocationValue | undefined {
   const matches = FILE_LOCATION_REGEX.exec(loc);
   if (matches && matches.length > 1 && matches[1]) {
     if (isWholeFileMatch(matches)) {
@@ -60,12 +58,7 @@ export function tryGetLocationFromString(
 }
 
 function isWholeFileMatch(matches: RegExpExecArray): boolean {
-  return (
-    matches[2] === '0' &&
-    matches[3] === '0' &&
-    matches[4] === '0' &&
-    matches[5] === '0'
-  );
+  return matches[2] === '0' && matches[3] === '0' && matches[4] === '0' && matches[5] === '0';
 }
 
 /**
@@ -79,12 +72,14 @@ export function isEmptyPath(uriStr: string) {
 }
 
 export function isLineColumnLoc(loc: UrlValue): loc is LineColumnLocation {
-  return typeof loc !== 'string'
-    && !isEmptyPath(loc.uri)
-    && 'startLine' in loc
-    && 'startColumn' in loc
-    && 'endLine' in loc
-    && 'endColumn' in loc;
+  return (
+    typeof loc !== 'string' &&
+    !isEmptyPath(loc.uri) &&
+    'startLine' in loc &&
+    'startColumn' in loc &&
+    'endLine' in loc &&
+    'endColumn' in loc
+  );
 }
 
 export function isWholeFileLoc(loc: UrlValue): loc is WholeFileLocation {
@@ -98,7 +93,7 @@ export function isStringLoc(loc: UrlValue): loc is string {
 export function tryGetRemoteLocation(
   loc: UrlValue | undefined,
   fileLinkPrefix: string,
-  sourceLocationPrefix: string | undefined,
+  sourceLocationPrefix: string | undefined
 ): string | undefined {
   const resolvableLocation = tryGetResolvableLocation(loc);
   if (!resolvableLocation) {
@@ -131,8 +126,5 @@ export function tryGetRemoteLocation(
     fileLinkPrefix,
     filePath: trimmedLocation,
   };
-  return createRemoteFileRef(
-    fileLink,
-    resolvableLocation.startLine,
-    resolvableLocation.endLine);
+  return createRemoteFileRef(fileLink, resolvableLocation.startLine, resolvableLocation.endLine);
 }

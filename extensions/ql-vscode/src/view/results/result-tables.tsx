@@ -23,10 +23,9 @@ import {
   tableHeaderItemClassName,
   toggleDiagnosticsClassName,
   alertExtrasClassName,
-  openFile
+  openFile,
 } from './result-table-utils';
 import { vscode } from '../vscode-api';
-
 
 const FILE_PATH_REGEX = /^(?:.+[\\/])*(.+)$/;
 
@@ -70,18 +69,18 @@ function getResultCount(resultSet: ResultSet): number {
 
 function renderResultCountString(resultSet: ResultSet): JSX.Element {
   const resultCount = getResultCount(resultSet);
-  return <span className={tableHeaderItemClassName}>
-    {resultCount} {resultCount === 1 ? 'result' : 'results'}
-  </span>;
+  return (
+    <span className={tableHeaderItemClassName}>
+      {resultCount} {resultCount === 1 ? 'result' : 'results'}
+    </span>
+  );
 }
 
 /**
  * Displays multiple `ResultTable` tables, where the table to be displayed is selected by a
  * dropdown.
  */
-export class ResultTables
-  extends React.Component<ResultTablesProps, ResultTablesState> {
-
+export class ResultTables extends React.Component<ResultTablesProps, ResultTablesState> {
   private getResultSets(): ResultSet[] {
     const resultSets: ResultSet[] =
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -99,7 +98,7 @@ export class ResultTables
         schema: {
           name: tableName,
           rows: 1,
-          columns: []
+          columns: [],
         },
         name: tableName,
         interpretation: this.props.interpretation,
@@ -109,7 +108,9 @@ export class ResultTables
   }
 
   private getInterpretedTableName(): string {
-    return this.props.interpretation?.data.t === 'GraphInterpretationData' ? GRAPH_TABLE_NAME : ALERTS_TABLE_NAME;
+    return this.props.interpretation?.data.t === 'GraphInterpretationData'
+      ? GRAPH_TABLE_NAME
+      : ALERTS_TABLE_NAME;
   }
 
   private getResultSetNames(): string[] {
@@ -120,18 +121,19 @@ export class ResultTables
 
   constructor(props: ResultTablesProps) {
     super(props);
-    const selectedTable = props.parsedResultSets.selectedTable || getDefaultResultSet(this.getResultSets());
-    const selectedPage = (props.parsedResultSets.pageNumber + 1) + '';
+    const selectedTable =
+      props.parsedResultSets.selectedTable || getDefaultResultSet(this.getResultSets());
+    const selectedPage = props.parsedResultSets.pageNumber + 1 + '';
     this.state = {
       selectedTable,
       selectedPage,
-      problemsViewSelected: false
+      problemsViewSelected: false,
     };
   }
 
   untoggleProblemsView() {
     this.setState({
-      problemsViewSelected: false
+      problemsViewSelected: false,
     });
   }
 
@@ -140,9 +142,9 @@ export class ResultTables
     vscode.postMessage({
       t: 'changePage',
       pageNumber: 0,
-      selectedTable
+      selectedTable,
     });
-  }
+  };
 
   private alertTableExtras(): JSX.Element | undefined {
     const { database, resultsPath, metadata, origResultsPaths } = this.props;
@@ -152,7 +154,7 @@ export class ResultTables
         return;
       }
       this.setState({
-        problemsViewSelected: e.target.checked
+        problemsViewSelected: e.target.checked,
       });
       if (resultsPath !== undefined) {
         vscode.postMessage({
@@ -160,7 +162,7 @@ export class ResultTables
           origResultsPaths: origResultsPaths,
           databaseUri: database.databaseUri,
           visible: e.target.checked,
-          metadata: metadata
+          metadata: metadata,
         });
       }
     };
@@ -195,8 +197,12 @@ export class ResultTables
     // on initial load of query results, resultSets.numPages will have the number of *raw* pages available,
     // not interpreted pages, because the extension doesn't know the view will default to showing alerts
     // instead.
-    const numPages = Math.max(selectedTable === ALERTS_TABLE_NAME ?
-      parsedResultSets.numInterpretedPages : parsedResultSets.numPages, 1);
+    const numPages = Math.max(
+      selectedTable === ALERTS_TABLE_NAME
+        ? parsedResultSets.numInterpretedPages
+        : parsedResultSets.numPages,
+      1
+    );
 
     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       this.setState({ selectedPage: e.target.value });
@@ -235,7 +241,7 @@ export class ResultTables
 
     return (
       <span className="vscode-codeql__table-selection-pagination">
-        <button onClick={prevPage} >&#xab;</button>
+        <button onClick={prevPage}>&#xab;</button>
         <input
           type="number"
           size={3}
@@ -243,26 +249,22 @@ export class ResultTables
           min="1"
           max={numPages}
           onChange={onChange}
-          onBlur={e => choosePage(e.target.value)}
-          onKeyDown={e => {
+          onBlur={(e) => choosePage(e.target.value)}
+          onKeyDown={(e) => {
             if (e.keyCode === 13) {
               choosePage((e.target as HTMLInputElement).value);
             }
           }}
         />
-        <span>
-          /&nbsp;{numPages}
-        </span>
-        <button value=">" onClick={nextPage} >&#xbb;</button>
+        <span>/&nbsp;{numPages}</span>
+        <button value=">" onClick={nextPage}>
+          &#xbb;
+        </button>
+        <div className={tableHeaderItemClassName}>{this.props.queryName}</div>
         <div className={tableHeaderItemClassName}>
-          {this.props.queryName}
-        </div>
-        <div className={tableHeaderItemClassName}>
-          <a
-            href="#"
-            onClick={openQuery}
-            className="vscode-codeql__result-table-location-link"
-          >Open {fileName}</a>
+          <a href="#" onClick={openQuery} className="vscode-codeql__result-table-location-link">
+            Open {fileName}
+          </a>
         </div>
       </span>
     );
@@ -273,39 +275,45 @@ export class ResultTables
     const resultSets = this.getResultSets();
     const resultSetNames = this.getResultSetNames();
 
-    const resultSet = resultSets.find(resultSet => resultSet.schema.name == selectedTable);
-    const nonemptyRawResults = resultSets.some(resultSet => resultSet.t == 'RawResultSet' && resultSet.rows.length > 0);
+    const resultSet = resultSets.find((resultSet) => resultSet.schema.name == selectedTable);
+    const nonemptyRawResults = resultSets.some(
+      (resultSet) => resultSet.t == 'RawResultSet' && resultSet.rows.length > 0
+    );
     const numberOfResults = resultSet && renderResultCountString(resultSet);
 
-    const resultSetOptions =
-      resultSetNames.map(name => <option key={name} value={name}>{name}</option>);
+    const resultSetOptions = resultSetNames.map((name) => (
+      <option key={name} value={name}>
+        {name}
+      </option>
+    ));
     return (
       <div>
         {this.renderPageButtons()}
-        <div className={tableHeaderClassName}>
-        </div>
+        <div className={tableHeaderClassName}></div>
         <div className={tableHeaderClassName}>
           <select value={selectedTable} onChange={this.onTableSelectionChange}>
             {resultSetOptions}
           </select>
           {numberOfResults}
           {selectedTable === ALERTS_TABLE_NAME ? this.alertTableExtras() : undefined}
-          {
-            this.props.isLoadingNewResults ?
-              <span className={UPDATING_RESULTS_TEXT_CLASS_NAME}>Updating results…</span>
-              : null
-          }
+          {this.props.isLoadingNewResults ? (
+            <span className={UPDATING_RESULTS_TEXT_CLASS_NAME}>Updating results…</span>
+          ) : null}
         </div>
-        {
-          resultSet &&
-          <ResultTable key={resultSet.schema.name} resultSet={resultSet}
+        {resultSet && (
+          <ResultTable
+            key={resultSet.schema.name}
+            resultSet={resultSet}
             databaseUri={this.props.database.databaseUri}
             resultsPath={this.props.resultsPath}
             sortState={this.props.sortStates.get(resultSet.schema.name)}
             nonemptyRawResults={nonemptyRawResults}
-            showRawResults={() => { this.setState({ selectedTable: SELECT_TABLE_NAME }); }}
-            offset={this.getOffset()} />
-        }
+            showRawResults={() => {
+              this.setState({ selectedTable: SELECT_TABLE_NAME });
+            }}
+            offset={this.getOffset()}
+          />
+        )}
       </div>
     );
   }
@@ -314,7 +322,7 @@ export class ResultTables
     switch (msg.t) {
       case 'untoggleShowProblems':
         this.setState({
-          problemsViewSelected: false
+          problemsViewSelected: false,
         });
         break;
 
@@ -346,7 +354,6 @@ export class ResultTables
 }
 
 class ResultTable extends React.Component<ResultTableProps, Record<string, never>> {
-
   constructor(props: ResultTableProps) {
     super(props);
   }
@@ -354,17 +361,23 @@ class ResultTable extends React.Component<ResultTableProps, Record<string, never
   render(): React.ReactNode {
     const { resultSet } = this.props;
     switch (resultSet.t) {
-      case 'RawResultSet': return <RawTable
-        {...this.props} resultSet={resultSet} />;
+      case 'RawResultSet':
+        return <RawTable {...this.props} resultSet={resultSet} />;
       case 'InterpretedResultSet': {
         const data = resultSet.interpretation.data;
         switch (data.t) {
           case 'SarifInterpretationData': {
-            const sarifResultSet = { ...resultSet, interpretation: { ...resultSet.interpretation, data } };
+            const sarifResultSet = {
+              ...resultSet,
+              interpretation: { ...resultSet.interpretation, data },
+            };
             return <PathTable {...this.props} resultSet={sarifResultSet} />;
           }
           case 'GraphInterpretationData': {
-            const grapResultSet = { ...resultSet, interpretation: { ...resultSet.interpretation, data } };
+            const grapResultSet = {
+              ...resultSet,
+              interpretation: { ...resultSet.interpretation, data },
+            };
             return <Graph {...this.props} resultSet={grapResultSet} />;
           }
         }
@@ -374,7 +387,5 @@ class ResultTable extends React.Component<ResultTableProps, Record<string, never
 }
 
 function getDefaultResultSet(resultSets: readonly ResultSet[]): string {
-  return getDefaultResultSetName(
-    resultSets.map((resultSet) => resultSet.schema.name)
-  );
+  return getDefaultResultSetName(resultSets.map((resultSet) => resultSet.schema.name));
 }

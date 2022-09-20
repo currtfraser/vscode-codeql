@@ -1,6 +1,17 @@
 import * as fs from 'fs-extra';
 import { RawSourceMap, SourceMapConsumer } from 'source-map';
-import { commands, Position, Selection, TextDocument, TextEditor, TextEditorRevealType, TextEditorSelectionChangeEvent, ViewColumn, window, workspace } from 'vscode';
+import {
+  commands,
+  Position,
+  Selection,
+  TextDocument,
+  TextEditor,
+  TextEditorRevealType,
+  TextEditorSelectionChangeEvent,
+  ViewColumn,
+  window,
+  workspace,
+} from 'vscode';
 import { DisposableObject } from '../pure/disposable-object';
 import { commandRunner } from '../commandRunner';
 import { logger } from '../logging';
@@ -79,7 +90,7 @@ export class SummaryLanguageSupport extends DisposableObject {
         const sourceMapText = await fs.readFile(mapPath, 'utf-8');
         const rawMap: RawSourceMap = JSON.parse(sourceMapText);
         this.sourceMap = await new SourceMapConsumer(rawMap);
-      } catch (e: unknown) {
+      } catch (e) {
         // Error reading sourcemap. Pretend there was no sourcemap.
         void logger.log(`Error reading sourcemap file '${mapPath}': ${getErrorMessage(e)}`);
         this.sourceMap = undefined;
@@ -94,19 +105,19 @@ export class SummaryLanguageSupport extends DisposableObject {
     const qlPosition = this.sourceMap.originalPositionFor({
       line: editor.selection.start.line + 1,
       column: editor.selection.start.character,
-      bias: SourceMapConsumer.GREATEST_LOWER_BOUND
+      bias: SourceMapConsumer.GREATEST_LOWER_BOUND,
     });
 
-    if ((qlPosition.source === null) || (qlPosition.line === null)) {
+    if (qlPosition.source === null || qlPosition.line === null) {
       // No position found.
       return undefined;
     }
-    const line = qlPosition.line - 1;  // In `source-map`, lines are 1-based...
-    const column = qlPosition.column ?? 0;  // ...but columns are 0-based :(
+    const line = qlPosition.line - 1; // In `source-map`, lines are 1-based...
+    const column = qlPosition.column ?? 0; // ...but columns are 0-based :(
 
     return {
       filePath: qlPosition.source,
-      position: new Position(line, column)
+      position: new Position(line, column),
     };
   }
 
@@ -133,17 +144,19 @@ export class SummaryLanguageSupport extends DisposableObject {
 
   handleDidChangeActiveTextEditor = async (_editor: TextEditor | undefined): Promise<void> => {
     await this.updateContext();
-  }
+  };
 
-  handleDidChangeTextEditorSelection = async (_e: TextEditorSelectionChangeEvent): Promise<void> => {
+  handleDidChangeTextEditorSelection = async (
+    _e: TextEditorSelectionChangeEvent
+  ): Promise<void> => {
     await this.updateContext();
-  }
+  };
 
   handleDidCloseTextDocument = (document: TextDocument): void => {
     if (this.lastDocument === document) {
       this.clearCache();
     }
-  }
+  };
 
   handleGotoQL = async (): Promise<void> => {
     const position = await this.getQLSourceLocation();

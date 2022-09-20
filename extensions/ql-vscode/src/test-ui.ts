@@ -8,7 +8,7 @@ import {
   TestRunStartedEvent,
   TestRunFinishedEvent,
   TestEvent,
-  TestSuiteEvent
+  TestSuiteEvent,
 } from 'vscode-test-adapter-api';
 
 import { showAndLogWarningMessage } from './helpers';
@@ -86,18 +86,25 @@ export class TestUIService extends UIService implements TestController {
       const actualPath = getActualFile(testId);
       const options: TextDocumentShowOptions = {
         preserveFocus: true,
-        preview: true
+        preview: true,
       };
 
-      if (!await fs.pathExists(expectedPath)) {
-        void showAndLogWarningMessage(`'${path.basename(expectedPath)}' does not exist. Creating an empty file.`);
+      if (!(await fs.pathExists(expectedPath))) {
+        void showAndLogWarningMessage(
+          `'${path.basename(expectedPath)}' does not exist. Creating an empty file.`
+        );
         await fs.createFile(expectedPath);
       }
 
       if (await fs.pathExists(actualPath)) {
         const actualUri = Uri.file(actualPath);
-        await commands.executeCommand<void>('vscode.diff', expectedUri, actualUri,
-          `Expected vs. Actual for ${path.basename(testId)}`, options);
+        await commands.executeCommand<void>(
+          'vscode.diff',
+          expectedUri,
+          actualUri,
+          `Expected vs. Actual for ${path.basename(testId)}`,
+          options
+        );
       } else {
         await window.showTextDocument(expectedUri, options);
       }

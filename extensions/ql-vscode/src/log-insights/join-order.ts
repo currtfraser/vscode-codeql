@@ -1,5 +1,9 @@
 import * as I from 'immutable';
-import { EvaluationLogProblemReporter, EvaluationLogScanner, EvaluationLogScannerProvider } from './log-scanner';
+import {
+  EvaluationLogProblemReporter,
+  EvaluationLogScanner,
+  EvaluationLogScannerProvider,
+} from './log-scanner';
 import { InLayer, ComputeRecursive, SummaryEvent, PipelineRun, ComputeSimple } from './log-summary';
 
 const DEFAULT_WARNING_THRESHOLD = 50;
@@ -16,11 +20,7 @@ function safeMax(it: Iterable<number>) {
  * Compute a key for the maps that that is sent to report generation.
  * Should only be used on events that are known to define queryCausingWork.
  */
-function makeKey(
-  queryCausingWork: string | undefined,
-  predicate: string,
-  suffix = ''
-): string {
+function makeKey(queryCausingWork: string | undefined, predicate: string, suffix = ''): string {
   if (queryCausingWork === undefined) {
     throw new Error(
       'queryCausingWork was not defined on an event we expected it to be defined for!'
@@ -42,22 +42,20 @@ const DEPENDENT_PREDICATES_REGEXP = (() => {
     // INVOKE HIGHER-ORDER RELATION rel ON <id, ..., id>
     String.raw`INVOKE\s+HIGHER-ORDER\s+RELATION\s[^\s]+\sON\s+<([0-9a-zA-Z:#_<>]+)((?:,[0-9a-zA-Z:#_<>]+)*)>`,
     // SELECT id
-    String.raw`SELECT\s+([0-9a-zA-Z:#_]+)`
+    String.raw`SELECT\s+([0-9a-zA-Z:#_]+)`,
   ];
-  return new RegExp(
-    `${String.raw`\{[0-9]+\}\s+[0-9a-zA-Z]+\s=\s(?:` + regexps.join('|')})`
-  );
+  return new RegExp(`${String.raw`\{[0-9]+\}\s+[0-9a-zA-Z]+\s=\s(?:` + regexps.join('|')})`);
 })();
 
 function getDependentPredicates(operations: string[]): I.List<string> {
-  return I.List(operations).flatMap(operation => {
+  return I.List(operations).flatMap((operation) => {
     const matches = DEPENDENT_PREDICATES_REGEXP.exec(operation.trim());
     if (matches !== null) {
       return I.List(matches)
         .rest() // Skip the first group as it's just the entire string
-        .filter(x => !!x && !x.match('r[0-9]+|PRIMITIVE')) // Only keep the references to predicates.
-        .flatMap(x => x.split(',')) // Group 2 in the INVOKE HIGHER_ORDER RELATION case is a comma-separated list of identifiers.
-        .filter(x => !!x); // Remove empty strings
+        .filter((x) => !!x && !x.match('r[0-9]+|PRIMITIVE')) // Only keep the references to predicates.
+        .flatMap((x) => x.split(',')) // Group 2 in the INVOKE HIGHER_ORDER RELATION case is a comma-separated list of identifiers.
+        .filter((x) => !!x); // Remove empty strings
     } else {
       return I.List();
     }
@@ -76,7 +74,11 @@ function getMainHash(event: InLayer | ComputeRecursive): string {
 /**
  * Sum arrays a and b element-wise. The shorter array is padded with 0s if the arrays are not the same length.
  */
-function pointwiseSum(a: Int32Array, b: Int32Array, problemReporter: EvaluationLogProblemReporter): Int32Array {
+function pointwiseSum(
+  a: Int32Array,
+  b: Int32Array,
+  problemReporter: EvaluationLogProblemReporter
+): Int32Array {
   function reportIfInconsistent(ai: number, bi: number) {
     if (ai === -1 && bi !== -1) {
       problemReporter.log(
@@ -144,14 +146,11 @@ class JoinOrderScanner implements EvaluationLogScanner {
 
   constructor(
     private readonly problemReporter: EvaluationLogProblemReporter,
-    private readonly warningThreshold: number) {
-  }
+    private readonly warningThreshold: number
+  ) {}
 
   public onEvent(event: SummaryEvent): void {
-    if (
-      event.completionType !== undefined &&
-      event.completionType !== 'SUCCESS'
-    ) {
+    if (event.completionType !== undefined && event.completionType !== 'SUCCESS') {
       return; // Skip any evaluation that wasn't successful
     }
 
@@ -193,16 +192,21 @@ class JoinOrderScanner implements EvaluationLogScanner {
 
   private reportProblemIfNecessary(event: SummaryEvent, iteration: number, metric: number): void {
     if (metric >= this.warningThreshold) {
-      this.problemReporter.reportProblem(event.predicateName, event.raHash, iteration,
-        `Relation '${event.predicateName}' has an inefficient join order. Its join order metric is ${metric.toFixed(2)}, which is larger than the threshold of ${this.warningThreshold.toFixed(2)}.`);
+      this.problemReporter.reportProblem(
+        event.predicateName,
+        event.raHash,
+        iteration,
+        `Relation '${
+          event.predicateName
+        }' has an inefficient join order. Its join order metric is ${metric.toFixed(
+          2
+        )}, which is larger than the threshold of ${this.warningThreshold.toFixed(2)}.`
+      );
     }
   }
 
   private computeBadnessMetric(event: SummaryEvent): void {
-    if (
-      event.completionType !== undefined &&
-      event.completionType !== 'SUCCESS'
-    ) {
+    if (event.completionType !== undefined && event.completionType !== 'SUCCESS') {
       return; // Skip any evaluation that wasn't successful
     }
     switch (event.evaluationStrategy) {
@@ -217,18 +221,20 @@ class JoinOrderScanner implements EvaluationLogScanner {
         const resultSize = event.resultSize;
 
         // There is only one entry in `pipelineRuns` if it's a non-recursive predicate.
-        const { maxTupleCount, maxDependentPredicateSize } =
-          this.badnessInputsForNonRecursiveDelta(event.pipelineRuns[0], event);
+        const { maxTupleCount, maxDependentPredicateSize } = this.badnessInputsForNonRecursiveDelta(
+          event.pipelineRuns[0],
+          event
+        );
 
         if (maxDependentPredicateSize > 0) {
           pushValue(this.maxTupleCountMap, key, maxTupleCount);
           pushValue(this.resultSizeMap, key, resultSize);
-          pushValue(
-            this.maxDependentPredicateSizeMap,
-            key,
-            maxDependentPredicateSize
+          pushValue(this.maxDependentPredicateSizeMap, key, maxDependentPredicateSize);
+          const metric = computeJoinOrderBadness(
+            maxTupleCount,
+            maxDependentPredicateSize,
+            resultSize!
           );
-          const metric = computeJoinOrderBadness(maxTupleCount, maxDependentPredicateSize, resultSize!);
           this.joinOrderMetricMap.set(key, metric);
           this.reportProblemIfNecessary(event, 0, metric);
         }
@@ -243,28 +249,22 @@ class JoinOrderScanner implements EvaluationLogScanner {
           // Loop through each ordering of the predicate
           buckets.forEach((bucket, raReference) => {
             // Format the key as demanding-query:name (ordering)
-            const key = makeKey(
-              event.queryCausingWork,
-              predicate,
-              `(${raReference})`
-            );
+            const key = makeKey(event.queryCausingWork, predicate, `(${raReference})`);
             const maxTupleCount = Math.max(...bucket.tupleCounts);
             const resultSize = bucket.resultSize;
-            const maxDependentPredicateSize = Math.max(
-              ...bucket.dependentPredicateSizes.values()
-            );
+            const maxDependentPredicateSize = Math.max(...bucket.dependentPredicateSizes.values());
 
             if (maxDependentPredicateSize > 0) {
               pushValue(this.maxTupleCountMap, key, maxTupleCount);
               pushValue(this.resultSizeMap, key, resultSize);
-              pushValue(
-                this.maxDependentPredicateSizeMap,
-                key,
-                maxDependentPredicateSize
+              pushValue(this.maxDependentPredicateSizeMap, key, maxDependentPredicateSize);
+              const metric = computeJoinOrderBadness(
+                maxTupleCount,
+                maxDependentPredicateSize,
+                resultSize
               );
-              const metric = computeJoinOrderBadness(maxTupleCount, maxDependentPredicateSize, resultSize);
               const oldMetric = this.joinOrderMetricMap.get(key);
-              if ((oldMetric === undefined) || (metric > oldMetric)) {
+              if (oldMetric === undefined || metric > oldMetric) {
                 this.joinOrderMetricMap.set(key, metric);
               }
             }
@@ -280,18 +280,12 @@ class JoinOrderScanner implements EvaluationLogScanner {
    */
   private iterateSCC(
     event: ComputeRecursive,
-    func: (
-      inLayerEvent: ComputeRecursive | InLayer,
-      run: PipelineRun,
-      iteration: number
-    ) => void
+    func: (inLayerEvent: ComputeRecursive | InLayer, run: PipelineRun, iteration: number) => void
   ): void {
     const sccEvents = this.layerEvents.get(event.raHash)!;
     const nextPipeline: number[] = new Array(sccEvents.length).fill(0);
 
-    const maxIteration = Math.max(
-      ...sccEvents.map(e => e.predicateIterationMillis.length)
-    );
+    const maxIteration = Math.max(...sccEvents.map((e) => e.predicateIterationMillis.length));
 
     for (let iteration = 0; iteration < maxIteration; ++iteration) {
       // Loop through each predicate in this iteration
@@ -302,8 +296,7 @@ class JoinOrderScanner implements EvaluationLogScanner {
             ? -1
             : inLayerEvent.predicateIterationMillis[iteration];
         if (iterationTime != -1) {
-          const run: PipelineRun =
-            inLayerEvent.pipelineRuns[nextPipeline[predicate]++];
+          const run: PipelineRun = inLayerEvent.pipelineRuns[nextPipeline[predicate]++];
           func(inLayerEvent, run, iteration);
         }
       }
@@ -317,13 +310,13 @@ class JoinOrderScanner implements EvaluationLogScanner {
     pipelineRun: PipelineRun,
     event: ComputeSimple
   ): { maxTupleCount: number; maxDependentPredicateSize: number } {
-    const dependentPredicateSizes = Object.values(event.dependencies).map(hash =>
-      this.predicateSizes.get(hash) ?? 0  // Should always be present, but zero is a safe default.
+    const dependentPredicateSizes = Object.values(event.dependencies).map(
+      (hash) => this.predicateSizes.get(hash) ?? 0 // Should always be present, but zero is a safe default.
     );
     const maxDependentPredicateSize = safeMax(dependentPredicateSizes);
     return {
       maxTupleCount: safeMax(pipelineRun.counts),
-      maxDependentPredicateSize: maxDependentPredicateSize
+      maxDependentPredicateSize: maxDependentPredicateSize,
     };
   }
 
@@ -337,7 +330,9 @@ class JoinOrderScanner implements EvaluationLogScanner {
     // If an iteration isn't present in the map it means it was skipped because the optimizer
     // inferred that it was empty. So its size is 0.
     return (
-      this.layerEvents.get(event.raHash)?.find(x => x.predicateName === predicate)?.deltaSizes[i] ?? 0
+      this.layerEvents.get(event.raHash)?.find((x) => x.predicateName === predicate)?.deltaSizes[
+        i
+      ] ?? 0
     );
   }
 
@@ -350,9 +345,7 @@ class JoinOrderScanner implements EvaluationLogScanner {
     raReference: string,
     iteration: number
   ) {
-    const dependentPredicates = getDependentPredicates(
-      inLayerEvent.ra[raReference]
-    );
+    const dependentPredicates = getDependentPredicates(inLayerEvent.ra[raReference]);
     let dependentPredicateSizes: I.Map<string, number>;
     // We treat the base case as a non-recursive pipeline. In that case, the dependent predicates are
     // the dependencies of the base case and the cur_deltas.
@@ -362,11 +355,7 @@ class JoinOrderScanner implements EvaluationLogScanner {
           // A base case cannot contain a `prev_delta`, but it can contain a `cur_delta`.
           let size = 0;
           if (pred.endsWith('#cur_delta')) {
-            size = this.curDeltaSizes(
-              event,
-              pred.slice(0, -'#cur_delta'.length),
-              iteration
-            );
+            size = this.curDeltaSizes(event, pred.slice(0, -'#cur_delta'.length), iteration);
           } else {
             const hash = event.dependencies[pred];
             size = this.predicateSizes.get(hash)!;
@@ -379,7 +368,7 @@ class JoinOrderScanner implements EvaluationLogScanner {
       // only the prev_deltas.
       dependentPredicateSizes = I.Map(
         dependentPredicates
-          .flatMap(pred => {
+          .flatMap((pred) => {
             // If it's actually a prev_delta
             if (pred.endsWith('#prev_delta')) {
               // Return the predicate without the #prev_delta suffix.
@@ -403,7 +392,9 @@ class JoinOrderScanner implements EvaluationLogScanner {
   /**
    * Compute the metric input for all the events in a SCC that starts with main node `event`
    */
-  private badnessInputsForRecursiveDelta(event: ComputeRecursive): Map<string, Map<string, Bucket>> {
+  private badnessInputsForRecursiveDelta(
+    event: ComputeRecursive
+  ): Map<string, Map<string, Bucket>> {
     // nameToOrderToBucket : predicate name -> ordering (i.e., standard, order_500000, etc.) -> bucket
     const nameToOrderToBucket = new Map<string, Map<string, Bucket>>();
 
@@ -419,7 +410,7 @@ class JoinOrderScanner implements EvaluationLogScanner {
         orderTobucket.set(raReference, {
           tupleCounts: new Int32Array(0),
           resultSize: 0,
-          dependentPredicateSizes: I.Map()
+          dependentPredicateSizes: I.Map(),
         });
       }
 
@@ -446,7 +437,7 @@ class JoinOrderScanner implements EvaluationLogScanner {
       orderTobucket.set(raReference, {
         tupleCounts: newTupleCounts,
         resultSize: resultSize,
-        dependentPredicateSizes: newDependentPredicateSizes
+        dependentPredicateSizes: newDependentPredicateSizes,
       });
     });
     return nameToOrderToBucket;

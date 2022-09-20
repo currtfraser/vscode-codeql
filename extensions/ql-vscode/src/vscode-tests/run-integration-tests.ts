@@ -4,7 +4,7 @@ import * as cp from 'child_process';
 import {
   runTests,
   downloadAndUnzipVSCode,
-  resolveCliPathFromVSCodeExecutablePath
+  resolveCliPathFromVSCodeExecutablePath,
 } from 'vscode-test';
 import { assertNever } from '../pure/helpers-pure';
 import * as tmp from 'tmp-promise';
@@ -12,7 +12,6 @@ import * as tmp from 'tmp-promise';
 // For some reason, the following are not exported directly from `vscode-test`,
 // but we can be tricky and import directly from the out file.
 import { TestOptions } from 'vscode-test/out/runTest';
-
 
 // For CI purposes we want to leave this at 'stable' to catch any bugs
 // that might show up with new vscode versions released, even though
@@ -27,7 +26,7 @@ const VSCODE_VERSION = 'stable';
 enum TestDir {
   NoWorksspace = 'no-workspace',
   MinimalWorksspace = 'minimal-workspace',
-  CliIntegration = 'cli-integration'
+  CliIntegration = 'cli-integration',
 }
 
 /**
@@ -43,15 +42,11 @@ async function runTestsWithRetryOnSegfault(suite: TestOptions, tries: number): P
     } catch (err) {
       if (err === 'SIGSEGV') {
         console.error('Test runner segfaulted.');
-        if (t < tries - 1)
-          console.error('Retrying...');
-      }
-      else if (os.platform() === 'win32') {
+        if (t < tries - 1) console.error('Retrying...');
+      } else if (os.platform() === 'win32') {
         console.error(`Test runner caught exception (${err})`);
-        if (t < tries - 1)
-          console.error('Retrying...');
-      }
-      else {
+        if (t < tries - 1) console.error('Retrying...');
+      } else {
         throw err;
       }
     }
@@ -71,10 +66,9 @@ async function main() {
     const extensionDevelopmentPath = path.resolve(__dirname, '../..');
     const vscodeExecutablePath = await downloadAndUnzipVSCode(VSCODE_VERSION);
 
-
     // Which tests to run. Use a comma-separated list of directories.
     const testDirsString = process.argv[2];
-    const dirs = testDirsString.split(',').map(dir => dir.trim().toLocaleLowerCase());
+    const dirs = testDirsString.split(',').map((dir) => dir.trim().toLocaleLowerCase());
     const extensionTestsEnv: Record<string, string> = {};
     if (dirs.includes(TestDir.CliIntegration)) {
       console.log('Installing required extensions');
@@ -100,14 +94,17 @@ async function main() {
       const launchArgs = getLaunchArgs(dir as TestDir);
       console.log(`Next integration test dir: ${dir}`);
       console.log(`Launch args: ${launchArgs}`);
-      await runTestsWithRetryOnSegfault({
-        version: VSCODE_VERSION,
-        vscodeExecutablePath,
-        extensionDevelopmentPath,
-        extensionTestsPath: path.resolve(__dirname, dir, 'index'),
-        extensionTestsEnv,
-        launchArgs
-      }, 3);
+      await runTestsWithRetryOnSegfault(
+        {
+          version: VSCODE_VERSION,
+          vscodeExecutablePath,
+          extensionDevelopmentPath,
+          extensionTestsPath: path.resolve(__dirname, dir, 'index'),
+          extensionTestsEnv,
+          launchArgs,
+        },
+        3
+      );
     }
   } catch (err) {
     console.error(`Unexpected exception while running tests: ${err}`);
@@ -118,14 +115,13 @@ async function main() {
 
 void main();
 
-
 function getLaunchArgs(dir: TestDir) {
   switch (dir) {
     case TestDir.NoWorksspace:
       return [
         '--disable-extensions',
         '--disable-gpu',
-        '--user-data-dir=' + path.join(tmpDir.name, dir, 'user-data')
+        '--user-data-dir=' + path.join(tmpDir.name, dir, 'user-data'),
       ];
 
     case TestDir.MinimalWorksspace:
@@ -133,7 +129,7 @@ function getLaunchArgs(dir: TestDir) {
         '--disable-extensions',
         '--disable-gpu',
         '--user-data-dir=' + path.join(tmpDir.name, dir, 'user-data'),
-        path.resolve(__dirname, '../../test/data')
+        path.resolve(__dirname, '../../test/data'),
       ];
 
     case TestDir.CliIntegration:

@@ -28,11 +28,12 @@ const QUERY_PACKS = [
  */
 export async function handleDownloadPacks(
   cliServer: CodeQLCliServer,
-  progress: ProgressCallback,
+  progress: ProgressCallback
 ): Promise<void> {
   if (!(await cliServer.cliConstraints.supportsPackaging())) {
-    throw new Error(`Packaging commands are not supported by this version of CodeQL. Please upgrade to v${CliVersionConstraint.CLI_VERSION_WITH_PACKAGING
-      } or later.`);
+    throw new Error(
+      `Packaging commands are not supported by this version of CodeQL. Please upgrade to v${CliVersionConstraint.CLI_VERSION_WITH_PACKAGING} or later.`
+    );
   }
   progress({
     message: 'Choose packs to download',
@@ -42,16 +43,14 @@ export async function handleDownloadPacks(
   let packsToDownload: string[] = [];
   const queryPackOption = 'Download all core query packs';
   const customPackOption = 'Download custom specified pack';
-  const quickpick = await window.showQuickPick(
-    [queryPackOption, customPackOption],
-    { ignoreFocusOut: true }
-  );
+  const quickpick = await window.showQuickPick([queryPackOption, customPackOption], {
+    ignoreFocusOut: true,
+  });
   if (quickpick === queryPackOption) {
     packsToDownload = QUERY_PACKS;
   } else if (quickpick === customPackOption) {
     const customPack = await window.showInputBox({
-      prompt:
-        'Enter the <package-scope/name[@version]> of the pack to download',
+      prompt: 'Enter the <package-scope/name[@version]> of the pack to download',
       ignoreFocusOut: true,
     });
     if (customPack) {
@@ -70,9 +69,7 @@ export async function handleDownloadPacks(
       await cliServer.packDownload(packsToDownload);
       void showAndLogInformationMessage('Finished downloading packs.');
     } catch (error) {
-      void showAndLogErrorMessage(
-        'Unable to download all packs. See log for more details.'
-      );
+      void showAndLogErrorMessage('Unable to download all packs. See log for more details.');
     }
   }
 }
@@ -89,11 +86,12 @@ interface QLPackQuickPickItem extends QuickPickItem {
  */
 export async function handleInstallPackDependencies(
   cliServer: CodeQLCliServer,
-  progress: ProgressCallback,
+  progress: ProgressCallback
 ): Promise<void> {
   if (!(await cliServer.cliConstraints.supportsPackaging())) {
-    throw new Error(`Packaging commands are not supported by this version of CodeQL. Please upgrade to v${CliVersionConstraint.CLI_VERSION_WITH_PACKAGING
-      } or later.`);
+    throw new Error(
+      `Packaging commands are not supported by this version of CodeQL. Please upgrade to v${CliVersionConstraint.CLI_VERSION_WITH_PACKAGING} or later.`
+    );
   }
   progress({
     message: 'Choose packs to install dependencies for',
@@ -101,10 +99,12 @@ export async function handleInstallPackDependencies(
     maxStep: 2,
   });
   const workspacePacks = await cliServer.resolveQlpacks(getOnDiskWorkspaceFolders());
-  const quickPickItems = Object.entries(workspacePacks).map<QLPackQuickPickItem>(([key, value]) => ({
-    label: key,
-    packRootDir: value,
-  }));
+  const quickPickItems = Object.entries(workspacePacks).map<QLPackQuickPickItem>(
+    ([key, value]) => ({
+      label: key,
+      packRootDir: value,
+    })
+  );
   const packsToInstall = await window.showQuickPick(quickPickItems, {
     placeHolder: 'Select packs to install dependencies for',
     canPickMany: true,
@@ -135,7 +135,9 @@ export async function handleInstallPackDependencies(
     if (failedPacks.length > 0) {
       void logger.log(`Errors:\n${errors.join('\n')}`);
       throw new Error(
-        `Unable to install pack dependencies for: ${failedPacks.join(', ')}. See log for more details.`
+        `Unable to install pack dependencies for: ${failedPacks.join(
+          ', '
+        )}. See log for more details.`
       );
     } else {
       void showAndLogInformationMessage('Finished installing pack dependencies.');

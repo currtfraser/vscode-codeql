@@ -8,14 +8,20 @@ import { createMessageConnection, MessageConnection, RequestType } from 'vscode-
 import * as cli from './cli';
 import { QueryServerConfig } from './config';
 import { Logger, ProgressReporter } from './logging';
-import { completeQuery, EvaluationResult, progress, ProgressMessage, WithProgressId } from './pure/messages';
+import {
+  completeQuery,
+  EvaluationResult,
+  progress,
+  ProgressMessage,
+  WithProgressId,
+} from './pure/messages';
 import * as messages from './pure/messages';
 import { ProgressCallback, ProgressTask } from './commandRunner';
 
 type ServerOpts = {
   logger: Logger;
   contextStoragePath: string;
-}
+};
 
 /** A running query server process and its associated message connection. */
 class ServerProcess implements Disposable {
@@ -42,7 +48,9 @@ class ServerProcess implements Disposable {
   }
 }
 
-type WithProgressReporting = (task: (progress: ProgressReporter, token: CancellationToken) => Thenable<void>) => Thenable<void>;
+type WithProgressReporting = (
+  task: (progress: ProgressReporter, token: CancellationToken) => Thenable<void>
+) => Thenable<void>;
 
 /**
  * Client that manages a query server process.
@@ -51,7 +59,6 @@ type WithProgressReporting = (task: (progress: ProgressReporter, token: Cancella
  * to restart it (which disposes the existing process and starts a new one).
  */
 export class QueryServerClient extends DisposableObject {
-
   serverProcess?: ServerProcess;
   evaluationResultCallbacks: { [key: number]: (res: EvaluationResult) => void };
   progressCallbacks: { [key: number]: ((res: ProgressMessage) => void) | undefined };
@@ -66,7 +73,7 @@ export class QueryServerClient extends DisposableObject {
   // we need here.
   readonly onDidStartQueryServer = (e: ProgressTask<void>) => {
     this.queryServerStartListeners.push(e);
-  }
+  };
 
   public activeQueryLogFile: string | undefined;
 
@@ -79,8 +86,9 @@ export class QueryServerClient extends DisposableObject {
     super();
     // When the query server configuration changes, restart the query server.
     if (config.onDidChangeConfiguration !== undefined) {
-      this.push(config.onDidChangeConfiguration(() =>
-        commands.executeCommand('codeQL.restartQueryServer')));
+      this.push(
+        config.onDidChangeConfiguration(() => commands.executeCommand('codeQL.restartQueryServer'))
+      );
     }
     this.withProgressReporting = withProgressReporting;
     this.nextCallback = 0;
@@ -103,19 +111,13 @@ export class QueryServerClient extends DisposableObject {
   }
 
   /** Restarts the query server by disposing of the current server process and then starting a new one. */
-  async restartQueryServer(
-    progress: ProgressCallback,
-    token: CancellationToken
-  ): Promise<void> {
+  async restartQueryServer(progress: ProgressCallback, token: CancellationToken): Promise<void> {
     this.stopQueryServer();
     await this.startQueryServer();
 
     // Ensure we await all responses from event handlers so that
     // errors can be properly reported to the user.
-    await Promise.all(this.queryServerStartListeners.map(handler => handler(
-      progress,
-      token
-    )));
+    await Promise.all(this.queryServerStartListeners.map((handler) => handler(progress, token)));
   }
 
   showLog(): void {
@@ -146,7 +148,10 @@ export class QueryServerClient extends DisposableObject {
       args.push('--require-db-registration');
     }
 
-    if (await this.cliServer.cliConstraints.supportsOldEvalStats() && !(await this.cliServer.cliConstraints.supportsPerQueryEvalLog())) {
+    if (
+      (await this.cliServer.cliConstraints.supportsOldEvalStats()) &&
+      !(await this.cliServer.cliConstraints.supportsPerQueryEvalLog())
+    ) {
       args.push('--old-eval-stats');
     }
 
@@ -168,7 +173,9 @@ export class QueryServerClient extends DisposableObject {
     }
 
     if (cli.shouldDebugQueryServer()) {
-      args.push('-J=-agentlib:jdwp=transport=dt_socket,address=localhost:9010,server=n,suspend=y,quiet=y');
+      args.push(
+        '-J=-agentlib:jdwp=transport=dt_socket,address=localhost:9010,server=n,suspend=y,quiet=y'
+      );
     }
 
     const child = cli.spawnServer(
@@ -177,24 +184,27 @@ export class QueryServerClient extends DisposableObject {
       ['execute', 'query-server'],
       args,
       this.logger,
-      data => this.logger.log(data.toString(), {
-        trailingNewline: false,
-        additionalLogLocation: this.activeQueryLogFile
-      }),
+      (data) =>
+        this.logger.log(data.toString(), {
+          trailingNewline: false,
+          additionalLogLocation: this.activeQueryLogFile,
+        }),
       undefined, // no listener for stdout
       progressReporter
     );
     progressReporter.report({ message: 'Connecting to CodeQL query server' });
     const connection = createMessageConnection(child.stdout, child.stdin);
-    connection.onRequest(completeQuery, res => {
+    connection.onRequest(completeQuery, (res) => {
       if (!(res.runId in this.evaluationResultCallbacks)) {
-        void this.logger.log(`No callback associated with run id ${res.runId}, continuing without executing any callback`);
+        void this.logger.log(
+          `No callback associated with run id ${res.runId}, continuing without executing any callback`
+        );
       } else {
         this.evaluationResultCallbacks[res.runId](res);
       }
       return {};
     });
-    connection.onNotification(progress, res => {
+    connection.onNotification(progress, (res) => {
       const callback = this.progressCallbacks[res.id];
       if (callback) {
         callback(res);
@@ -225,7 +235,12 @@ export class QueryServerClient extends DisposableObject {
     return this.serverProcess!.child.pid || 0;
   }
 
-  async sendRequest<P, R, E, RO>(type: RequestType<WithProgressId<P>, R, E, RO>, parameter: P, token?: CancellationToken, progress?: (res: ProgressMessage) => void): Promise<R> {
+  async sendRequest<P, R, E, RO>(
+    type: RequestType<WithProgressId<P>, R, E, RO>,
+    parameter: P,
+    token?: CancellationToken,
+    progress?: (res: ProgressMessage) => void
+  ): Promise<R> {
     const id = this.nextProgress++;
     this.progressCallbacks[id] = progress;
 
@@ -234,7 +249,11 @@ export class QueryServerClient extends DisposableObject {
       if (this.serverProcess === undefined) {
         throw new Error('No query server process found.');
       }
-      return await this.serverProcess.connection.sendRequest(type, { body: parameter, progressId: id }, token);
+      return await this.serverProcess.connection.sendRequest(
+        type,
+        { body: parameter, progressId: id },
+        token
+      );
     } finally {
       delete this.progressCallbacks[id];
     }

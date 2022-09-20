@@ -26,11 +26,11 @@ const CloseButton = styled.button`
 const FullScreenModal = ({
   setOpen,
   containerElementId,
-  children
+  children,
 }: {
   setOpen: (open: boolean) => void;
   containerElementId: string;
-  children: React.ReactNode
+  children: React.ReactNode;
 }) => {
   const containerElement = document.getElementById(containerElementId);
   if (!containerElement) {

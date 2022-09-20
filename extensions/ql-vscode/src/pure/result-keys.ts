@@ -45,8 +45,7 @@ export function getPath(sarif: sarif.Log, key: Path): sarif.ThreadFlow | undefin
   for (const codeFlows of result.codeFlows) {
     for (const threadFlow of codeFlows.threadFlows) {
       ++index;
-      if (index == key.pathIndex)
-        return threadFlow;
+      if (index == key.pathIndex) return threadFlow;
     }
   }
   return undefined;
@@ -67,15 +66,26 @@ export function getPathNode(sarif: sarif.Log, key: PathNode): sarif.Location | u
 export function equals(key1: PathNode | undefined, key2: PathNode | undefined): boolean {
   if (key1 === key2) return true;
   if (key1 === undefined || key2 === undefined) return false;
-  return key1.resultIndex === key2.resultIndex && key1.pathIndex === key2.pathIndex && key1.pathNodeIndex === key2.pathNodeIndex;
+  return (
+    key1.resultIndex === key2.resultIndex &&
+    key1.pathIndex === key2.pathIndex &&
+    key1.pathNodeIndex === key2.pathNodeIndex
+  );
 }
 
 /**
  * Returns true if the two keys contain the same set of indices and neither are `undefined`.
  */
-export function equalsNotUndefined(key1: PathNode | undefined, key2: PathNode | undefined): boolean {
+export function equalsNotUndefined(
+  key1: PathNode | undefined,
+  key2: PathNode | undefined
+): boolean {
   if (key1 === undefined || key2 === undefined) return false;
-  return key1.resultIndex === key2.resultIndex && key1.pathIndex === key2.pathIndex && key1.pathNodeIndex === key2.pathNodeIndex;
+  return (
+    key1.resultIndex === key2.resultIndex &&
+    key1.pathIndex === key2.pathIndex &&
+    key1.pathNodeIndex === key2.pathNodeIndex
+  );
 }
 
 /**

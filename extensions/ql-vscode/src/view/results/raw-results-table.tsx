@@ -31,31 +31,39 @@ export class RawTable extends React.Component<RawTableProps, Record<string, neve
       dataRows = dataRows.slice(0, RAW_RESULTS_LIMIT);
     }
 
-    const tableRows = dataRows.map((row: ResultRow, rowIndex: number) =>
+    const tableRows = dataRows.map((row: ResultRow, rowIndex: number) => (
       <RawTableRow
         key={rowIndex}
         rowIndex={rowIndex + this.props.offset}
         row={row}
         databaseUri={databaseUri}
       />
-    );
+    ));
 
     if (numTruncatedResults > 0) {
       const colSpan = dataRows[0].length + 1; // one row for each data column, plus index column
-      tableRows.push(<tr><td key={'message'} colSpan={colSpan} style={{ textAlign: 'center', fontStyle: 'italic' }}>
-        Too many results to show at once. {numTruncatedResults} result(s) omitted.
-      </td></tr>);
+      tableRows.push(
+        <tr>
+          <td
+            key={'message'}
+            colSpan={colSpan}
+            style={{ textAlign: 'center', fontStyle: 'italic' }}
+          >
+            Too many results to show at once. {numTruncatedResults} result(s) omitted.
+          </td>
+        </tr>
+      );
     }
 
-    return <table className={className}>
-      <RawTableHeader
-        columns={resultSet.schema.columns}
-        schemaName={resultSet.schema.name}
-        sortState={this.props.sortState}
-      />
-      <tbody>
-        {tableRows}
-      </tbody>
-    </table>;
+    return (
+      <table className={className}>
+        <RawTableHeader
+          columns={resultSet.schema.columns}
+          schemaName={resultSet.schema.name}
+          sortState={this.props.sortState}
+        />
+        <tbody>{tableRows}</tbody>
+      </table>
+    );
   }
 }

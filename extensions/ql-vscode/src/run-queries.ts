@@ -10,7 +10,7 @@ import {
   TextDocument,
   TextEditor,
   Uri,
-  window
+  window,
 } from 'vscode';
 import { ErrorCodes, ResponseError } from 'vscode-languageclient';
 
@@ -23,7 +23,7 @@ import {
   showAndLogErrorMessage,
   showAndLogWarningMessage,
   tryGetQueryMetadata,
-  upgradesTmpDir
+  upgradesTmpDir,
 } from './helpers';
 import { ProgressCallback, UserCancellationException } from './commandRunner';
 import { DatabaseInfo, QueryMetadata } from './pure/interface-types';
@@ -63,7 +63,6 @@ interface SelectedQuery {
  * output and results.
  */
 export class QueryEvaluationInfo {
-
   /**
    * Note that in the {@link FullQueryInfo.slurp} method, we create a QueryEvaluationInfo instance
    * by explicitly setting the prototype in order to avoid calling this constructor.
@@ -119,10 +118,9 @@ export class QueryEvaluationInfo {
   get resultsPaths() {
     return {
       resultsPath: path.join(this.querySaveDir, 'results.bqrs'),
-      interpretedResultsPath: path.join(this.querySaveDir,
-        this.metadata?.kind === 'graph'
-          ? 'graphResults'
-          : 'interpretedResults.sarif'
+      interpretedResultsPath: path.join(
+        this.querySaveDir,
+        this.metadata?.kind === 'graph' ? 'graphResults' : 'interpretedResults.sarif'
       ),
     };
   }
@@ -146,22 +144,24 @@ export class QueryEvaluationInfo {
     dbItem: DatabaseItem,
     progress: ProgressCallback,
     token: CancellationToken,
-    queryInfo?: LocalQueryInfo,
+    queryInfo?: LocalQueryInfo
   ): Promise<messages.EvaluationResult> {
     if (!dbItem.contents || dbItem.error) {
-      throw new Error('Can\'t run query on invalid database.');
+      throw new Error("Can't run query on invalid database.");
     }
 
     let result: messages.EvaluationResult | null = null;
 
-    const callbackId = qs.registerCallback(res => {
+    const callbackId = qs.registerCallback((res) => {
       result = {
         ...res,
-        logFileLocation: this.logPath
+        logFileLocation: this.logPath,
       };
     });
 
-    const availableMlModelUris: messages.MlModel[] = availableMlModels.map(model => ({ uri: Uri.file(model.path).toString(true) }));
+    const availableMlModelUris: messages.MlModel[] = availableMlModels.map((model) => ({
+      uri: Uri.file(model.path).toString(true),
+    }));
 
     const queryToRun: messages.QueryToRun = {
       resultsPath: this.resultsPaths.resultsPath,
@@ -176,21 +176,20 @@ export class QueryEvaluationInfo {
 
     const dataset: messages.Dataset = {
       dbDir: dbItem.contents.datasetUri.fsPath,
-      workingSet: 'default'
+      workingSet: 'default',
     };
-    if (queryInfo && await qs.cliServer.cliConstraints.supportsPerQueryEvalLog()) {
+    if (queryInfo && (await qs.cliServer.cliConstraints.supportsPerQueryEvalLog())) {
       await qs.sendRequest(messages.startLog, {
         db: dataset,
         logPath: this.evalLogPath,
       });
-
     }
     const params: messages.EvaluateQueriesParams = {
       db: dataset,
       evaluateId: callbackId,
       queries: [queryToRun],
       stopOnError: false,
-      useSequenceHint: false
+      useSequenceHint: false,
     };
     try {
       await qs.sendRequest(messages.runQueries, params, token, progress);
@@ -201,7 +200,7 @@ export class QueryEvaluationInfo {
       }
     } finally {
       qs.unRegisterCallback(callbackId);
-      if (queryInfo && await qs.cliServer.cliConstraints.supportsPerQueryEvalLog()) {
+      if (queryInfo && (await qs.cliServer.cliConstraints.supportsPerQueryEvalLog())) {
         await qs.sendRequest(messages.endLog, {
           db: dataset,
           logPath: this.evalLogPath,
@@ -209,39 +208,52 @@ export class QueryEvaluationInfo {
         if (await this.hasEvalLog()) {
           queryInfo.evalLogLocation = this.evalLogPath;
           queryInfo.evalLogSummaryLocation = await this.generateHumanReadableLogSummary(qs);
-          void this.logEndSummary(queryInfo.evalLogSummaryLocation, qs);  // Logged asynchrnously
+          void this.logEndSummary(queryInfo.evalLogSummaryLocation, qs); // Logged asynchrnously
 
-          if (config.isCanary()) { // Generate JSON summary for viewer.
-            await qs.cliServer.generateJsonLogSummary(this.evalLogPath, this.jsonEvalLogSummaryPath);
+          if (config.isCanary()) {
+            // Generate JSON summary for viewer.
+            await qs.cliServer.generateJsonLogSummary(
+              this.evalLogPath,
+              this.jsonEvalLogSummaryPath
+            );
             queryInfo.jsonEvalLogSummaryLocation = this.jsonEvalLogSummaryPath;
-            await generateSummarySymbolsFile(this.evalLogSummaryPath, this.evalLogSummarySymbolsPath);
+            await generateSummarySymbolsFile(
+              this.evalLogSummaryPath,
+              this.evalLogSummarySymbolsPath
+            );
             queryInfo.evalLogSummarySymbolsLocation = this.evalLogSummarySymbolsPath;
           }
         } else {
-          void showAndLogWarningMessage(`Failed to write structured evaluator log to ${this.evalLogPath}.`);
+          void showAndLogWarningMessage(
+            `Failed to write structured evaluator log to ${this.evalLogPath}.`
+          );
         }
       }
     }
-    return result || {
-      evaluationTime: 0,
-      message: 'No result from server',
-      queryId: -1,
-      runId: callbackId,
-      resultType: messages.QueryResultType.OTHER_ERROR
-    };
+    return (
+      result || {
+        evaluationTime: 0,
+        message: 'No result from server',
+        queryId: -1,
+        runId: callbackId,
+        resultType: messages.QueryResultType.OTHER_ERROR,
+      }
+    );
   }
 
   async compile(
     qs: qsClient.QueryServerClient,
     program: messages.QlProgram,
     progress: ProgressCallback,
-    token: CancellationToken,
+    token: CancellationToken
   ): Promise<messages.CompilationMessage[]> {
     let compiled: messages.CheckQueryResult | undefined;
     try {
-      const target = this.quickEvalPosition ? {
-        quickEval: { quickEvalPos: this.quickEvalPosition }
-      } : { query: {} };
+      const target = this.quickEvalPosition
+        ? {
+            quickEval: { quickEvalPos: this.quickEvalPosition },
+          }
+        : { query: {} };
       const params: messages.CompileQueryParams = {
         compilationOptions: {
           computeNoLocationUrls: true,
@@ -252,10 +264,10 @@ export class QueryEvaluationInfo {
           noComputeGetUrl: false,
           noComputeToString: false,
           computeDefaultStrings: true,
-          emitDebugInfo: true
+          emitDebugInfo: true,
         },
         extraOptions: {
-          timeoutSecs: qs.config.timeoutSecs
+          timeoutSecs: qs.config.timeoutSecs,
         },
         queryToCheck: program,
         resultPath: this.compiledQueryPath,
@@ -266,7 +278,7 @@ export class QueryEvaluationInfo {
     } finally {
       void qs.logger.log(' - - - COMPILATION DONE - - - ', { additionalLogLocation: this.logPath });
     }
-    return (compiled?.messages || []).filter(msg => msg.severity === messages.Severity.ERROR);
+    return (compiled?.messages || []).filter((msg) => msg.severity === messages.Severity.ERROR);
   }
 
   /**
@@ -274,14 +286,18 @@ export class QueryEvaluationInfo {
    */
   canHaveInterpretedResults(): boolean {
     if (!this.databaseHasMetadataFile) {
-      void logger.log('Cannot produce interpreted results since the database does not have a .dbinfo or codeql-database.yml file.');
+      void logger.log(
+        'Cannot produce interpreted results since the database does not have a .dbinfo or codeql-database.yml file.'
+      );
       return false;
     }
 
     const kind = this.metadata?.kind;
     const hasKind = !!kind;
     if (!hasKind) {
-      void logger.log('Cannot produce interpreted results since the query does not have @kind metadata.');
+      void logger.log(
+        'Cannot produce interpreted results since the query does not have @kind metadata.'
+      );
       return false;
     }
 
@@ -347,14 +363,21 @@ export class QueryEvaluationInfo {
    * @param qs The query server client.
    * @returns The path to the log summary, or `undefined` if the summary could not be generated.
    */
-  private async generateHumanReadableLogSummary(qs: qsClient.QueryServerClient): Promise<string | undefined> {
+  private async generateHumanReadableLogSummary(
+    qs: qsClient.QueryServerClient
+  ): Promise<string | undefined> {
     try {
-      await qs.cliServer.generateLogSummary(this.evalLogPath, this.evalLogSummaryPath, this.evalLogEndSummaryPath);
+      await qs.cliServer.generateLogSummary(
+        this.evalLogPath,
+        this.evalLogSummaryPath,
+        this.evalLogEndSummaryPath
+      );
       return this.evalLogSummaryPath;
-
     } catch (e) {
       const err = asError(e);
-      void showAndLogWarningMessage(`Failed to generate human-readable structured evaluator log summary. Reason: ${err.message}`);
+      void showAndLogWarningMessage(
+        `Failed to generate human-readable structured evaluator log summary. Reason: ${err.message}`
+      );
       return undefined;
     }
   }
@@ -364,7 +387,10 @@ export class QueryEvaluationInfo {
    * @param logSummaryPath Path to the human-readable log summary
    * @param qs The query server client.
    */
-  private async logEndSummary(logSummaryPath: string | undefined, qs: qsClient.QueryServerClient): Promise<void> {
+  private async logEndSummary(
+    logSummaryPath: string | undefined,
+    qs: qsClient.QueryServerClient
+  ): Promise<void> {
     if (logSummaryPath === undefined) {
       // Failed to generate the log, so we don't expect an end summary either.
       return;
@@ -372,10 +398,14 @@ export class QueryEvaluationInfo {
 
     try {
       const endSummaryContent = await fs.readFile(this.evalLogEndSummaryPath, 'utf-8');
-      void qs.logger.log(' --- Evaluator Log Summary --- ', { additionalLogLocation: this.logPath });
+      void qs.logger.log(' --- Evaluator Log Summary --- ', {
+        additionalLogLocation: this.logPath,
+      });
       void qs.logger.log(endSummaryContent, { additionalLogLocation: this.logPath });
     } catch (e) {
-      void showAndLogWarningMessage(`Could not read structured evaluator log end of summary file at ${this.evalLogEndSummaryPath}.`);
+      void showAndLogWarningMessage(
+        `Could not read structured evaluator log end of summary file at ${this.evalLogEndSummaryPath}.`
+      );
     }
   }
 
@@ -409,16 +439,24 @@ export class QueryEvaluationInfo {
 
     let nextOffset: number | undefined = 0;
     do {
-      const chunk: DecodedBqrsChunk = await qs.cliServer.bqrsDecode(this.resultsPaths.resultsPath, resultSet, {
-        pageSize: 100,
-        offset: nextOffset,
-      });
+      const chunk: DecodedBqrsChunk = await qs.cliServer.bqrsDecode(
+        this.resultsPaths.resultsPath,
+        resultSet,
+        {
+          pageSize: 100,
+          offset: nextOffset,
+        }
+      );
       chunk.tuples.forEach((tuple) => {
-        out.write(tuple.map((v, i) =>
-          chunk.columns[i].kind === 'String'
-            ? `"${typeof v === 'string' ? v.replaceAll('"', '""') : v}"`
-            : v
-        ).join(',') + '\n');
+        out.write(
+          tuple
+            .map((v, i) =>
+              chunk.columns[i].kind === 'String'
+                ? `"${typeof v === 'string' ? v.replaceAll('"', '""') : v}"`
+                : v
+            )
+            .join(',') + '\n'
+        );
       });
       nextOffset = chunk.next;
     } while (nextOffset && !stopDecoding);
@@ -434,11 +472,13 @@ export class QueryEvaluationInfo {
    * If the query has no result sets, then return undefined.
    */
   async chooseResultSet(qs: qsClient.QueryServerClient) {
-    const resultSets = (await qs.cliServer.bqrsInfo(this.resultsPaths.resultsPath, 0))['result-sets'];
+    const resultSets = (await qs.cliServer.bqrsInfo(this.resultsPaths.resultsPath, 0))[
+      'result-sets'
+    ];
     if (!resultSets.length) {
       return undefined;
     }
-    if (resultSets.find(r => r.name === SELECT_QUERY_NAME)) {
+    if (resultSets.find((r) => r.name === SELECT_QUERY_NAME)) {
       return SELECT_QUERY_NAME;
     }
     return resultSets[0].name;
@@ -463,13 +503,16 @@ export class QueryEvaluationInfo {
     if (dbItem.sourceArchive !== undefined) {
       sourceInfo = {
         sourceArchive: dbItem.sourceArchive.fsPath,
-        sourceLocationPrefix: await dbItem.getSourceLocationPrefix(
-          qs.cliServer
-        ),
+        sourceLocationPrefix: await dbItem.getSourceLocationPrefix(qs.cliServer),
       };
     }
 
-    await qs.cliServer.generateResultsCsv(ensureMetadataIsComplete(this.metadata), this.resultsPaths.resultsPath, this.csvPath, sourceInfo);
+    await qs.cliServer.generateResultsCsv(
+      ensureMetadataIsComplete(this.metadata),
+      this.resultsPaths.resultsPath,
+      this.csvPath,
+      sourceInfo
+    );
     return this.csvPath;
   }
 
@@ -492,10 +535,10 @@ export async function clearCacheInDatabase(
   qs: qsClient.QueryServerClient,
   dbItem: DatabaseItem,
   progress: ProgressCallback,
-  token: CancellationToken,
+  token: CancellationToken
 ): Promise<messages.ClearCacheResult> {
   if (dbItem.contents === undefined) {
-    throw new Error('Can\'t clear the cache in an invalid database.');
+    throw new Error("Can't clear the cache in an invalid database.");
   }
 
   const db: messages.Dataset = {
@@ -516,7 +559,6 @@ export async function clearCacheInDatabase(
  */
 async function convertToQlPath(filePath: string): Promise<string> {
   if (process.platform === 'win32') {
-
     if (path.parse(filePath).root === filePath) {
       // Java assumes uppercase drive letters are canonical.
       return filePath.toUpperCase();
@@ -533,13 +575,11 @@ async function convertToQlPath(filePath: string): Promise<string> {
         }
       }
     }
-    throw new Error('Can\'t convert path to form suitable for QL:' + filePath);
+    throw new Error("Can't convert path to form suitable for QL:" + filePath);
   } else {
     return filePath;
   }
 }
-
-
 
 /** Gets the selected position within the given editor. */
 async function getSelectedPosition(editor: TextEditor, range?: Range): Promise<messages.Position> {
@@ -552,7 +592,7 @@ async function getSelectedPosition(editor: TextEditor, range?: Range): Promise<m
     line: pos.line + 1,
     column: pos.character + 1,
     endLine: posEnd.line + 1,
-    endColumn: posEnd.character + 1
+    endColumn: posEnd.character + 1,
   };
 }
 
@@ -569,14 +609,21 @@ async function checkDbschemeCompatibility(
   qlProgram: messages.QlProgram,
   dbItem: DatabaseItem,
   progress: ProgressCallback,
-  token: CancellationToken,
+  token: CancellationToken
 ): Promise<void> {
   const searchPath = getOnDiskWorkspaceFolders();
 
   if (dbItem.contents?.dbSchemeUri !== undefined) {
-    const { finalDbscheme } = await cliServer.resolveUpgrades(dbItem.contents.dbSchemeUri.fsPath, searchPath, false);
-    const hash = async function(filename: string): Promise<string> {
-      return crypto.createHash('sha256').update(await fs.readFile(filename)).digest('hex');
+    const { finalDbscheme } = await cliServer.resolveUpgrades(
+      dbItem.contents.dbSchemeUri.fsPath,
+      searchPath,
+      false
+    );
+    const hash = async function (filename: string): Promise<string> {
+      return crypto
+        .createHash('sha256')
+        .update(await fs.readFile(filename))
+        .digest('hex');
     };
 
     // At this point, we have learned about three dbschemes:
@@ -594,15 +641,9 @@ async function checkDbschemeCompatibility(
       reportNoUpgradePath(qlProgram, query);
     }
 
-    if (upgradableTo == dbschemeOfLib &&
-      dbschemeOfDb != dbschemeOfLib) {
+    if (upgradableTo == dbschemeOfLib && dbschemeOfDb != dbschemeOfLib) {
       // Try to upgrade the database
-      await upgradeDatabaseExplicit(
-        qs,
-        dbItem,
-        progress,
-        token
-      );
+      await upgradeDatabaseExplicit(qs, dbItem, progress, token);
     }
   }
 }
@@ -623,9 +664,8 @@ async function compileNonDestructiveUpgrade(
   qlProgram: messages.QlProgram,
   dbItem: DatabaseItem,
   progress: ProgressCallback,
-  token: CancellationToken,
+  token: CancellationToken
 ): Promise<string> {
-
   if (!dbItem?.contents?.dbSchemeUri) {
     throw new Error('Database is invalid, and cannot be upgraded.');
   }
@@ -646,7 +686,14 @@ async function compileNonDestructiveUpgrade(
   if (!matchesTarget) {
     reportNoUpgradePath(qlProgram, query);
   }
-  const result = await compileDatabaseUpgradeSequence(qs, dbItem, scripts, upgradeTemp, progress, token);
+  const result = await compileDatabaseUpgradeSequence(
+    qs,
+    dbItem,
+    scripts,
+    upgradeTemp,
+    progress,
+    token
+  );
   if (result.compiledUpgrade === undefined) {
     const error = result.error || '[no error message available]';
     throw new Error(error);
@@ -669,8 +716,7 @@ async function promptUserToSaveChanges(document: TextDocument): Promise<boolean>
   if (document.isDirty) {
     if (config.AUTOSAVE_SETTING.getValue()) {
       return true;
-    }
-    else {
+    } else {
       const yesItem = { title: 'Yes', isCloseAffordance: false };
       const alwaysItem = { title: 'Always Save', isCloseAffordance: false };
       const noItem = { title: 'No (run version on disk)', isCloseAffordance: false };
@@ -679,7 +725,10 @@ async function promptUserToSaveChanges(document: TextDocument): Promise<boolean>
       const chosenItem = await window.showInformationMessage(
         message,
         { modal: true },
-        yesItem, alwaysItem, noItem, cancelItem
+        yesItem,
+        alwaysItem,
+        noItem,
+        cancelItem
       );
 
       if (chosenItem === alwaysItem) {
@@ -708,7 +757,7 @@ async function promptUserToSaveChanges(document: TextDocument): Promise<boolean>
  * and use the selected region.
  * @param selectedResourceUri The selected resource when the command was run.
  * @param quickEval Whether the command being run is `Quick Evaluation`.
-*/
+ */
 export async function determineSelectedQuery(
   selectedResourceUri: Uri | undefined,
   quickEval: boolean,
@@ -738,11 +787,15 @@ export async function determineSelectedQuery(
 
   if (quickEval) {
     if (!(queryPath.endsWith('.ql') || queryPath.endsWith('.qll'))) {
-      throw new Error('The selected resource is not a CodeQL file; It should have the extension ".ql" or ".qll".');
+      throw new Error(
+        'The selected resource is not a CodeQL file; It should have the extension ".ql" or ".qll".'
+      );
     }
   } else {
-    if (!(queryPath.endsWith('.ql'))) {
-      throw new Error('The selected resource is not a CodeQL query file; It should have the extension ".ql".');
+    if (!queryPath.endsWith('.ql')) {
+      throw new Error(
+        'The selected resource is not a CodeQL query file; It should have the extension ".ql".'
+      );
     }
   }
 
@@ -759,7 +812,7 @@ export async function determineSelectedQuery(
   let quickEvalText: string | undefined = undefined;
   if (quickEval) {
     if (editor == undefined) {
-      throw new Error('Can\'t run quick evaluation without an active editor.');
+      throw new Error("Can't run quick evaluation without an active editor.");
     }
     if (editor.document.fileName !== queryPath) {
       // For Quick Evaluation we expect these to be the same.
@@ -788,7 +841,7 @@ export async function compileAndRunQueryAgainstDatabase(
   progress: ProgressCallback,
   token: CancellationToken,
   templates?: messages.TemplateDefinitions,
-  queryInfo?: LocalQueryInfo, // May be omitted for queries not initiated by the user. If omitted we won't create a structured log for the query.
+  queryInfo?: LocalQueryInfo // May be omitted for queries not initiated by the user. If omitted we won't create a structured log for the query.
 ): Promise<QueryWithResults> {
   if (!dbItem.contents || !dbItem.contents.dbSchemeUri) {
     throw new Error(`Database ${dbItem.databaseUri} does not have a CodeQL database scheme.`);
@@ -797,10 +850,15 @@ export async function compileAndRunQueryAgainstDatabase(
   // Get the workspace folder paths.
   const diskWorkspaceFolders = getOnDiskWorkspaceFolders();
   // Figure out the library path for the query.
-  const packConfig = await cliServer.resolveLibraryPath(diskWorkspaceFolders, initialInfo.queryPath);
+  const packConfig = await cliServer.resolveLibraryPath(
+    diskWorkspaceFolders,
+    initialInfo.queryPath
+  );
 
   if (!packConfig.dbscheme) {
-    throw new Error('Could not find a database scheme for this query. Please check that you have a valid qlpack.yml file for this query, which refers to a database scheme either in the `dbscheme` field or through one of its dependencies.');
+    throw new Error(
+      'Could not find a database scheme for this query. Please check that you have a valid qlpack.yml file for this query, which refers to a database scheme either in the `dbscheme` field or through one of its dependencies.'
+    );
   }
 
   // Check whether the query has an entirely different schema from the
@@ -810,8 +868,16 @@ export async function compileAndRunQueryAgainstDatabase(
   const querySchemaName = path.basename(packConfig.dbscheme);
   const dbSchemaName = path.basename(dbItem.contents.dbSchemeUri.fsPath);
   if (querySchemaName != dbSchemaName) {
-    void logger.log(`Query schema was ${querySchemaName}, but database schema was ${dbSchemaName}.`);
-    throw new Error(`The query ${path.basename(initialInfo.queryPath)} cannot be run against the selected database (${dbItem.name}): their target languages are different. Please select a different database and try again.`);
+    void logger.log(
+      `Query schema was ${querySchemaName}, but database schema was ${dbSchemaName}.`
+    );
+    throw new Error(
+      `The query ${path.basename(
+        initialInfo.queryPath
+      )} cannot be run against the selected database (${
+        dbItem.name
+      }): their target languages are different. Please select a different database and try again.`
+    );
   }
 
   const qlProgram: messages.QlProgram = {
@@ -823,31 +889,40 @@ export async function compileAndRunQueryAgainstDatabase(
     // we use the database's DB scheme here instead of the DB scheme
     // from the current document's project.
     dbschemePath: dbItem.contents.dbSchemeUri.fsPath,
-    queryPath: initialInfo.queryPath
+    queryPath: initialInfo.queryPath,
   };
 
   // Read the query metadata if possible, to use in the UI.
   const metadata = await tryGetQueryMetadata(cliServer, qlProgram.queryPath);
 
   let availableMlModels: cli.MlModelInfo[] = [];
-  if (!await cliServer.cliConstraints.supportsResolveMlModels()) {
-    void logger.log('Resolving ML models is unsupported by this version of the CLI. Running the query without any ML models.');
+  if (!(await cliServer.cliConstraints.supportsResolveMlModels())) {
+    void logger.log(
+      'Resolving ML models is unsupported by this version of the CLI. Running the query without any ML models.'
+    );
   } else {
     try {
-      availableMlModels = (await cliServer.resolveMlModels(diskWorkspaceFolders, initialInfo.queryPath)).models;
+      availableMlModels = (
+        await cliServer.resolveMlModels(diskWorkspaceFolders, initialInfo.queryPath)
+      ).models;
       if (availableMlModels.length) {
-        void logger.log(`Found available ML models at the following paths: ${availableMlModels.map(x => `'${x.path}'`).join(', ')}.`);
+        void logger.log(
+          `Found available ML models at the following paths: ${availableMlModels
+            .map((x) => `'${x.path}'`)
+            .join(', ')}.`
+        );
       } else {
         void logger.log('Did not find any available ML models.');
       }
     } catch (e) {
-      const message = `Couldn't resolve available ML models for ${qlProgram.queryPath}. Running the ` +
+      const message =
+        `Couldn't resolve available ML models for ${qlProgram.queryPath}. Running the ` +
         `query without any ML models: ${e}.`;
       void showAndLogErrorMessage(message);
     }
   }
 
-  const hasMetadataFile = (await dbItem.hasMetadataFile());
+  const hasMetadataFile = await dbItem.hasMetadataFile();
   const query = new QueryEvaluationInfo(
     path.join(queryStorageDir, initialInfo.id),
     dbItem.databaseUri.fsPath,
@@ -864,7 +939,15 @@ export async function compileAndRunQueryAgainstDatabase(
     let upgradeQlo;
     if (await qs.cliServer.cliConstraints.supportsNonDestructiveUpgrades()) {
       upgradeDir = await tmp.dir({ dir: upgradesTmpDir, unsafeCleanup: true });
-      upgradeQlo = await compileNonDestructiveUpgrade(qs, upgradeDir, query, qlProgram, dbItem, progress, token);
+      upgradeQlo = await compileNonDestructiveUpgrade(
+        qs,
+        upgradeDir,
+        query,
+        qlProgram,
+        dbItem,
+        progress,
+        token
+      );
     } else {
       await checkDbschemeCompatibility(cliServer, qs, query, qlProgram, dbItem, progress, token);
     }
@@ -873,14 +956,26 @@ export async function compileAndRunQueryAgainstDatabase(
       errors = await query.compile(qs, qlProgram, progress, token);
     } catch (e) {
       if (e instanceof ResponseError && e.code == ErrorCodes.RequestCancelled) {
-        return createSyntheticResult(query, 'Query cancelled', messages.QueryResultType.CANCELLATION);
+        return createSyntheticResult(
+          query,
+          'Query cancelled',
+          messages.QueryResultType.CANCELLATION
+        );
       } else {
         throw e;
       }
     }
 
     if (errors.length === 0) {
-      const result = await query.run(qs, upgradeQlo, availableMlModels, dbItem, progress, token, queryInfo);
+      const result = await query.run(
+        qs,
+        upgradeQlo,
+        availableMlModels,
+        dbItem,
+        progress,
+        token,
+        queryInfo
+      );
       if (result.resultType !== messages.QueryResultType.SUCCESS) {
         const message = result.message || 'Failed to run query';
         void logger.log(message);
@@ -892,7 +987,7 @@ export async function compileAndRunQueryAgainstDatabase(
         logFileLocation: result.logFileLocation,
         dispose: () => {
           qs.logger.removeAdditionalLogLocation(result.logFileLocation);
-        }
+        },
       };
     } else {
       // Error dialogs are limited in size and scrollability,
@@ -916,21 +1011,28 @@ export async function compileAndRunQueryAgainstDatabase(
         // If there are more than 2 error messages, they will not be displayed well in a popup
         // and will be trimmed by the function displaying the error popup. Accordingly, we only
         // try to show the errors if there are 2 or less, otherwise we direct the user to the log.
-        void showAndLogErrorMessage('Quick evaluation compilation failed: ' + formattedMessages.join('\n'));
+        void showAndLogErrorMessage(
+          'Quick evaluation compilation failed: ' + formattedMessages.join('\n')
+        );
       } else {
-        void showAndLogErrorMessage((initialInfo.isQuickEval ? 'Quick evaluation' : 'Query') + compilationFailedErrorTail);
+        void showAndLogErrorMessage(
+          (initialInfo.isQuickEval ? 'Quick evaluation' : 'Query') + compilationFailedErrorTail
+        );
       }
 
-      return createSyntheticResult(query, 'Query had compilation errors', messages.QueryResultType.OTHER_ERROR);
+      return createSyntheticResult(
+        query,
+        'Query had compilation errors',
+        messages.QueryResultType.OTHER_ERROR
+      );
     }
   } finally {
     try {
       await upgradeDir?.cleanup();
     } catch (e) {
-      void qs.logger.log(
-        `Could not clean up the upgrades dir. Reason: ${getErrorMessage(e)}`,
-        { additionalLogLocation: query.logPath }
-      );
+      void qs.logger.log(`Could not clean up the upgrades dir. Reason: ${getErrorMessage(e)}`, {
+        additionalLogLocation: query.logPath,
+      });
     }
   }
 }
@@ -952,7 +1054,11 @@ export async function createInitialQueryInfo(
   range?: Range
 ): Promise<InitialQueryInfo> {
   // Determine which query to run, based on the selection and the active editor.
-  const { queryPath, quickEvalPosition, quickEvalText } = await determineSelectedQuery(selectedQueryUri, isQuickEval, range);
+  const { queryPath, quickEvalPosition, quickEvalText } = await determineSelectedQuery(
+    selectedQueryUri,
+    isQuickEval,
+    range
+  );
 
   return {
     queryPath,
@@ -961,17 +1067,19 @@ export async function createInitialQueryInfo(
     databaseInfo,
     id: `${path.basename(queryPath)}-${nanoid()}`,
     start: new Date(),
-    ... (isQuickEval ? {
-      queryText: quickEvalText!, // if this query is quick eval, it must have quick eval text
-      quickEvalPosition: quickEvalPosition
-    } : {
-      queryText: await fs.readFile(queryPath, 'utf8')
-    })
+    ...(isQuickEval
+      ? {
+          queryText: quickEvalText!, // if this query is quick eval, it must have quick eval text
+          quickEvalPosition: quickEvalPosition,
+        }
+      : {
+          queryText: await fs.readFile(queryPath, 'utf8'),
+        }),
   };
 }
 
-
-const compilationFailedErrorTail = ' compilation failed. Please make sure there are no errors in the query, the database is up to date,' +
+const compilationFailedErrorTail =
+  ' compilation failed. Please make sure there are no errors in the query, the database is up to date,' +
   ' and the query and database use the same target language. For more details on the error, go to View > Output,' +
   ' and choose CodeQL Query Server from the dropdown.';
 
@@ -990,8 +1098,10 @@ function createSyntheticResult(
       resultType: resultType,
       queryId: -1,
       runId: -1,
-      message
+      message,
     },
-    dispose: () => { /**/ },
+    dispose: () => {
+      /**/
+    },
   };
 }

@@ -17,14 +17,13 @@ import { skipIfNoCodeQL } from '../ensureCli';
 import { QueryResultType } from '../../pure/messages';
 import { tmpDir } from '../../helpers';
 
-
 /**
  * Integration tests for queries
  */
-describe('Queries', function() {
+describe('Queries', function () {
   this.timeout(20000);
 
-  before(function() {
+  before(function () {
     skipIfNoCodeQL(this);
   });
 
@@ -42,12 +41,13 @@ describe('Queries', function() {
   let oldQlpackLockFile: string; // codeql v2.6.3 and earlier
   let qlFile: string;
 
-
   beforeEach(async () => {
     sandbox = sinon.createSandbox();
 
     try {
-      const extension = await extensions.getExtension<CodeQLExtensionInterface | Record<string, never>>('GitHub.vscode-codeql')!.activate();
+      const extension = await extensions
+        .getExtension<CodeQLExtensionInterface | Record<string, never>>('GitHub.vscode-codeql')!
+        .activate();
       if ('databaseManager' in extension) {
         databaseManager = extension.databaseManager;
         cli = extension.cliServer;
@@ -59,7 +59,9 @@ describe('Queries', function() {
         oldQlpackLockFile = `${ctx.storageUri?.fsPath}/quick-queries/qlpack.lock.yml`;
         qlFile = `${ctx.storageUri?.fsPath}/quick-queries/quick-query.ql`;
       } else {
-        throw new Error('Extension not initialized. Make sure cli is downloaded and installed properly.');
+        throw new Error(
+          'Extension not initialized. Make sure cli is downloaded and installed properly.'
+        );
       }
 
       // Ensure we are starting from a clean slate.
@@ -153,29 +155,28 @@ describe('Queries', function() {
     expect(fs.pathExistsSync(qlFile)).to.be.true;
     expect(fs.pathExistsSync(qlpackFile)).to.be.true;
 
-    const qlpackContents: any = await yaml.load(
-      fs.readFileSync(qlpackFile, 'utf8')
-    );
+    const qlpackContents: any = await yaml.load(fs.readFileSync(qlpackFile, 'utf8'));
     // Should have chosen the js libraries
     expect(qlpackContents.dependencies['codeql/javascript-all']).to.eq('*');
 
     // Should also have a codeql-pack.lock.yml file
     const packFileToUse = fs.pathExistsSync(qlpackLockFile) ? qlpackLockFile : oldQlpackLockFile;
-    const qlpackLock: any = await yaml.load(
-      fs.readFileSync(packFileToUse, 'utf8')
-    );
+    const qlpackLock: any = await yaml.load(fs.readFileSync(packFileToUse, 'utf8'));
     expect(!!qlpackLock.dependencies['codeql/javascript-all'].version).to.be.true;
   });
 
   it('should avoid creating a quick query', async () => {
     fs.mkdirpSync(path.dirname(qlpackFile));
-    fs.writeFileSync(qlpackFile, yaml.dump({
-      name: 'quick-query',
-      version: '1.0.0',
-      dependencies: {
-        'codeql/javascript-all': '*'
-      }
-    }));
+    fs.writeFileSync(
+      qlpackFile,
+      yaml.dump({
+        name: 'quick-query',
+        version: '1.0.0',
+        dependencies: {
+          'codeql/javascript-all': '*',
+        },
+      })
+    );
     fs.writeFileSync(qlFile, 'xxx');
     await commands.executeCommand('codeQL.quickQuery');
 

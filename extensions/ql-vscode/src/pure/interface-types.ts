@@ -1,7 +1,13 @@
 import * as sarif from 'sarif';
 import { AnalysisResults } from '../remote-queries/shared/analysis-result';
 import { AnalysisSummary, RemoteQueryResult } from '../remote-queries/shared/remote-query-result';
-import { RawResultSet, ResultRow, ResultSetSchema, Column, ResolvableLocationValue } from './bqrs-cli-types';
+import {
+  RawResultSet,
+  ResultRow,
+  ResultSetSchema,
+  Column,
+  ResolvableLocationValue,
+} from './bqrs-cli-types';
 
 /**
  * This module contains types and code that are shared between
@@ -359,15 +365,13 @@ export type QueryCompareResult = {
  *
  * @param resultSetNames
  */
-export function getDefaultResultSetName(
-  resultSetNames: readonly string[]
-): string {
+export function getDefaultResultSetName(resultSetNames: readonly string[]): string {
   // Choose first available result set from the array
   return [
     ALERTS_TABLE_NAME,
     GRAPH_TABLE_NAME,
     SELECT_TABLE_NAME,
-    resultSetNames[0]
+    resultSetNames[0],
   ].filter((resultSetName) => resultSetNames.includes(resultSetName))[0];
 }
 
@@ -391,13 +395,11 @@ export type FromRemoteQueriesMessage =
   | RemoteQueryExportResultsMessage
   | CopyRepoListMessage;
 
-export type ToRemoteQueriesMessage =
-  | SetRemoteQueryResultMessage
-  | SetAnalysesResultsMessage;
+export type ToRemoteQueriesMessage = SetRemoteQueryResultMessage | SetAnalysesResultsMessage;
 
 export interface SetRemoteQueryResultMessage {
   t: 'setRemoteQueryResult';
-  queryResult: RemoteQueryResult
+  queryResult: RemoteQueryResult;
 }
 
 export interface SetAnalysesResultsMessage {
@@ -412,7 +414,7 @@ export interface RemoteQueryErrorMessage {
 
 export interface RemoteQueryDownloadAnalysisResultsMessage {
   t: 'remoteQueryDownloadAnalysisResults';
-  analysisSummary: AnalysisSummary
+  analysisSummary: AnalysisSummary;
 }
 
 export interface RemoteQueryDownloadAllAnalysesResultsMessage {

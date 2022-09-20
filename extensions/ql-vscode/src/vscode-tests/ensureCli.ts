@@ -30,7 +30,7 @@ import { workspace } from 'vscode';
  * exists. And the cli will not be re-downloaded if the zip already exists.
  */
 
-process.on('unhandledRejection', e => {
+process.on('unhandledRejection', (e) => {
   console.error('Unhandled rejection.');
   console.error(e);
   // Must use a setTimeout in order to ensure the log is fully flushed before exiting
@@ -77,12 +77,16 @@ export async function ensureCli(useCli: boolean) {
     process.env.CLI_PATH = executablePath;
 
     if (fs.existsSync(executablePath)) {
-      console.log(`CLI version ${CLI_VERSION} is found ${executablePath}. Not going to download again.`);
+      console.log(
+        `CLI version ${CLI_VERSION} is found ${executablePath}. Not going to download again.`
+      );
       return;
     }
 
     if (!fs.existsSync(downloadedFilePath)) {
-      console.log(`CLI version ${CLI_VERSION} zip file not found. Downloading from '${url}' into '${downloadedFilePath}'.`);
+      console.log(
+        `CLI version ${CLI_VERSION} zip file not found. Downloading from '${url}' into '${downloadedFilePath}'.`
+      );
 
       const assetStream = await fetch(url);
       const contentLength = Number(assetStream.headers.get('content-length') || 0);
@@ -129,16 +133,18 @@ export async function ensureCli(useCli: boolean) {
  */
 function hasCodeQL() {
   const folders = workspace.workspaceFolders;
-  return !!folders?.some(folder => folder.uri.path.endsWith('/codeql'));
+  return !!folders?.some((folder) => folder.uri.path.endsWith('/codeql'));
 }
 
 export function skipIfNoCodeQL(context: Mocha.Context) {
   if (!hasCodeQL()) {
-    console.log([
-      'The CodeQL libraries are not available as a folder in this workspace.',
-      'To fix in CI: checkout the github/codeql repository and set the \'TEST_CODEQL_PATH\' environment variable to the checked out directory.',
-      'To fix when running from vs code, see the comment in the launch.json file in the \'Launch Integration Tests - With CLI\' section.'
-    ].join('\n\n'));
+    console.log(
+      [
+        'The CodeQL libraries are not available as a folder in this workspace.',
+        "To fix in CI: checkout the github/codeql repository and set the 'TEST_CODEQL_PATH' environment variable to the checked out directory.",
+        "To fix when running from vs code, see the comment in the launch.json file in the 'Launch Integration Tests - With CLI' section.",
+      ].join('\n\n')
+    );
     context.skip();
   }
 }

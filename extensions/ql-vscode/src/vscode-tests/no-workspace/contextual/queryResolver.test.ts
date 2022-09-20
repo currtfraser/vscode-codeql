@@ -18,7 +18,7 @@ describe('queryResolver', () => {
       resolveQueriesInSuite: sinon.stub(),
       cliConstraints: {
         supportsAllowLibraryPacksInResolveQueries: sinon.stub().returns(true),
-      }
+      },
     };
     module = createModule();
   });
@@ -26,46 +26,62 @@ describe('queryResolver', () => {
   describe('resolveQueries', () => {
     it('should resolve a query', async () => {
       mockCli.resolveQueriesInSuite.returns(['a', 'b']);
-      const result = await module.resolveQueries(mockCli, { dbschemePack: 'my-qlpack' }, KeyType.DefinitionQuery);
+      const result = await module.resolveQueries(
+        mockCli,
+        { dbschemePack: 'my-qlpack' },
+        KeyType.DefinitionQuery
+      );
       expect(result).to.deep.equal(['a', 'b']);
       expect(writeFileSpy.getCall(0).args[0]).to.match(/.qls$/);
-      expect(yaml.load(writeFileSpy.getCall(0).args[1])).to.deep.equal([{
-        from: 'my-qlpack',
-        queries: '.',
-        include: {
-          kind: 'definitions',
-          'tags contain': 'ide-contextual-queries/local-definitions'
-        }
-      }]);
+      expect(yaml.load(writeFileSpy.getCall(0).args[1])).to.deep.equal([
+        {
+          from: 'my-qlpack',
+          queries: '.',
+          include: {
+            kind: 'definitions',
+            'tags contain': 'ide-contextual-queries/local-definitions',
+          },
+        },
+      ]);
     });
 
     it('should resolve a query from the queries pack if this is an old CLI', async () => {
       // pretend this is an older CLI
       (mockCli.cliConstraints as any).supportsAllowLibraryPacksInResolveQueries.returns(false);
       mockCli.resolveQueriesInSuite.returns(['a', 'b']);
-      const result = await module.resolveQueries(mockCli, { dbschemePackIsLibraryPack: true, dbschemePack: 'my-qlpack', queryPack: 'my-qlpack2' }, KeyType.DefinitionQuery);
+      const result = await module.resolveQueries(
+        mockCli,
+        { dbschemePackIsLibraryPack: true, dbschemePack: 'my-qlpack', queryPack: 'my-qlpack2' },
+        KeyType.DefinitionQuery
+      );
       expect(result).to.deep.equal(['a', 'b']);
       expect(writeFileSpy.getCall(0).args[0]).to.match(/.qls$/);
-      expect(yaml.load(writeFileSpy.getCall(0).args[1])).to.deep.equal([{
-        from: 'my-qlpack2',
-        queries: '.',
-        include: {
-          kind: 'definitions',
-          'tags contain': 'ide-contextual-queries/local-definitions'
-        }
-      }]);
+      expect(yaml.load(writeFileSpy.getCall(0).args[1])).to.deep.equal([
+        {
+          from: 'my-qlpack2',
+          queries: '.',
+          include: {
+            kind: 'definitions',
+            'tags contain': 'ide-contextual-queries/local-definitions',
+          },
+        },
+      ]);
     });
 
     it('should throw an error when there are no queries found', async () => {
       mockCli.resolveQueriesInSuite.returns([]);
 
       try {
-        await module.resolveQueries(mockCli, { dbschemePack: 'my-qlpack' }, KeyType.DefinitionQuery);
+        await module.resolveQueries(
+          mockCli,
+          { dbschemePack: 'my-qlpack' },
+          KeyType.DefinitionQuery
+        );
         // should reject
         expect(true).to.be.false;
       } catch (e) {
         expect(getErrorMessage(e)).to.eq(
-          'Couldn\'t find any queries tagged ide-contextual-queries/local-definitions in any of the following packs: my-qlpack.'
+          "Couldn't find any queries tagged ide-contextual-queries/local-definitions in any of the following packs: my-qlpack."
         );
       }
     });
@@ -77,9 +93,9 @@ describe('queryResolver', () => {
       const db = {
         contents: {
           datasetUri: {
-            fsPath: '/path/to/database'
-          }
-        }
+            fsPath: '/path/to/database',
+          },
+        },
       };
       const result = await module.qlpackOfDatabase(mockCli, db);
       expect(result).to.eq('my-qlpack');
@@ -93,15 +109,15 @@ describe('queryResolver', () => {
     getPrimaryDbschemeSpy = sinon.stub();
     return proxyquire('../../../contextual/queryResolver', {
       'fs-extra': {
-        writeFile: writeFileSpy
+        writeFile: writeFileSpy,
       },
 
       '../helpers': {
         getQlPackForDbscheme: getQlPackForDbschemeSpy,
         getPrimaryDbscheme: getPrimaryDbschemeSpy,
         getOnDiskWorkspaceFolders: () => ({}),
-        showAndLogErrorMessage: () => ({})
-      }
+        showAndLogErrorMessage: () => ({}),
+      },
     });
   }
 });

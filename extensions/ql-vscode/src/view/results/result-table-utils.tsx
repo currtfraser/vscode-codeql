@@ -57,14 +57,14 @@ export function jumpToLocation(loc: ResolvableLocationValue, databaseUri: string
   vscode.postMessage({
     t: 'viewSourceFile',
     loc,
-    databaseUri
+    databaseUri,
   });
 }
 
 export function openFile(filePath: string): void {
   vscode.postMessage({
     t: 'openFile',
-    filePath
+    filePath,
   });
 }
 
@@ -78,7 +78,6 @@ export function renderLocation(
   title?: string,
   callback?: () => void
 ): JSX.Element {
-
   const displayLabel = convertNonPrintableChars(label!);
 
   if (loc === undefined) {
@@ -90,10 +89,12 @@ export function renderLocation(
   const resolvableLoc = tryGetResolvableLocation(loc);
   if (databaseUri !== undefined && resolvableLoc !== undefined) {
     return (
-      <a href="#"
+      <a
+        href="#"
         className="vscode-codeql__result-table-location-link"
         title={title}
-        onClick={jumpToLocationHandler(resolvableLoc, databaseUri, callback)}>
+        onClick={jumpToLocationHandler(resolvableLoc, databaseUri, callback)}
+      >
         {displayLabel}
       </a>
     );
@@ -106,14 +107,18 @@ export function renderLocation(
  * Returns the attributes for a zebra-striped table row at position `index`.
  */
 export function zebraStripe(index: number, ...otherClasses: string[]): { className: string } {
-  return { className: [(index % 2) ? oddRowClassName : evenRowClassName, ...otherClasses].join(' ') };
+  return { className: [index % 2 ? oddRowClassName : evenRowClassName, ...otherClasses].join(' ') };
 }
 
 /**
  * Returns the attributes for a zebra-striped table row at position `index`,
  * with highlighting if `isSelected` is true.
  */
-export function selectableZebraStripe(isSelected: boolean, index: number, ...otherClasses: string[]): { className: string } {
+export function selectableZebraStripe(
+  isSelected: boolean,
+  index: number,
+  ...otherClasses: string[]
+): { className: string } {
   return isSelected
     ? { className: [selectedRowClassName, ...otherClasses].join(' ') }
     : zebraStripe(index, ...otherClasses);
@@ -123,7 +128,10 @@ export function selectableZebraStripe(isSelected: boolean, index: number, ...oth
  * Returns the next sort direction when cycling through sort directions while clicking.
  * if `includeUndefined` is true, include `undefined` in the cycle.
  */
-export function nextSortDirection(direction: SortDirection | undefined, includeUndefined?: boolean): SortDirection | undefined {
+export function nextSortDirection(
+  direction: SortDirection | undefined,
+  includeUndefined?: boolean
+): SortDirection | undefined {
   switch (direction) {
     case SortDirection.asc:
       return SortDirection.desc;
@@ -137,7 +145,13 @@ export function nextSortDirection(direction: SortDirection | undefined, includeU
 }
 
 export function emptyQueryResultsMessage(): JSX.Element {
-  return <div className='vscode-codeql__empty-query-message'><span>
-    This query returned no results. If this isn&apos;t what you were expecting, and for effective query-writing tips, check out the <a href="https://codeql.github.com/docs/codeql-language-guides/">CodeQL language guides</a>.
-  </span></div>;
+  return (
+    <div className="vscode-codeql__empty-query-message">
+      <span>
+        This query returned no results. If this isn&apos;t what you were expecting, and for
+        effective query-writing tips, check out the{' '}
+        <a href="https://codeql.github.com/docs/codeql-language-guides/">CodeQL language guides</a>.
+      </span>
+    </div>
+  );
 }

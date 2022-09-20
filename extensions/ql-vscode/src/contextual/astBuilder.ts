@@ -11,7 +11,6 @@ import { Uri } from 'vscode';
  * has an @kind of graph
  */
 export default class AstBuilder {
-
   private roots: AstItem[] | undefined;
   private bqrsPath: string;
   constructor(
@@ -50,8 +49,13 @@ export default class AstBuilder {
     const roots = [];
 
     // Build up the parent-child relationships
-    edgeTuples.tuples.forEach(tuple => {
-      const [source, target, tupleType, value] = tuple as [EntityValue, EntityValue, string, string];
+    edgeTuples.tuples.forEach((tuple) => {
+      const [source, target, tupleType, value] = tuple as [
+        EntityValue,
+        EntityValue,
+        string,
+        string
+      ];
       const sourceId = source.id!;
       const targetId = target.id!;
 
@@ -64,7 +68,7 @@ export default class AstBuilder {
           childToParent.set(targetId, sourceId);
           let children = parentToChildren.get(sourceId);
           if (!children) {
-            parentToChildren.set(sourceId, children = []);
+            parentToChildren.set(sourceId, (children = []));
           }
           children.push(targetId);
 
@@ -81,7 +85,7 @@ export default class AstBuilder {
     });
 
     // populate parents and children
-    nodeTuples.tuples.forEach(tuple => {
+    nodeTuples.tuples.forEach((tuple) => {
       const [entity, tupleType, value] = tuple as [EntityValue, string, string];
       const id = entity.id!;
 
@@ -94,14 +98,14 @@ export default class AstBuilder {
           // If an edge label exists, include it and separate from the node label using ':'
           const nodeLabel = value ?? entity.label;
           const edgeLabel = edgeLabels.get(id);
-          const label = [edgeLabel, nodeLabel].filter(e => e).join(': ');
+          const label = [edgeLabel, nodeLabel].filter((e) => e).join(': ');
           const item = {
             id,
             label,
             location: entity.url,
             fileLocation: fileRangeFromURI(entity.url, this.db),
             children: [] as ChildAstItem[],
-            order: Number.MAX_SAFE_INTEGER
+            order: Number.MAX_SAFE_INTEGER,
           };
 
           idToItem.set(id, item);
@@ -113,7 +117,7 @@ export default class AstBuilder {
             parent.children.push(astItem);
           }
           const children = parentToChildren.has(id) ? parentToChildren.get(id)! : [];
-          children.forEach(childId => {
+          children.forEach((childId) => {
             const child = idToItem.get(childId) as ChildAstItem | undefined;
             if (child) {
               child.parent = item;
@@ -130,9 +134,7 @@ export default class AstBuilder {
 
     // find the roots and add the order
     for (const [, item] of idToItem) {
-      item.order = astOrder.has(item.id)
-        ? astOrder.get(item.id)!
-        : Number.MAX_SAFE_INTEGER;
+      item.order = astOrder.has(item.id) ? astOrder.get(item.id)! : Number.MAX_SAFE_INTEGER;
 
       if (!('parent' in item)) {
         roots.push(item);
@@ -142,7 +144,7 @@ export default class AstBuilder {
   }
 
   private isValidGraph(graphProperties: DecodedBqrsChunk) {
-    const tuple = graphProperties?.tuples?.find(t => t[0] === 'semmle.graphKind');
+    const tuple = graphProperties?.tuples?.find((t) => t[0] === 'semmle.graphKind');
     return tuple?.[1] === 'tree';
   }
 }

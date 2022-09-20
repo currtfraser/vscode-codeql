@@ -1,6 +1,13 @@
 import { ConfigurationTarget, Extension, ExtensionContext, ConfigurationChangeEvent } from 'vscode';
 import TelemetryReporter from 'vscode-extension-telemetry';
-import { ConfigListener, CANARY_FEATURES, ENABLE_TELEMETRY, GLOBAL_ENABLE_TELEMETRY, LOG_TELEMETRY, isIntegrationTestMode } from './config';
+import {
+  ConfigListener,
+  CANARY_FEATURES,
+  ENABLE_TELEMETRY,
+  GLOBAL_ENABLE_TELEMETRY,
+  LOG_TELEMETRY,
+  isIntegrationTestMode,
+} from './config';
 import * as appInsights from 'applicationinsights';
 import { logger } from './logging';
 import { UserCancellationException } from './commandRunner';
@@ -12,7 +19,7 @@ const key = 'REPLACE-APP-INSIGHTS-KEY';
 export enum CommandCompletion {
   Success = 'Success',
   Failed = 'Failed',
-  Cancelled = 'Cancelled'
+  Cancelled = 'Cancelled',
 }
 
 // Avoid sending the following data to App insights since we don't need it.
@@ -26,7 +33,7 @@ const tagsToRemove = [
   'ai.device.osPlatform',
   'ai.device.osVersion',
   'ai.internal.sdkVersion',
-  'ai.session.id'
+  'ai.session.id',
 ];
 
 const baseDataPropertiesToRemove = [
@@ -34,11 +41,10 @@ const baseDataPropertiesToRemove = [
   'common.platformversion',
   'common.remotename',
   'common.uikind',
-  'common.vscodesessionid'
+  'common.vscodesessionid',
 ];
 
 export class TelemetryListener extends ConfigListener {
-
   static relevantSettings = [ENABLE_TELEMETRY, CANARY_FEATURES];
 
   private reporter?: TelemetryReporter;
@@ -82,10 +88,7 @@ export class TelemetryListener extends ConfigListener {
       CANARY_FEATURES.getValue() &&
       !ENABLE_TELEMETRY.getValue()
     ) {
-      await Promise.all([
-        this.setTelemetryRequested(false),
-        this.requestTelemetryPermission()
-      ]);
+      await Promise.all([this.setTelemetryRequested(false), this.requestTelemetryPermission()]);
     }
   }
 
@@ -112,10 +115,10 @@ export class TelemetryListener extends ConfigListener {
     if (client) {
       // add a telemetry processor to delete unwanted properties
       client.addTelemetryProcessor((envelope: any) => {
-        tagsToRemove.forEach(tag => delete envelope.tags[tag]);
+        tagsToRemove.forEach((tag) => delete envelope.tags[tag]);
         const baseDataProperties = (envelope.data as any)?.baseData?.properties;
         if (baseDataProperties) {
-          baseDataPropertiesToRemove.forEach(prop => delete baseDataProperties[prop]);
+          baseDataPropertiesToRemove.forEach((prop) => delete baseDataProperties[prop]);
         }
 
         if (LOG_TELEMETRY.getValue<boolean>()) {
@@ -138,8 +141,8 @@ export class TelemetryListener extends ConfigListener {
     const status = !error
       ? CommandCompletion.Success
       : error instanceof UserCancellationException
-        ? CommandCompletion.Cancelled
-        : CommandCompletion.Failed;
+      ? CommandCompletion.Cancelled
+      : CommandCompletion.Failed;
 
     const isCanary = (!!CANARY_FEATURES.getValue<boolean>()).toString();
 
@@ -148,7 +151,7 @@ export class TelemetryListener extends ConfigListener {
       {
         name,
         status,
-        isCanary
+        isCanary,
       },
       { executionTime }
     );
@@ -205,13 +208,15 @@ export class TelemetryListener extends ConfigListener {
   }
 }
 
-
 /**
  * The global Telemetry instance
  */
 export let telemetryListener: TelemetryListener;
 
-export async function initializeTelemetry(extension: Extension<any>, ctx: ExtensionContext): Promise<void> {
+export async function initializeTelemetry(
+  extension: Extension<any>,
+  ctx: ExtensionContext
+): Promise<void> {
   telemetryListener = new TelemetryListener(extension.id, extension.packageJSON.version, key, ctx);
   // do not await initialization, since doing so will sometimes cause a modal popup.
   // this is a particular problem during integration tests, which will hang if a modal popup is displayed.

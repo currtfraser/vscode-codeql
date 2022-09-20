@@ -25,11 +25,12 @@ import { EvalLogViewer } from '../../../eval-log-viewer';
  * Tests for remote queries and how they interact with the query history manager.
  */
 
-describe('Remote queries and query history manager', function() {
-
+describe('Remote queries and query history manager', function () {
   const EXTENSION_PATH = path.join(__dirname, '../../../../');
   const STORAGE_DIR = Uri.file(path.join(tmpDir.name, 'remote-queries')).fsPath;
-  const asyncNoop = async () => { /** noop */ };
+  const asyncNoop = async () => {
+    /** noop */
+  };
 
   let sandbox: sinon.SinonSandbox;
   let qhm: QueryHistoryManager;
@@ -46,8 +47,7 @@ describe('Remote queries and query history manager', function() {
   let removeRemoteQueryStub: sinon.SinonStub;
   let openRemoteQueryResultsStub: sinon.SinonStub;
 
-  beforeEach(async function() {
-
+  beforeEach(async function () {
     // set a higher timeout since recursive delete below may take a while, expecially on Windows.
     this.timeout(120000);
 
@@ -57,25 +57,25 @@ describe('Remote queries and query history manager', function() {
 
     sandbox = sinon.createSandbox();
 
-    localQueriesResultsViewStub = {
-      showResults: sandbox.stub()
-    } as any as ResultsView;
+    localQueriesResultsViewStub = ({
+      showResults: sandbox.stub(),
+    } as any) as ResultsView;
 
     rehydrateRemoteQueryStub = sandbox.stub();
     removeRemoteQueryStub = sandbox.stub();
     openRemoteQueryResultsStub = sandbox.stub();
 
-    remoteQueriesManagerStub = {
+    remoteQueriesManagerStub = ({
       onRemoteQueryAdded: sandbox.stub(),
       onRemoteQueryRemoved: sandbox.stub(),
       onRemoteQueryStatusUpdate: sandbox.stub(),
       rehydrateRemoteQuery: rehydrateRemoteQueryStub,
       removeRemoteQuery: removeRemoteQueryStub,
-      openRemoteQueryResults: openRemoteQueryResultsStub
-    } as any as RemoteQueriesManager;
+      openRemoteQueryResults: openRemoteQueryResultsStub,
+    } as any) as RemoteQueriesManager;
   });
 
-  afterEach(function() {
+  afterEach(function () {
     // set a higher timeout since recursive delete below may take a while, expecially on Windows.
     this.timeout(120000);
     deleteHistoryState();
@@ -85,9 +85,14 @@ describe('Remote queries and query history manager', function() {
     sandbox = sinon.createSandbox();
     disposables = new DisposableBucket();
 
-    rawQueryHistory = fs.readJSONSync(path.join(STORAGE_DIR, 'workspace-query-history.json')).queries;
-    remoteQueryResult0 = fs.readJSONSync(path.join(STORAGE_DIR, 'queries', rawQueryHistory[0].queryId, 'query-result.json'));
-    remoteQueryResult1 = fs.readJSONSync(path.join(STORAGE_DIR, 'queries', rawQueryHistory[1].queryId, 'query-result.json'));
+    rawQueryHistory = fs.readJSONSync(path.join(STORAGE_DIR, 'workspace-query-history.json'))
+      .queries;
+    remoteQueryResult0 = fs.readJSONSync(
+      path.join(STORAGE_DIR, 'queries', rawQueryHistory[0].queryId, 'query-result.json')
+    );
+    remoteQueryResult1 = fs.readJSONSync(
+      path.join(STORAGE_DIR, 'queries', rawQueryHistory[1].queryId, 'query-result.json')
+    );
 
     qhm = new QueryHistoryManager(
       {} as QueryServerClient,
@@ -98,11 +103,11 @@ describe('Remote queries and query history manager', function() {
       STORAGE_DIR,
       {
         globalStorageUri: Uri.file(STORAGE_DIR),
-        extensionPath: EXTENSION_PATH
+        extensionPath: EXTENSION_PATH,
       } as ExtensionContext,
-      {
+      ({
         onDidChangeConfiguration: () => new DisposableBucket(),
-      } as unknown as QueryHistoryConfig,
+      } as unknown) as QueryHistoryConfig,
       new HistoryItemLabelProvider({} as QueryHistoryConfig),
       asyncNoop
     );
@@ -155,7 +160,10 @@ describe('Remote queries and query history manager', function() {
 
     // Remove the both queries
     // Just for fun, let's do it in reverse order
-    await qhm.handleRemoveHistoryItem(undefined!, [qhm.treeDataProvider.allHistory[1], qhm.treeDataProvider.allHistory[0]]);
+    await qhm.handleRemoveHistoryItem(undefined!, [
+      qhm.treeDataProvider.allHistory[1],
+      qhm.treeDataProvider.allHistory[0],
+    ]);
 
     expect(removeRemoteQueryStub.callCount).to.eq(2);
     expect(removeRemoteQueryStub.getCall(0).args[0]).to.eq(rawQueryHistory[1].queryId);
@@ -165,7 +173,7 @@ describe('Remote queries and query history manager', function() {
     // also, both queries should be removed from on disk storage
     expect(fs.readJSONSync(path.join(STORAGE_DIR, 'workspace-query-history.json'))).to.deep.eq({
       version: 1,
-      queries: []
+      queries: [],
     });
   });
 
@@ -191,7 +199,6 @@ describe('Remote queries and query history manager', function() {
   });
 
   describe('AnalysisResultsManager', () => {
-
     let mockCredentials: any;
     let mockOctokit: any;
     let mockLogger: any;
@@ -200,17 +207,17 @@ describe('Remote queries and query history manager', function() {
 
     beforeEach(() => {
       mockOctokit = {
-        request: sandbox.stub()
+        request: sandbox.stub(),
       };
       mockCredentials = {
-        getOctokit: () => mockOctokit
+        getOctokit: () => mockOctokit,
       };
       mockLogger = {
-        log: sandbox.spy()
+        log: sandbox.spy(),
       };
       mockCliServer = {
         bqrsInfo: sandbox.spy(),
-        bqrsDecode: sandbox.spy()
+        bqrsDecode: sandbox.spy(),
       };
       sandbox.stub(Credentials, 'initialize').resolves(mockCredentials);
 
@@ -263,54 +270,68 @@ describe('Remote queries and query history manager', function() {
 
     it('should download two artifacts at once', async () => {
       const publisher = sandbox.spy();
-      const analysisSummaries = [remoteQueryResult0.analysisSummaries[0], remoteQueryResult0.analysisSummaries[1]];
+      const analysisSummaries = [
+        remoteQueryResult0.analysisSummaries[0],
+        remoteQueryResult0.analysisSummaries[1],
+      ];
       await arm.loadAnalysesResults(analysisSummaries, undefined, publisher);
 
-      const trimmed = publisher.getCalls().map(call => call.args[0]).map(args => {
-        args.forEach((analysisResult: any) => delete analysisResult.interpretedResults);
-        return args;
-      });
+      const trimmed = publisher
+        .getCalls()
+        .map((call) => call.args[0])
+        .map((args) => {
+          args.forEach((analysisResult: any) => delete analysisResult.interpretedResults);
+          return args;
+        });
 
       // As before, but now both summaries should have been published
-      expect(trimmed[0]).to.deep.eq([{
-        nwo: 'github/vscode-codeql',
-        status: 'InProgress',
-        resultCount: 15,
-        lastUpdated: 1653447088649,
-        starCount: 1
-      }]);
+      expect(trimmed[0]).to.deep.eq([
+        {
+          nwo: 'github/vscode-codeql',
+          status: 'InProgress',
+          resultCount: 15,
+          lastUpdated: 1653447088649,
+          starCount: 1,
+        },
+      ]);
 
-      expect(trimmed[1]).to.deep.eq([{
-        nwo: 'github/vscode-codeql',
-        status: 'InProgress',
-        resultCount: 15,
-        lastUpdated: 1653447088649,
-        starCount: 1
-      }, {
-        nwo: 'other/hucairz',
-        status: 'InProgress',
-        resultCount: 15,
-        lastUpdated: 1653447088649,
-        starCount: 1
-      }]);
+      expect(trimmed[1]).to.deep.eq([
+        {
+          nwo: 'github/vscode-codeql',
+          status: 'InProgress',
+          resultCount: 15,
+          lastUpdated: 1653447088649,
+          starCount: 1,
+        },
+        {
+          nwo: 'other/hucairz',
+          status: 'InProgress',
+          resultCount: 15,
+          lastUpdated: 1653447088649,
+          starCount: 1,
+        },
+      ]);
 
       // there is a third call. It is non-deterministic if
       // github/vscode-codeql is completed first or other/hucairz is.
       // There is not much point in trying to test it if the other calls are correct.
 
-      expect(trimmed[3]).to.deep.eq([{
-        nwo: 'github/vscode-codeql',
-        status: 'Completed',
-        resultCount: 15,
-        lastUpdated: 1653447088649,
-        starCount: 1
-      }, {
-        nwo: 'other/hucairz',
-        status: 'Completed',
-        resultCount: 15,
-        lastUpdated: 1653447088649,
-        starCount: 1
-      }]);
+      expect(trimmed[3]).to.deep.eq([
+        {
+          nwo: 'github/vscode-codeql',
+          status: 'Completed',
+          resultCount: 15,
+          lastUpdated: 1653447088649,
+          starCount: 1,
+        },
+        {
+          nwo: 'other/hucairz',
+          status: 'Completed',
+          resultCount: 15,
+          lastUpdated: 1653447088649,
+          starCount: 1,
+        },
+      ]);
 
       expect(publisher).to.have.callCount(4);
     });
@@ -320,9 +341,13 @@ describe('Remote queries and query history manager', function() {
       const analysisSummaries = [...remoteQueryResult0.analysisSummaries];
 
       try {
-        await arm.loadAnalysesResults(analysisSummaries, {
-          isCancellationRequested: true
-        } as CancellationToken, publisher);
+        await arm.loadAnalysesResults(
+          analysisSummaries,
+          {
+            isCancellationRequested: true,
+          } as CancellationToken,
+          publisher
+        );
         expect.fail('Should have thrown');
       } catch (e) {
         expect(getErrorMessage(e)).to.contain('cancelled');
@@ -333,7 +358,10 @@ describe('Remote queries and query history manager', function() {
 
     it('should get the analysis results', async () => {
       const publisher = sandbox.spy();
-      const analysisSummaries0 = [remoteQueryResult0.analysisSummaries[0], remoteQueryResult0.analysisSummaries[1]];
+      const analysisSummaries0 = [
+        remoteQueryResult0.analysisSummaries[0],
+        remoteQueryResult0.analysisSummaries[1],
+      ];
       const analysisSummaries1 = [...remoteQueryResult1.analysisSummaries];
 
       await arm.loadAnalysesResults(analysisSummaries0, undefined, publisher);
@@ -358,7 +386,9 @@ describe('Remote queries and query history manager', function() {
       const analysisSummaries0 = [remoteQueryResult0.analysisSummaries[0]];
       await arm.loadAnalysesResults(analysisSummaries0, undefined, publisher);
 
-      const sarif = fs.readJSONSync(path.join(STORAGE_DIR, 'queries', rawQueryHistory[0].queryId, '171543249', 'results.sarif'));
+      const sarif = fs.readJSONSync(
+        path.join(STORAGE_DIR, 'queries', rawQueryHistory[0].queryId, '171543249', 'results.sarif')
+      );
       const queryResults = sarif.runs
         .flatMap((run: any) => run.results)
         .map((result: any) => ({ message: result.message.text }));
@@ -368,22 +398,30 @@ describe('Remote queries and query history manager', function() {
 
     it('should check if an artifact is downloaded and not in memory', async () => {
       // Load remoteQueryResult0.analysisSummaries[1] into memory
-      await arm.downloadAnalysisResults(remoteQueryResult0.analysisSummaries[1], () => Promise.resolve());
+      await arm.downloadAnalysisResults(remoteQueryResult0.analysisSummaries[1], () =>
+        Promise.resolve()
+      );
 
       // on disk
-      expect(await (arm as any).isAnalysisDownloaded(remoteQueryResult0.analysisSummaries[0])).to.be.true;
+      expect(await (arm as any).isAnalysisDownloaded(remoteQueryResult0.analysisSummaries[0])).to.be
+        .true;
 
       // in memory
-      expect(await (arm as any).isAnalysisDownloaded(remoteQueryResult0.analysisSummaries[1])).to.be.true;
+      expect(await (arm as any).isAnalysisDownloaded(remoteQueryResult0.analysisSummaries[1])).to.be
+        .true;
 
       // not downloaded
-      expect(await (arm as any).isAnalysisDownloaded(remoteQueryResult0.analysisSummaries[2])).to.be.false;
+      expect(await (arm as any).isAnalysisDownloaded(remoteQueryResult0.analysisSummaries[2])).to.be
+        .false;
     });
 
     it('should load downloaded artifacts', async () => {
       await arm.loadDownloadedAnalyses(remoteQueryResult0.analysisSummaries);
       const queryId = rawQueryHistory[0].queryId;
-      const analysesResultsNwos = arm.getAnalysesResults(queryId).map(ar => ar.nwo).sort();
+      const analysesResultsNwos = arm
+        .getAnalysesResults(queryId)
+        .map((ar) => ar.nwo)
+        .sort();
       expect(analysesResultsNwos[0]).to.eq('github/vscode-codeql');
       expect(analysesResultsNwos[1]).to.eq('other/hucairz');
       expect(analysesResultsNwos.length).to.eq(2);
@@ -392,7 +430,10 @@ describe('Remote queries and query history manager', function() {
 
   async function copyHistoryState() {
     fs.ensureDirSync(STORAGE_DIR);
-    fs.copySync(path.join(__dirname, '../data/remote-queries/'), path.join(tmpDir.name, 'remote-queries'));
+    fs.copySync(
+      path.join(__dirname, '../data/remote-queries/'),
+      path.join(tmpDir.name, 'remote-queries')
+    );
 
     // also, replace the files with "PLACEHOLDER" so that they have the correct directory
     for await (const p of walkDirectory(STORAGE_DIR)) {
@@ -405,13 +446,15 @@ describe('Remote queries and query history manager', function() {
       recursive: true,
       force: true,
       maxRetries: 10,
-      retryDelay: 100
+      retryDelay: 100,
     });
   }
 
   function replacePlaceholder(filePath: string) {
     if (filePath.endsWith('.json')) {
-      const newContents = fs.readFileSync(filePath, 'utf8').replaceAll('PLACEHOLDER', STORAGE_DIR.replaceAll('\\', '/'));
+      const newContents = fs
+        .readFileSync(filePath, 'utf8')
+        .replaceAll('PLACEHOLDER', STORAGE_DIR.replaceAll('\\', '/'));
       fs.writeFileSync(filePath, newContents, 'utf8');
     }
   }

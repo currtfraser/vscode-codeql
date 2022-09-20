@@ -11,14 +11,18 @@ import {
   TestEvent,
   TestSuiteInfo,
   TestInfo,
-  TestHub
+  TestHub,
 } from 'vscode-test-adapter-api';
 import { TestAdapterRegistrar } from 'vscode-test-adapter-util';
 import { QLTestFile, QLTestNode, QLTestDirectory, QLTestDiscovery } from './qltest-discovery';
 import { Event, EventEmitter, CancellationTokenSource, CancellationToken } from 'vscode';
 import { DisposableObject } from './pure/disposable-object';
 import { CodeQLCliServer } from './cli';
-import { getOnDiskWorkspaceFolders, showAndLogErrorMessage, showAndLogWarningMessage } from './helpers';
+import {
+  getOnDiskWorkspaceFolders,
+  showAndLogErrorMessage,
+  showAndLogWarningMessage,
+} from './helpers';
 import { testLogger } from './logging';
 import { DatabaseItem, DatabaseManager } from './databases';
 
@@ -63,10 +67,12 @@ export class QLTestAdapterFactory extends DisposableObject {
     super();
 
     // this will register a QLTestAdapter for each WorkspaceFolder
-    this.push(new TestAdapterRegistrar(
-      testHub,
-      workspaceFolder => new QLTestAdapter(workspaceFolder, cliServer, databaseManager)
-    ));
+    this.push(
+      new TestAdapterRegistrar(
+        testHub,
+        (workspaceFolder) => new QLTestAdapter(workspaceFolder, cliServer, databaseManager)
+      )
+    );
   }
 }
 
@@ -85,9 +91,11 @@ function changeExtension(p: string, ext: string): string {
 export class QLTestAdapter extends DisposableObject implements TestAdapter {
   private readonly qlTestDiscovery: QLTestDiscovery;
   private readonly _tests = this.push(
-    new EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>());
+    new EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>()
+  );
   private readonly _testStates = this.push(
-    new EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>());
+    new EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>()
+  );
   private readonly _autorun = this.push(new EventEmitter<void>());
   private runningTask?: vscode.CancellationTokenSource = undefined;
 
@@ -108,7 +116,9 @@ export class QLTestAdapter extends DisposableObject implements TestAdapter {
     return this._tests.event;
   }
 
-  public get testStates(): Event<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent> {
+  public get testStates(): Event<
+    TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent
+  > {
     return this._testStates.event;
   }
 
@@ -116,7 +126,9 @@ export class QLTestAdapter extends DisposableObject implements TestAdapter {
     return this._autorun.event;
   }
 
-  private static createTestOrSuiteInfos(testNodes: readonly QLTestNode[]): (TestSuiteInfo | TestInfo)[] {
+  private static createTestOrSuiteInfos(
+    testNodes: readonly QLTestNode[]
+  ): (TestSuiteInfo | TestInfo)[] {
     return testNodes.map((childNode) => {
       return QLTestAdapter.createTestOrSuiteInfo(childNode);
     });
@@ -138,7 +150,7 @@ export class QLTestAdapter extends DisposableObject implements TestAdapter {
       id: testFile.path,
       label: testFile.name,
       tooltip: testFile.path,
-      file: testFile.path
+      file: testFile.path,
     };
   }
 
@@ -148,7 +160,7 @@ export class QLTestAdapter extends DisposableObject implements TestAdapter {
       id: testDirectory.path,
       label: label,
       children: QLTestAdapter.createTestOrSuiteInfos(testDirectory.children),
-      tooltip: testDirectory.path
+      tooltip: testDirectory.path,
     };
   }
 
@@ -167,12 +179,12 @@ export class QLTestAdapter extends DisposableObject implements TestAdapter {
         type: 'suite',
         label: 'CodeQL',
         id: testDirectory.path,
-        children
+        children,
       };
     }
     this._tests.fire({
       type: 'finished',
-      suite: testSuite
+      suite: testSuite,
     } as TestLoadFinishedEvent);
   }
 
@@ -216,11 +228,18 @@ export class QLTestAdapter extends DisposableObject implements TestAdapter {
   }
 
   private async removeDatabasesBeforeTests(
-    databasesUnderTest: DatabaseItem[], token: vscode.CancellationToken): Promise<void> {
+    databasesUnderTest: DatabaseItem[],
+    token: vscode.CancellationToken
+  ): Promise<void> {
     for (const database of databasesUnderTest) {
       try {
-        await this.databaseManager
-          .removeDatabaseItem(_ => { /* no progress reporting */ }, token, database);
+        await this.databaseManager.removeDatabaseItem(
+          (_) => {
+            /* no progress reporting */
+          },
+          token,
+          database
+        );
       } catch (e) {
         // This method is invoked from Test Explorer UI, and testing indicates that Test
         // Explorer UI swallows any thrown exception without reporting it to the user.
@@ -234,13 +253,19 @@ export class QLTestAdapter extends DisposableObject implements TestAdapter {
   private async reopenDatabasesAfterTests(
     databasesUnderTest: DatabaseItem[],
     currentDatabaseUri: vscode.Uri | undefined,
-    token: vscode.CancellationToken): Promise<void> {
+    token: vscode.CancellationToken
+  ): Promise<void> {
     for (const closedDatabase of databasesUnderTest) {
       const uri = closedDatabase.databaseUri;
       if (await this.isFileAccessible(uri)) {
         try {
-          const reopenedDatabase = await this.databaseManager
-            .openDatabase(_ => { /* no progress reporting */ }, token, uri);
+          const reopenedDatabase = await this.databaseManager.openDatabase(
+            (_) => {
+              /* no progress reporting */
+            },
+            token,
+            uri
+          );
           await this.databaseManager.renameDatabaseItem(reopenedDatabase, closedDatabase.name);
           if (currentDatabaseUri == uri) {
             await this.databaseManager.setCurrentDatabaseItem(reopenedDatabase, true);
@@ -285,18 +310,26 @@ export class QLTestAdapter extends DisposableObject implements TestAdapter {
     const workspacePaths = await getOnDiskWorkspaceFolders();
     for await (const event of await this.cliServer.runTests(tests, workspacePaths, {
       cancellationToken: cancellationToken,
-      logger: testLogger
+      logger: testLogger,
     })) {
-      const state = event.pass
-        ? 'passed'
-        : event.messages?.length
-          ? 'errored'
-          : 'failed';
+      const state = event.pass ? 'passed' : event.messages?.length ? 'errored' : 'failed';
       let message: string | undefined;
       if (event.failureDescription || event.diff?.length) {
-        message = event.failureStage === 'RESULT'
-          ? ['', `${state}: ${event.test}`, event.failureDescription || event.diff?.join('\n'), ''].join('\n')
-          : ['', `${event.failureStage?.toLowerCase()} error: ${event.test}`, event.failureDescription || `${event.messages[0].severity}: ${event.messages[0].message}`, ''].join('\n');
+        message =
+          event.failureStage === 'RESULT'
+            ? [
+                '',
+                `${state}: ${event.test}`,
+                event.failureDescription || event.diff?.join('\n'),
+                '',
+              ].join('\n')
+            : [
+                '',
+                `${event.failureStage?.toLowerCase()} error: ${event.test}`,
+                event.failureDescription ||
+                  `${event.messages[0].severity}: ${event.messages[0].message}`,
+                '',
+              ].join('\n');
         void testLogger.log(message);
       }
       this._testStates.fire({
@@ -304,10 +337,10 @@ export class QLTestAdapter extends DisposableObject implements TestAdapter {
         state,
         test: event.test,
         message,
-        decorations: event.messages?.map(msg => ({
+        decorations: event.messages?.map((msg) => ({
           line: msg.position.line,
-          message: msg.message
-        }))
+          message: msg.message,
+        })),
       });
     }
   }

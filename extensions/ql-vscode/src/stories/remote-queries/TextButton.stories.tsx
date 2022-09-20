@@ -14,7 +14,7 @@ export default {
         disable: true,
       },
     },
-  }
+  },
 } as ComponentMeta<typeof TextButtonComponent>;
 
 const Template: ComponentStory<typeof TextButtonComponent> = (args) => (

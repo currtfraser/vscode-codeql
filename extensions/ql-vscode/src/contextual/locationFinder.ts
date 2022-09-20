@@ -1,11 +1,20 @@
 import { decodeSourceArchiveUri, encodeArchiveBasePath } from '../archive-filesystem-provider';
-import { ColumnKindCode, EntityValue, getResultSetSchema, ResultSetSchema } from '../pure/bqrs-cli-types';
+import {
+  ColumnKindCode,
+  EntityValue,
+  getResultSetSchema,
+  ResultSetSchema,
+} from '../pure/bqrs-cli-types';
 import { CodeQLCliServer } from '../cli';
 import { DatabaseManager, DatabaseItem } from '../databases';
 import fileRangeFromURI from './fileRangeFromURI';
 import * as messages from '../pure/messages';
 import { QueryServerClient } from '../queryserver-client';
-import { QueryWithResults, compileAndRunQueryAgainstDatabase, createInitialQueryInfo } from '../run-queries';
+import {
+  QueryWithResults,
+  compileAndRunQueryAgainstDatabase,
+  createInitialQueryInfo,
+} from '../run-queries';
 import { ProgressCallback } from '../commandRunner';
 import { KeyType } from './keyType';
 import { qlpackOfDatabase, resolveQueries } from './queryResolver';
@@ -78,7 +87,7 @@ export async function getLocationsForUriString(
     );
 
     if (results.result.resultType == messages.QueryResultType.SUCCESS) {
-      links.push(...await getLinksFromResults(results, cli, db, filter));
+      links.push(...(await getLinksFromResults(results, cli, db, filter)));
     }
   }
   return links;
@@ -106,7 +115,7 @@ async function getLinksFromResults(
           targetRange: destFile.range,
           targetUri: destFile.uri,
           originSelectionRange: srcFile.range,
-          originUri: srcFile.uri
+          originUri: srcFile.uri,
         });
       }
     }
@@ -118,17 +127,24 @@ function createTemplates(path: string): messages.TemplateDefinitions {
   return {
     [TEMPLATE_NAME]: {
       values: {
-        tuples: [[{
-          stringValue: path
-        }]]
-      }
-    }
+        tuples: [
+          [
+            {
+              stringValue: path,
+            },
+          ],
+        ],
+      },
+    },
   };
 }
 
 function isValidSelect(selectInfo: ResultSetSchema | undefined) {
-  return selectInfo && selectInfo.columns.length == 3
-    && selectInfo.columns[0].kind == ColumnKindCode.ENTITY
-    && selectInfo.columns[1].kind == ColumnKindCode.ENTITY
-    && selectInfo.columns[2].kind == ColumnKindCode.STRING;
+  return (
+    selectInfo &&
+    selectInfo.columns.length == 3 &&
+    selectInfo.columns[0].kind == ColumnKindCode.ENTITY &&
+    selectInfo.columns[1].kind == ColumnKindCode.ENTITY &&
+    selectInfo.columns[2].kind == ColumnKindCode.STRING
+  );
 }

@@ -16,7 +16,7 @@ import {
   QuickPickItem,
   Range,
   workspace,
-  ProviderResult
+  ProviderResult,
 } from 'vscode';
 import { LanguageClient } from 'vscode-languageclient';
 import * as os from 'os';
@@ -35,7 +35,7 @@ import {
   isCanary,
   MAX_QUERIES,
   QueryHistoryConfigListener,
-  QueryServerConfigListener
+  QueryServerConfigListener,
 } from './config';
 import * as languageSupport from './languageSupport';
 import { DatabaseItem, DatabaseManager } from './databases';
@@ -44,7 +44,7 @@ import {
   TemplateQueryDefinitionProvider,
   TemplateQueryReferenceProvider,
   TemplatePrintAstProvider,
-  TemplatePrintCfgProvider
+  TemplatePrintCfgProvider,
 } from './contextual/templateProvider';
 import {
   DEFAULT_DISTRIBUTION_VERSION_RANGE,
@@ -54,7 +54,7 @@ import {
   FindDistributionResult,
   FindDistributionResultKind,
   GithubApiError,
-  GithubRateLimitedError
+  GithubRateLimitedError,
 } from './distribution';
 import {
   findLanguage,
@@ -64,7 +64,7 @@ import {
   showAndLogWarningMessage,
   showAndLogInformationMessage,
   showInformationMessageWithAction,
-  tmpDir
+  tmpDir,
 } from './helpers';
 import { asError, assertNever, getErrorMessage } from './pure/helpers-pure';
 import { spawnIdeServer } from './ide-server';
@@ -86,7 +86,7 @@ import {
   commandRunnerWithProgress,
   ProgressCallback,
   withProgress,
-  ProgressUpdate
+  ProgressUpdate,
 } from './commandRunner';
 import { CodeQlStatusBarHandler } from './status-bar';
 
@@ -140,18 +140,22 @@ const extension = extensions.getExtension(extensionId);
  *
  * @param excludedCommands List of commands for which we should not register error stubs.
  */
-function registerErrorStubs(excludedCommands: string[], stubGenerator: (command: string) => () => Promise<void>): void {
+function registerErrorStubs(
+  excludedCommands: string[],
+  stubGenerator: (command: string) => () => Promise<void>
+): void {
   // Remove existing stubs
-  errorStubs.forEach(stub => stub.dispose());
+  errorStubs.forEach((stub) => stub.dispose());
 
   if (extension === undefined) {
     throw new Error(`Can't find extension ${extensionId}`);
   }
 
-  const stubbedCommands: string[]
-    = extension.packageJSON.contributes.commands.map((entry: { command: string }) => entry.command);
+  const stubbedCommands: string[] = extension.packageJSON.contributes.commands.map(
+    (entry: { command: string }) => entry.command
+  );
 
-  stubbedCommands.forEach(command => {
+  stubbedCommands.forEach((command) => {
     if (excludedCommands.indexOf(command) === -1) {
       errorStubs.push(commandRunner(command, stubGenerator(command)));
     }
@@ -182,8 +186,9 @@ export interface CodeQLExtensionInterface {
  *
  * @returns CodeQLExtensionInterface
  */
-export async function activate(ctx: ExtensionContext): Promise<CodeQLExtensionInterface | Record<string, never>> {
-
+export async function activate(
+  ctx: ExtensionContext
+): Promise<CodeQLExtensionInterface | Record<string, never>> {
   void logger.log(`Starting ${extensionId} extension`);
   if (extension === undefined) {
     throw new Error(`Can't find extension ${extensionId}`);
@@ -199,13 +204,17 @@ export async function activate(ctx: ExtensionContext): Promise<CodeQLExtensionIn
 
   ctx.subscriptions.push(distributionConfigListener);
   const codeQlVersionRange = DEFAULT_DISTRIBUTION_VERSION_RANGE;
-  const distributionManager = new DistributionManager(distributionConfigListener, codeQlVersionRange, ctx);
+  const distributionManager = new DistributionManager(
+    distributionConfigListener,
+    codeQlVersionRange,
+    ctx
+  );
 
   const shouldUpdateOnNextActivationKey = 'shouldUpdateOnNextActivation';
 
-  registerErrorStubs([checkForUpdatesCommand], command => (async () => {
+  registerErrorStubs([checkForUpdatesCommand], (command) => async () => {
     void showAndLogErrorMessage(`Can't execute ${command}: waiting to finish loading CodeQL CLI.`);
-  }));
+  });
 
   interface DistributionUpdateConfig {
     isUserInitiated: boolean;
@@ -213,19 +222,28 @@ export async function activate(ctx: ExtensionContext): Promise<CodeQLExtensionIn
     allowAutoUpdating: boolean;
   }
 
-  async function installOrUpdateDistributionWithProgressTitle(progressTitle: string, config: DistributionUpdateConfig): Promise<void> {
+  async function installOrUpdateDistributionWithProgressTitle(
+    progressTitle: string,
+    config: DistributionUpdateConfig
+  ): Promise<void> {
     const minSecondsSinceLastUpdateCheck = config.isUserInitiated ? 0 : 86400;
-    const noUpdatesLoggingFunc = config.shouldDisplayMessageWhenNoUpdates ?
-      showAndLogInformationMessage : async (message: string) => void logger.log(message);
-    const result = await distributionManager.checkForUpdatesToExtensionManagedDistribution(minSecondsSinceLastUpdateCheck);
+    const noUpdatesLoggingFunc = config.shouldDisplayMessageWhenNoUpdates
+      ? showAndLogInformationMessage
+      : async (message: string) => void logger.log(message);
+    const result = await distributionManager.checkForUpdatesToExtensionManagedDistribution(
+      minSecondsSinceLastUpdateCheck
+    );
 
     // We do want to auto update if there is no distribution at all
-    const allowAutoUpdating = config.allowAutoUpdating || !await distributionManager.hasDistribution();
+    const allowAutoUpdating =
+      config.allowAutoUpdating || !(await distributionManager.hasDistribution());
 
     switch (result.kind) {
       case DistributionUpdateCheckResultKind.AlreadyCheckedRecentlyResult:
-        void logger.log('Didn\'t perform CodeQL CLI update check since a check was already performed within the previous ' +
-          `${minSecondsSinceLastUpdateCheck} seconds.`);
+        void logger.log(
+          "Didn't perform CodeQL CLI update check since a check was already performed within the previous " +
+            `${minSecondsSinceLastUpdateCheck} seconds.`
+        );
         break;
       case DistributionUpdateCheckResultKind.AlreadyUpToDate:
         await noUpdatesLoggingFunc('CodeQL CLI already up to date.');
@@ -235,10 +253,13 @@ export async function activate(ctx: ExtensionContext): Promise<CodeQLExtensionIn
         break;
       case DistributionUpdateCheckResultKind.UpdateAvailable:
         if (beganMainExtensionActivation || !allowAutoUpdating) {
-          const updateAvailableMessage = `Version "${result.updatedRelease.name}" of the CodeQL CLI is now available. ` +
+          const updateAvailableMessage =
+            `Version "${result.updatedRelease.name}" of the CodeQL CLI is now available. ` +
             'Do you wish to upgrade?';
           await ctx.globalState.update(shouldUpdateOnNextActivationKey, true);
-          if (await showInformationMessageWithAction(updateAvailableMessage, 'Restart and Upgrade')) {
+          if (
+            await showInformationMessageWithAction(updateAvailableMessage, 'Restart and Upgrade')
+          ) {
             await commands.executeCommand('workbench.action.reloadWindow');
           }
         } else {
@@ -247,11 +268,17 @@ export async function activate(ctx: ExtensionContext): Promise<CodeQLExtensionIn
             location: ProgressLocation.Notification,
           };
 
-          await withProgress(progressOptions, progress =>
-            distributionManager.installExtensionManagedDistributionRelease(result.updatedRelease, progress));
+          await withProgress(progressOptions, (progress) =>
+            distributionManager.installExtensionManagedDistributionRelease(
+              result.updatedRelease,
+              progress
+            )
+          );
 
           await ctx.globalState.update(shouldUpdateOnNextActivationKey, false);
-          void showAndLogInformationMessage(`CodeQL CLI updated to version "${result.updatedRelease.name}".`);
+          void showAndLogInformationMessage(
+            `CodeQL CLI updated to version "${result.updatedRelease.name}".`
+          );
         }
         break;
       default:
@@ -264,27 +291,33 @@ export async function activate(ctx: ExtensionContext): Promise<CodeQLExtensionIn
       throw new Error('Already installing or updating CodeQL CLI');
     }
     isInstallingOrUpdatingDistribution = true;
-    const codeQlInstalled = await distributionManager.getCodeQlPathWithoutVersionCheck() !== undefined;
+    const codeQlInstalled =
+      (await distributionManager.getCodeQlPathWithoutVersionCheck()) !== undefined;
     const willUpdateCodeQl = ctx.globalState.get(shouldUpdateOnNextActivationKey);
     const messageText = willUpdateCodeQl
       ? 'Updating CodeQL CLI'
       : codeQlInstalled
-        ? 'Checking for updates to CodeQL CLI'
-        : 'Installing CodeQL CLI';
+      ? 'Checking for updates to CodeQL CLI'
+      : 'Installing CodeQL CLI';
 
     try {
       await installOrUpdateDistributionWithProgressTitle(messageText, config);
     } catch (e) {
       // Don't rethrow the exception, because if the config is changed, we want to be able to retry installing
       // or updating the distribution.
-      const alertFunction = (codeQlInstalled && !config.isUserInitiated) ?
-        showAndLogWarningMessage : showAndLogErrorMessage;
-      const taskDescription = (willUpdateCodeQl ? 'update' :
-        codeQlInstalled ? 'check for updates to' : 'install') + ' CodeQL CLI';
+      const alertFunction =
+        codeQlInstalled && !config.isUserInitiated
+          ? showAndLogWarningMessage
+          : showAndLogErrorMessage;
+      const taskDescription =
+        (willUpdateCodeQl ? 'update' : codeQlInstalled ? 'check for updates to' : 'install') +
+        ' CodeQL CLI';
 
       if (e instanceof GithubRateLimitedError) {
-        void alertFunction(`Rate limited while trying to ${taskDescription}. Please try again after ` +
-          `your rate limit window resets at ${e.rateLimitResetDate.toLocaleString(env.language)}.`);
+        void alertFunction(
+          `Rate limited while trying to ${taskDescription}. Please try again after ` +
+            `your rate limit window resets at ${e.rateLimitResetDate.toLocaleString(env.language)}.`
+        );
       } else if (e instanceof GithubApiError) {
         void alertFunction(`Encountered GitHub API error while trying to ${taskDescription}. ` + e);
       }
@@ -308,21 +341,23 @@ export async function activate(ctx: ExtensionContext): Promise<CodeQLExtensionIn
             case DistributionKind.CustomPathConfig:
               return `Please update the \"CodeQL CLI Executable Path\" setting to point to a CLI in the version range ${codeQlVersionRange}.`;
             case DistributionKind.PathEnvironmentVariable:
-              return `Please update the CodeQL CLI on your PATH to a version compatible with ${codeQlVersionRange}, or ` +
-                `set the \"CodeQL CLI Executable Path\" setting to the path of a CLI version compatible with ${codeQlVersionRange}.`;
+              return (
+                `Please update the CodeQL CLI on your PATH to a version compatible with ${codeQlVersionRange}, or ` +
+                `set the \"CodeQL CLI Executable Path\" setting to the path of a CLI version compatible with ${codeQlVersionRange}.`
+              );
           }
         })();
 
         void showAndLogWarningMessage(
           `The current version of the CodeQL CLI (${result.version.raw}) ` +
-          `is incompatible with this extension. ${fixGuidanceMessage}`
+            `is incompatible with this extension. ${fixGuidanceMessage}`
         );
         break;
       }
       case FindDistributionResultKind.UnknownCompatibilityDistribution:
         void showAndLogWarningMessage(
           'Compatibility with the configured CodeQL CLI could not be determined. ' +
-          'You may experience problems using the extension.'
+            'You may experience problems using the extension.'
         );
         break;
       case FindDistributionResultKind.NoDistribution:
@@ -337,30 +372,34 @@ export async function activate(ctx: ExtensionContext): Promise<CodeQLExtensionIn
   async function installOrUpdateThenTryActivate(
     config: DistributionUpdateConfig
   ): Promise<CodeQLExtensionInterface | Record<string, never>> {
-
     await installOrUpdateDistribution(config);
 
     // Display the warnings even if the extension has already activated.
     const distributionResult = await getDistributionDisplayingDistributionWarnings();
     let extensionInterface: CodeQLExtensionInterface | Record<string, never> = {};
-    if (!beganMainExtensionActivation && distributionResult.kind !== FindDistributionResultKind.NoDistribution) {
+    if (
+      !beganMainExtensionActivation &&
+      distributionResult.kind !== FindDistributionResultKind.NoDistribution
+    ) {
       extensionInterface = await activateWithInstalledDistribution(
         ctx,
         distributionManager,
         distributionConfigListener
       );
-
     } else if (distributionResult.kind === FindDistributionResultKind.NoDistribution) {
-      registerErrorStubs([checkForUpdatesCommand], command => async () => {
+      registerErrorStubs([checkForUpdatesCommand], (command) => async () => {
         const installActionName = 'Install CodeQL CLI';
-        const chosenAction = await void showAndLogErrorMessage(`Can't execute ${command}: missing CodeQL CLI.`, {
-          items: [installActionName]
-        });
+        const chosenAction = await void showAndLogErrorMessage(
+          `Can't execute ${command}: missing CodeQL CLI.`,
+          {
+            items: [installActionName],
+          }
+        );
         if (chosenAction === installActionName) {
           await installOrUpdateThenTryActivate({
             isUserInitiated: true,
             shouldDisplayMessageWhenNoUpdates: false,
-            allowAutoUpdating: true
+            allowAutoUpdating: true,
           });
         }
       });
@@ -368,16 +407,24 @@ export async function activate(ctx: ExtensionContext): Promise<CodeQLExtensionIn
     return extensionInterface;
   }
 
-  ctx.subscriptions.push(distributionConfigListener.onDidChangeConfiguration(() => installOrUpdateThenTryActivate({
-    isUserInitiated: true,
-    shouldDisplayMessageWhenNoUpdates: false,
-    allowAutoUpdating: true
-  })));
-  ctx.subscriptions.push(commandRunner(checkForUpdatesCommand, () => installOrUpdateThenTryActivate({
-    isUserInitiated: true,
-    shouldDisplayMessageWhenNoUpdates: true,
-    allowAutoUpdating: true
-  })));
+  ctx.subscriptions.push(
+    distributionConfigListener.onDidChangeConfiguration(() =>
+      installOrUpdateThenTryActivate({
+        isUserInitiated: true,
+        shouldDisplayMessageWhenNoUpdates: false,
+        allowAutoUpdating: true,
+      })
+    )
+  );
+  ctx.subscriptions.push(
+    commandRunner(checkForUpdatesCommand, () =>
+      installOrUpdateThenTryActivate({
+        isUserInitiated: true,
+        shouldDisplayMessageWhenNoUpdates: true,
+        allowAutoUpdating: true,
+      })
+    )
+  );
 
   return await installOrUpdateThenTryActivate({
     isUserInitiated: !!ctx.globalState.get(shouldUpdateOnNextActivationKey),
@@ -385,7 +432,7 @@ export async function activate(ctx: ExtensionContext): Promise<CodeQLExtensionIn
 
     // only auto update on startup if the user has previously requested an update
     // otherwise, ask user to accept the update
-    allowAutoUpdating: !!ctx.globalState.get(shouldUpdateOnNextActivationKey)
+    allowAutoUpdating: !!ctx.globalState.get(shouldUpdateOnNextActivationKey),
   });
 }
 
@@ -406,11 +453,7 @@ async function activateWithInstalledDistribution(
   ctx.subscriptions.push(qlConfigurationListener);
 
   void logger.log('Initializing CodeQL cli server...');
-  const cliServer = new CodeQLCliServer(
-    distributionManager,
-    new CliConfigListener(),
-    logger
-  );
+  const cliServer = new CodeQLCliServer(distributionManager, new CliConfigListener(), logger);
   ctx.subscriptions.push(cliServer);
 
   const statusBar = new CodeQlStatusBarHandler(cliServer, distributionConfigListener);
@@ -425,10 +468,7 @@ async function activateWithInstalledDistribution(
       contextStoragePath: getContextStoragePath(ctx),
     },
     (task) =>
-      Window.withProgress(
-        { title: 'CodeQL query server', location: ProgressLocation.Window },
-        task
-      )
+      Window.withProgress({ title: 'CodeQL query server', location: ProgressLocation.Window }, task)
   );
   ctx.subscriptions.push(qs);
   await qs.startQueryServer();
@@ -437,12 +477,8 @@ async function activateWithInstalledDistribution(
   const dbm = new DatabaseManager(ctx, qs, cliServer, logger);
   ctx.subscriptions.push(dbm);
   void logger.log('Initializing database panel.');
-  const databaseUI = new DatabaseUI(
-    dbm,
-    qs,
-    getContextStoragePath(ctx),
-    ctx.extensionPath,
-    () => Credentials.initialize(ctx),
+  const databaseUI = new DatabaseUI(dbm, qs, getContextStoragePath(ctx), ctx.extensionPath, () =>
+    Credentials.initialize(ctx)
   );
   databaseUI.init();
   ctx.subscriptions.push(databaseUI);
@@ -461,7 +497,13 @@ async function activateWithInstalledDistribution(
   const labelProvider = new HistoryItemLabelProvider(queryHistoryConfigurationListener);
 
   void logger.log('Initializing results panel interface.');
-  const localQueryResultsView = new ResultsView(ctx, dbm, cliServer, queryServerLogger, labelProvider);
+  const localQueryResultsView = new ResultsView(
+    ctx,
+    dbm,
+    cliServer,
+    queryServerLogger,
+    labelProvider
+  );
   ctx.subscriptions.push(localQueryResultsView);
 
   void logger.log('Initializing variant analysis manager.');
@@ -480,16 +522,17 @@ async function activateWithInstalledDistribution(
     queryHistoryConfigurationListener,
     labelProvider,
     async (from: CompletedLocalQueryInfo, to: CompletedLocalQueryInfo) =>
-      showResultsForComparison(from, to),
+      showResultsForComparison(from, to)
   );
-
 
   ctx.subscriptions.push(qhm);
 
   void logger.log('Initializing evaluation log scanners.');
   const logScannerService = new LogScannerService(qhm);
   ctx.subscriptions.push(logScannerService);
-  ctx.subscriptions.push(logScannerService.scanners.registerLogScannerProvider(new JoinOrderScannerProvider()));
+  ctx.subscriptions.push(
+    logScannerService.scanners.registerLogScannerProvider(new JoinOrderScannerProvider())
+  );
 
   void logger.log('Reading query history');
   await qhm.readQueryHistory();
@@ -536,9 +579,9 @@ async function activateWithInstalledDistribution(
   ): Promise<void> {
     if (qs !== undefined) {
       // If no databaseItem is specified, use the database currently selected in the Databases UI
-      databaseItem = databaseItem || await databaseUI.getDatabaseItem(progress, token);
+      databaseItem = databaseItem || (await databaseUI.getDatabaseItem(progress, token));
       if (databaseItem === undefined) {
-        throw new Error('Can\'t run query without a selected database');
+        throw new Error("Can't run query without a selected database");
       }
       const databaseInfo = {
         name: databaseItem.name,
@@ -549,7 +592,12 @@ async function activateWithInstalledDistribution(
       const source = new CancellationTokenSource();
       token.onCancellationRequested(() => source.cancel());
 
-      const initialInfo = await createInitialQueryInfo(selectedQuery, databaseInfo, quickEval, range);
+      const initialInfo = await createInitialQueryInfo(
+        selectedQuery,
+        databaseInfo,
+        quickEval,
+        range
+      );
       const item = new LocalQueryInfo(initialInfo, source);
       qhm.addQuery(item);
       try {
@@ -562,10 +610,13 @@ async function activateWithInstalledDistribution(
           progress,
           source.token,
           undefined,
-          item,
+          item
         );
         qhm.completeQuery(item, completedQueryInfo);
-        await showResultsForCompletedQuery(item as CompletedLocalQueryInfo, WebviewReveal.NotForced);
+        await showResultsForCompletedQuery(
+          item as CompletedLocalQueryInfo,
+          WebviewReveal.NotForced
+        );
         // Note we must update the query history view after showing results as the
         // display and sorting might depend on the number of results
       } catch (e) {
@@ -583,11 +634,11 @@ async function activateWithInstalledDistribution(
   const qhelpTmpDir = tmp.dirSync({ prefix: 'qhelp_', keep: false, unsafeCleanup: true });
   ctx.subscriptions.push({ dispose: qhelpTmpDir.removeCallback });
 
-  async function previewQueryHelp(
-    selectedQuery: Uri
-  ): Promise<void> {
+  async function previewQueryHelp(selectedQuery: Uri): Promise<void> {
     // selectedQuery is unpopulated when executing through the command palette
-    const pathToQhelp = selectedQuery ? selectedQuery.fsPath : window.activeTextEditor?.document.uri.fsPath;
+    const pathToQhelp = selectedQuery
+      ? selectedQuery.fsPath
+      : window.activeTextEditor?.document.uri.fsPath;
     if (pathToQhelp) {
       // Create temporary directory
       const relativePathToMd = path.basename(pathToQhelp, '.qhelp') + '.md';
@@ -597,18 +648,15 @@ async function activateWithInstalledDistribution(
         await cliServer.generateQueryHelp(pathToQhelp, absolutePathToMd);
         await commands.executeCommand('markdown.showPreviewToSide', uri);
       } catch (e) {
-        const errorMessage = getErrorMessage(e).includes('Generating qhelp in markdown') ? (
-          `Could not generate markdown from ${pathToQhelp}: Bad formatting in .qhelp file.`
-        ) : `Could not open a preview of the generated file (${absolutePathToMd}).`;
+        const errorMessage = getErrorMessage(e).includes('Generating qhelp in markdown')
+          ? `Could not generate markdown from ${pathToQhelp}: Bad formatting in .qhelp file.`
+          : `Could not open a preview of the generated file (${absolutePathToMd}).`;
         void showAndLogErrorMessage(errorMessage, { fullMessage: `${errorMessage}\n${e}` });
       }
     }
-
   }
 
-  async function openReferencedFile(
-    selectedQuery: Uri
-  ): Promise<void> {
+  async function openReferencedFile(selectedQuery: Uri): Promise<void> {
     // If no file is selected, the path of the file in the editor is selected
     const path = selectedQuery?.fsPath || window.activeTextEditor?.document.uri.fsPath;
     if (qs !== undefined && path) {
@@ -618,10 +666,10 @@ async function activateWithInstalledDistribution(
         await window.showTextDocument(uri, { preview: false });
       } else {
         void showAndLogErrorMessage(
-          'Jumping from a .qlref file to the .ql file it references is not '
-          + 'supported with the CLI version you are running.\n'
-          + `Please upgrade your CLI to version ${CliVersionConstraint.CLI_VERSION_WITH_RESOLVE_QLREF
-          } or later to use this feature.`);
+          'Jumping from a .qlref file to the .ql file it references is not ' +
+            'supported with the CLI version you are running.\n' +
+            `Please upgrade your CLI to version ${CliVersionConstraint.CLI_VERSION_WITH_RESOLVE_QLREF} or later to use this feature.`
+        );
       }
     }
   }
@@ -647,9 +695,7 @@ async function activateWithInstalledDistribution(
   );
 
   void logger.log('Initializing QLTest interface.');
-  const testExplorerExtension = extensions.getExtension<TestHub>(
-    testExplorerExtensionId
-  );
+  const testExplorerExtension = extensions.getExtension<TestHub>(testExplorerExtensionId);
   if (testExplorerExtension) {
     const testHub = testExplorerExtension.exports;
     const testAdapterFactory = new QLTestAdapterFactory(testHub, cliServer, dbm);
@@ -663,14 +709,11 @@ async function activateWithInstalledDistribution(
   ctx.subscriptions.push(
     commandRunnerWithProgress(
       'codeQL.runQuery',
-      async (
-        progress: ProgressCallback,
-        token: CancellationToken,
-        uri: Uri | undefined
-      ) => await compileAndRunQuery(false, uri, progress, token, undefined),
+      async (progress: ProgressCallback, token: CancellationToken, uri: Uri | undefined) =>
+        await compileAndRunQuery(false, uri, progress, token, undefined),
       {
         title: 'Running query',
-        cancellable: true
+        cancellable: true,
       },
 
       // Open the query server logger on error since that's usually where the interesting errors appear.
@@ -683,39 +726,37 @@ async function activateWithInstalledDistribution(
   ctx.subscriptions.push(
     commandRunnerWithProgress(
       'codeQL.runQueryOnMultipleDatabases',
-      async (
-        progress: ProgressCallback,
-        token: CancellationToken,
-        uri: Uri | undefined
-      ) => {
+      async (progress: ProgressCallback, token: CancellationToken, uri: Uri | undefined) => {
         let filteredDBs = dbm.databaseItems;
         if (filteredDBs.length === 0) {
-          void showAndLogErrorMessage('No databases found. Please add a suitable database to your workspace.');
+          void showAndLogErrorMessage(
+            'No databases found. Please add a suitable database to your workspace.'
+          );
           return;
         }
         // If possible, only show databases with the right language (otherwise show all databases).
         const queryLanguage = await findLanguage(cliServer, uri);
         if (queryLanguage) {
-          filteredDBs = dbm.databaseItems.filter(db => db.language === queryLanguage);
+          filteredDBs = dbm.databaseItems.filter((db) => db.language === queryLanguage);
           if (filteredDBs.length === 0) {
-            void showAndLogErrorMessage(`No databases found for language ${queryLanguage}. Please add a suitable database to your workspace.`);
+            void showAndLogErrorMessage(
+              `No databases found for language ${queryLanguage}. Please add a suitable database to your workspace.`
+            );
             return;
           }
         }
-        const quickPickItems = filteredDBs.map<DatabaseQuickPickItem>(dbItem => (
-          {
-            databaseItem: dbItem,
-            label: dbItem.name,
-            description: dbItem.language,
-          }
-        ));
+        const quickPickItems = filteredDBs.map<DatabaseQuickPickItem>((dbItem) => ({
+          databaseItem: dbItem,
+          label: dbItem.name,
+          description: dbItem.language,
+        }));
         /**
          * Databases that were selected in the quick pick menu.
          */
-        const quickpick = await window.showQuickPick<DatabaseQuickPickItem>(
-          quickPickItems,
-          { canPickMany: true, ignoreFocusOut: true }
-        );
+        const quickpick = await window.showQuickPick<DatabaseQuickPickItem>(quickPickItems, {
+          canPickMany: true,
+          ignoreFocusOut: true,
+        });
         if (quickpick !== undefined) {
           // Collect all skipped databases and display them at the end (instead of popping up individual errors)
           const skippedDatabases = [];
@@ -731,7 +772,9 @@ async function activateWithInstalledDistribution(
           if (skippedDatabases.length > 0) {
             void logger.log(`Errors:\n${errors.join('\n')}`);
             void showAndLogWarningMessage(
-              `The following databases were skipped:\n${skippedDatabases.join('\n')}.\nFor details about the errors, see the logs.`
+              `The following databases were skipped:\n${skippedDatabases.join(
+                '\n'
+              )}.\nFor details about the errors, see the logs.`
             );
           }
         } else {
@@ -740,7 +783,7 @@ async function activateWithInstalledDistribution(
       },
       {
         title: 'Running query on selected databases',
-        cancellable: true
+        cancellable: true,
       }
     )
   );
@@ -754,14 +797,16 @@ async function activateWithInstalledDistribution(
         multi: Uri[]
       ) => {
         const maxQueryCount = MAX_QUERIES.getValue() as number;
-        const [files, dirFound] = await gatherQlFiles(multi.map(uri => uri.fsPath));
+        const [files, dirFound] = await gatherQlFiles(multi.map((uri) => uri.fsPath));
         if (files.length > maxQueryCount) {
-          throw new Error(`You tried to run ${files.length} queries, but the maximum is ${maxQueryCount}. Try selecting fewer queries or changing the 'codeQL.runningQueries.maxQueries' setting.`);
+          throw new Error(
+            `You tried to run ${files.length} queries, but the maximum is ${maxQueryCount}. Try selecting fewer queries or changing the 'codeQL.runningQueries.maxQueries' setting.`
+          );
         }
         // warn user and display selected files when a directory is selected because some ql
         // files may be hidden from the user.
         if (dirFound) {
-          const fileString = files.map(file => path.basename(file)).join(', ');
+          const fileString = files.map((file) => path.basename(file)).join(', ');
           const res = await showBinaryChoiceDialog(
             `You are about to run ${files.length} queries: ${fileString} Do you want to continue?`
           );
@@ -769,21 +814,25 @@ async function activateWithInstalledDistribution(
             return;
           }
         }
-        const queryUris = files.map(path => Uri.parse(`file:${path}`, true));
+        const queryUris = files.map((path) => Uri.parse(`file:${path}`, true));
 
         // Use a wrapped progress so that messages appear with the queries remaining in it.
         let queriesRemaining = queryUris.length;
         function wrappedProgress(update: ProgressUpdate) {
-          const message = queriesRemaining > 1
-            ? `${queriesRemaining} remaining. ${update.message}`
-            : update.message;
+          const message =
+            queriesRemaining > 1
+              ? `${queriesRemaining} remaining. ${update.message}`
+              : update.message;
           progress({
             ...update,
-            message
+            message,
           });
         }
 
-        if (queryUris.length > 1 && !await cliServer.cliConstraints.supportsNonDestructiveUpgrades()) {
+        if (
+          queryUris.length > 1 &&
+          !(await cliServer.cliConstraints.supportsNonDestructiveUpgrades())
+        ) {
           // Try to upgrade the current database before running any queries
           // so that the user isn't confronted with multiple upgrade
           // requests for each query to run.
@@ -795,17 +844,20 @@ async function activateWithInstalledDistribution(
         wrappedProgress({
           maxStep: queryUris.length,
           step: queryUris.length - queriesRemaining,
-          message: ''
+          message: '',
         });
 
-        await Promise.all(queryUris.map(async uri =>
-          compileAndRunQuery(false, uri, wrappedProgress, token, undefined)
-            .then(() => queriesRemaining--)
-        ));
+        await Promise.all(
+          queryUris.map(async (uri) =>
+            compileAndRunQuery(false, uri, wrappedProgress, token, undefined).then(
+              () => queriesRemaining--
+            )
+          )
+        );
       },
       {
         title: 'Running queries',
-        cancellable: true
+        cancellable: true,
       },
 
       // Open the query server logger on error since that's usually where the interesting errors appear.
@@ -815,14 +867,11 @@ async function activateWithInstalledDistribution(
   ctx.subscriptions.push(
     commandRunnerWithProgress(
       'codeQL.quickEval',
-      async (
-        progress: ProgressCallback,
-        token: CancellationToken,
-        uri: Uri | undefined
-      ) => await compileAndRunQuery(true, uri, progress, token, undefined),
+      async (progress: ProgressCallback, token: CancellationToken, uri: Uri | undefined) =>
+        await compileAndRunQuery(true, uri, progress, token, undefined),
       {
         title: 'Running query',
-        cancellable: true
+        cancellable: true,
       },
       // Open the query server logger on error since that's usually where the interesting errors appear.
       queryServerLogger
@@ -832,15 +881,11 @@ async function activateWithInstalledDistribution(
   ctx.subscriptions.push(
     commandRunnerWithProgress(
       'codeQL.codeLensQuickEval',
-      async (
-        progress: ProgressCallback,
-        token: CancellationToken,
-        uri: Uri,
-        range: Range
-      ) => await compileAndRunQuery(true, uri, progress, token, undefined, range),
+      async (progress: ProgressCallback, token: CancellationToken, uri: Uri, range: Range) =>
+        await compileAndRunQuery(true, uri, progress, token, undefined, range),
       {
         title: 'Running query',
-        cancellable: true
+        cancellable: true,
       },
 
       // Open the query server logger on error since that's usually where the interesting errors appear.
@@ -849,57 +894,52 @@ async function activateWithInstalledDistribution(
   );
 
   ctx.subscriptions.push(
-    commandRunnerWithProgress('codeQL.quickQuery', async (
-      progress: ProgressCallback,
-      token: CancellationToken
-    ) =>
-      displayQuickQuery(ctx, cliServer, databaseUI, progress, token),
+    commandRunnerWithProgress(
+      'codeQL.quickQuery',
+      async (progress: ProgressCallback, token: CancellationToken) =>
+        displayQuickQuery(ctx, cliServer, databaseUI, progress, token),
       {
-        title: 'Run Quick Query'
+        title: 'Run Quick Query',
       },
 
       // Open the query server logger on error since that's usually where the interesting errors appear.
       queryServerLogger
     )
   );
-
 
   registerRemoteQueryTextProvider();
 
   // The "runVariantAnalysis" command is internal-only.
   ctx.subscriptions.push(
-    commandRunnerWithProgress('codeQL.runVariantAnalysis', async (
-      progress: ProgressCallback,
-      token: CancellationToken,
-      uri: Uri | undefined
-    ) => {
-      if (isCanary()) {
-        progress({
-          maxStep: 5,
-          step: 0,
-          message: 'Getting credentials'
-        });
-        await rqm.runRemoteQuery(
-          uri || window.activeTextEditor?.document.uri,
-          progress,
-          token
-        );
-      } else {
-        throw new Error('Variant analysis requires the CodeQL Canary version to run.');
+    commandRunnerWithProgress(
+      'codeQL.runVariantAnalysis',
+      async (progress: ProgressCallback, token: CancellationToken, uri: Uri | undefined) => {
+        if (isCanary()) {
+          progress({
+            maxStep: 5,
+            step: 0,
+            message: 'Getting credentials',
+          });
+          await rqm.runRemoteQuery(uri || window.activeTextEditor?.document.uri, progress, token);
+        } else {
+          throw new Error('Variant analysis requires the CodeQL Canary version to run.');
+        }
+      },
+      {
+        title: 'Run Variant Analysis',
+        cancellable: true,
       }
-    }, {
-      title: 'Run Variant Analysis',
-      cancellable: true
-    })
+    )
   );
 
   ctx.subscriptions.push(
-    commandRunner('codeQL.monitorRemoteQuery', async (
-      queryId: string,
-      query: RemoteQuery,
-      token: CancellationToken) => {
-      await rqm.monitorRemoteQuery(queryId, query, token);
-    }));
+    commandRunner(
+      'codeQL.monitorRemoteQuery',
+      async (queryId: string, query: RemoteQuery, token: CancellationToken) => {
+        await rqm.monitorRemoteQuery(queryId, query, token);
+      }
+    )
+  );
 
   ctx.subscriptions.push(
     commandRunner('codeQL.copyRepoList', async (queryId: string) => {
@@ -908,11 +948,13 @@ async function activateWithInstalledDistribution(
   );
 
   ctx.subscriptions.push(
-    commandRunner('codeQL.autoDownloadRemoteQueryResults', async (
-      queryResult: RemoteQueryResult,
-      token: CancellationToken) => {
-      await rqm.autoDownloadRemoteQueryResults(queryResult, token);
-    }));
+    commandRunner(
+      'codeQL.autoDownloadRemoteQueryResults',
+      async (queryResult: RemoteQueryResult, token: CancellationToken) => {
+        await rqm.autoDownloadRemoteQueryResults(queryResult, token);
+      }
+    )
+  );
 
   ctx.subscriptions.push(
     commandRunner('codeQL.exportVariantAnalysisResults', async () => {
@@ -927,98 +969,96 @@ async function activateWithInstalledDistribution(
     })
   );
 
+  ctx.subscriptions.push(commandRunner('codeQL.openReferencedFile', openReferencedFile));
+
+  ctx.subscriptions.push(commandRunner('codeQL.previewQueryHelp', previewQueryHelp));
+
   ctx.subscriptions.push(
-    commandRunner(
-      'codeQL.openReferencedFile',
-      openReferencedFile
+    commandRunnerWithProgress(
+      'codeQL.restartQueryServer',
+      async (progress: ProgressCallback, token: CancellationToken) => {
+        // We restart the CLI server too, to ensure they are the same version
+        cliServer.restartCliServer();
+        await qs.restartQueryServer(progress, token);
+        void showAndLogInformationMessage('CodeQL Query Server restarted.', {
+          outputLogger: queryServerLogger,
+        });
+      },
+      {
+        title: 'Restarting Query Server',
+      }
     )
   );
 
   ctx.subscriptions.push(
-    commandRunner(
-      'codeQL.previewQueryHelp',
-      previewQueryHelp
+    commandRunnerWithProgress(
+      'codeQL.chooseDatabaseFolder',
+      (progress: ProgressCallback, token: CancellationToken) =>
+        databaseUI.handleChooseDatabaseFolder(progress, token),
+      {
+        title: 'Choose a Database from a Folder',
+      }
     )
   );
-
   ctx.subscriptions.push(
-    commandRunnerWithProgress('codeQL.restartQueryServer', async (
-      progress: ProgressCallback,
-      token: CancellationToken
-    ) => {
-      // We restart the CLI server too, to ensure they are the same version
-      cliServer.restartCliServer();
-      await qs.restartQueryServer(progress, token);
-      void showAndLogInformationMessage('CodeQL Query Server restarted.', {
-        outputLogger: queryServerLogger,
-      });
-    }, {
-      title: 'Restarting Query Server'
-    })
-  );
-
-  ctx.subscriptions.push(
-    commandRunnerWithProgress('codeQL.chooseDatabaseFolder', (
-      progress: ProgressCallback,
-      token: CancellationToken
-    ) =>
-      databaseUI.handleChooseDatabaseFolder(progress, token), {
-      title: 'Choose a Database from a Folder'
-    })
+    commandRunnerWithProgress(
+      'codeQL.chooseDatabaseArchive',
+      (progress: ProgressCallback, token: CancellationToken) =>
+        databaseUI.handleChooseDatabaseArchive(progress, token),
+      {
+        title: 'Choose a Database from an Archive',
+      }
+    )
   );
   ctx.subscriptions.push(
-    commandRunnerWithProgress('codeQL.chooseDatabaseArchive', (
-      progress: ProgressCallback,
-      token: CancellationToken
-    ) =>
-      databaseUI.handleChooseDatabaseArchive(progress, token), {
-      title: 'Choose a Database from an Archive'
-    })
-  );
-  ctx.subscriptions.push(
-    commandRunnerWithProgress('codeQL.chooseDatabaseGithub', async (
-      progress: ProgressCallback,
-      token: CancellationToken
-    ) => {
-      const credentials = isCanary() ? await Credentials.initialize(ctx) : undefined;
-      await databaseUI.handleChooseDatabaseGithub(credentials, progress, token);
-    },
+    commandRunnerWithProgress(
+      'codeQL.chooseDatabaseGithub',
+      async (progress: ProgressCallback, token: CancellationToken) => {
+        const credentials = isCanary() ? await Credentials.initialize(ctx) : undefined;
+        await databaseUI.handleChooseDatabaseGithub(credentials, progress, token);
+      },
       {
         title: 'Adding database from GitHub',
-      })
+      }
+    )
   );
   ctx.subscriptions.push(
-    commandRunnerWithProgress('codeQL.chooseDatabaseLgtm', (
-      progress: ProgressCallback,
-      token: CancellationToken
-    ) =>
-      databaseUI.handleChooseDatabaseLgtm(progress, token),
+    commandRunnerWithProgress(
+      'codeQL.chooseDatabaseLgtm',
+      (progress: ProgressCallback, token: CancellationToken) =>
+        databaseUI.handleChooseDatabaseLgtm(progress, token),
       {
         title: 'Adding database from LGTM',
-      })
+      }
+    )
   );
   ctx.subscriptions.push(
-    commandRunnerWithProgress('codeQL.chooseDatabaseInternet', (
-      progress: ProgressCallback,
-      token: CancellationToken
-    ) =>
-      databaseUI.handleChooseDatabaseInternet(progress, token),
+    commandRunnerWithProgress(
+      'codeQL.chooseDatabaseInternet',
+      (progress: ProgressCallback, token: CancellationToken) =>
+        databaseUI.handleChooseDatabaseInternet(progress, token),
 
       {
         title: 'Adding database from URL',
-      })
+      }
+    )
   );
 
   ctx.subscriptions.push(
     commandRunner('codeQL.openDocumentation', async () =>
-      env.openExternal(Uri.parse('https://codeql.github.com/docs/'))));
+      env.openExternal(Uri.parse('https://codeql.github.com/docs/'))
+    )
+  );
 
   ctx.subscriptions.push(
     commandRunner('codeQL.copyVersion', async () => {
-      const text = `CodeQL extension version: ${extension?.packageJSON.version} \nCodeQL CLI version: ${await getCliVersion()} \nPlatform: ${os.platform()} ${os.arch()}`;
+      const text = `CodeQL extension version: ${
+        extension?.packageJSON.version
+      } \nCodeQL CLI version: ${await getCliVersion()} \nPlatform: ${os.platform()} ${os.arch()}`;
       await env.clipboard.writeText(text);
       void showAndLogInformationMessage(text);
-    }));
+    })
+  );
 
   const getCliVersion = async () => {
     try {
@@ -1038,27 +1078,29 @@ async function activateWithInstalledDistribution(
       const octokit = await credentials.getOctokit();
       const userInfo = await octokit.users.getAuthenticated();
       void showAndLogInformationMessage(`Authenticated to GitHub as user: ${userInfo.data.login}`);
-    }));
+    })
+  );
 
   ctx.subscriptions.push(
-    commandRunnerWithProgress('codeQL.installPackDependencies', async (
-      progress: ProgressCallback
-    ) =>
-      await handleInstallPackDependencies(cliServer, progress),
+    commandRunnerWithProgress(
+      'codeQL.installPackDependencies',
+      async (progress: ProgressCallback) =>
+        await handleInstallPackDependencies(cliServer, progress),
       {
         title: 'Installing pack dependencies',
       }
-    ));
+    )
+  );
 
   ctx.subscriptions.push(
-    commandRunnerWithProgress('codeQL.downloadPacks', async (
-      progress: ProgressCallback
-    ) =>
-      await handleDownloadPacks(cliServer, progress),
+    commandRunnerWithProgress(
+      'codeQL.downloadPacks',
+      async (progress: ProgressCallback) => await handleDownloadPacks(cliServer, progress),
       {
         title: 'Downloading packs',
       }
-    ));
+    )
+  );
 
   ctx.subscriptions.push(
     commandRunner('codeQL.showLogs', async () => {
@@ -1089,35 +1131,39 @@ async function activateWithInstalledDistribution(
   );
 
   const astViewer = new AstViewer();
-  const printAstTemplateProvider = new TemplatePrintAstProvider(cliServer, qs, dbm, contextualQueryStorageDir);
+  const printAstTemplateProvider = new TemplatePrintAstProvider(
+    cliServer,
+    qs,
+    dbm,
+    contextualQueryStorageDir
+  );
   const cfgTemplateProvider = new TemplatePrintCfgProvider(cliServer, dbm);
 
   ctx.subscriptions.push(astViewer);
-  ctx.subscriptions.push(commandRunnerWithProgress('codeQL.viewAst', async (
-    progress: ProgressCallback,
-    token: CancellationToken,
-    selectedFile: Uri
-  ) => {
-    const ast = await printAstTemplateProvider.provideAst(
-      progress,
-      token,
-      selectedFile ?? window.activeTextEditor?.document.uri,
-    );
-    if (ast) {
-      astViewer.updateRoots(await ast.getRoots(), ast.db, ast.fileName);
-    }
-  }, {
-    cancellable: true,
-    title: 'Calculate AST'
-  }));
+  ctx.subscriptions.push(
+    commandRunnerWithProgress(
+      'codeQL.viewAst',
+      async (progress: ProgressCallback, token: CancellationToken, selectedFile: Uri) => {
+        const ast = await printAstTemplateProvider.provideAst(
+          progress,
+          token,
+          selectedFile ?? window.activeTextEditor?.document.uri
+        );
+        if (ast) {
+          astViewer.updateRoots(await ast.getRoots(), ast.db, ast.fileName);
+        }
+      },
+      {
+        cancellable: true,
+        title: 'Calculate AST',
+      }
+    )
+  );
 
   ctx.subscriptions.push(
     commandRunnerWithProgress(
       'codeQL.viewCfg',
-      async (
-        progress: ProgressCallback,
-        token: CancellationToken
-      ) => {
+      async (progress: ProgressCallback, token: CancellationToken) => {
         const res = await cfgTemplateProvider.provideCfgUri(window.activeTextEditor?.document);
         if (res) {
           await compileAndRunQuery(false, res[0], progress, token, undefined);
@@ -1125,7 +1171,7 @@ async function activateWithInstalledDistribution(
       },
       {
         title: 'Calculating Control Flow Graph',
-        cancellable: true
+        cancellable: true,
       }
     )
   );
@@ -1142,8 +1188,8 @@ async function activateWithInstalledDistribution(
     databaseManager: dbm,
     databaseUI,
     dispose: () => {
-      ctx.subscriptions.forEach(d => d.dispose());
-    }
+      ctx.subscriptions.forEach((d) => d.dispose());
+    },
   };
 }
 
@@ -1166,9 +1212,7 @@ const checkForUpdatesCommand = 'codeQL.checkForUpdatesToCLI';
  */
 function registerRemoteQueryTextProvider() {
   workspace.registerTextDocumentContentProvider('remote-query', {
-    provideTextDocumentContent(
-      uri: Uri
-    ): ProviderResult<string> {
+    provideTextDocumentContent(uri: Uri): ProviderResult<string> {
       const params = new URLSearchParams(uri.query);
 
       return params.get('queryText');

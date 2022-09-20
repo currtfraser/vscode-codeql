@@ -23,7 +23,6 @@ export default function resultsDiff(
   fromResults: RawResultSet,
   toResults: RawResultSet
 ): QueryCompareResult {
-
   if (fromResults.schema.columns.length !== toResults.schema.columns.length) {
     throw new Error('CodeQL Compare: Columns do not match.');
   }

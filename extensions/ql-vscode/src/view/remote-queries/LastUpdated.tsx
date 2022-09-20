@@ -18,7 +18,7 @@ const Duration = styled.span`
 
 type Props = { lastUpdated?: number };
 
-const LastUpdated = ({ lastUpdated }: Props) => (
+const LastUpdated = ({ lastUpdated }: Props) =>
   // lastUpdated will be undefined for older results that were
   // created before the lastUpdated field was added.
   Number.isFinite(lastUpdated) ? (
@@ -26,13 +26,10 @@ const LastUpdated = ({ lastUpdated }: Props) => (
       <IconContainer>
         <RepoPushIcon size={16} />
       </IconContainer>
-      <Duration>
-        {humanizeRelativeTime(lastUpdated)}
-      </Duration>
+      <Duration>{humanizeRelativeTime(lastUpdated)}</Duration>
     </>
   ) : (
     <></>
-  )
-);
+  );
 
 export default LastUpdated;

@@ -14,7 +14,7 @@ export default {
       <VariantAnalysisContainer>
         <Story />
       </VariantAnalysisContainer>
-    )
+    ),
   ],
   argTypes: {
     onOpenQueryFileClick: {
@@ -47,7 +47,7 @@ export default {
         disable: true,
       },
     },
-  }
+  },
 } as ComponentMeta<typeof VariantAnalysisHeader>;
 
 const Template: ComponentStory<typeof VariantAnalysisHeader> = (args) => (

@@ -9,7 +9,7 @@ import analysesResults from './data/analysesResultsMessage.json';
 
 export default {
   title: 'MRVA/Remote Queries',
-  component: RemoteQueries
+  component: RemoteQueries,
 } as ComponentMeta<typeof RemoteQueries>;
 
 const Template: ComponentStory<typeof RemoteQueries> = () => {

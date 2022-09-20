@@ -13,13 +13,11 @@ export default {
         disable: true,
       },
     },
-  }
+  },
 } as ComponentMeta<typeof RepositoriesSearchComponent>;
 
 export const RepositoriesSearch = () => {
   const [filterValue, setFilterValue] = useState('');
 
-  return (
-    <RepositoriesSearchComponent filterValue={filterValue} setFilterValue={setFilterValue} />
-  );
+  return <RepositoriesSearchComponent filterValue={filterValue} setFilterValue={setFilterValue} />;
 };

@@ -15,8 +15,6 @@ import { DatabaseItem } from './databases';
  */
 const MAX_UPGRADE_MESSAGE_LINES = 10;
 
-
-
 /**
  * Compile a database upgrade sequence.
  * Callers must check that this is valid with the current queryserver first.
@@ -32,14 +30,19 @@ export async function compileDatabaseUpgradeSequence(
   if (dbItem.contents === undefined || dbItem.contents.dbSchemeUri === undefined) {
     throw new Error('Database is invalid, and cannot be upgraded.');
   }
-  if (!await qs.cliServer.cliConstraints.supportsNonDestructiveUpgrades()) {
+  if (!(await qs.cliServer.cliConstraints.supportsNonDestructiveUpgrades())) {
     throw new Error('The version of codeql is too old to run non-destructive upgrades.');
   }
   // If possible just compile the upgrade sequence
-  return await qs.sendRequest(messages.compileUpgradeSequence, {
-    upgradeTempDir: currentUpgradeTmp.path,
-    upgradePaths: resolvedSequence
-  }, token, progress);
+  return await qs.sendRequest(
+    messages.compileUpgradeSequence,
+    {
+      upgradeTempDir: currentUpgradeTmp.path,
+      upgradePaths: resolvedSequence,
+    },
+    token,
+    progress
+  );
 }
 
 async function compileDatabaseUpgrade(
@@ -57,22 +60,27 @@ async function compileDatabaseUpgrade(
   // We have the upgrades we want but compileUpgrade
   // requires searching for them.  So we use the parent directories of the upgrades
   // as the upgrade path.
-  const parentDirs = resolvedSequence.map(dir => path.dirname(dir));
+  const parentDirs = resolvedSequence.map((dir) => path.dirname(dir));
   const uniqueParentDirs = new Set(parentDirs);
   progress({
     step: 1,
     maxStep: 3,
-    message: 'Checking for database upgrades'
+    message: 'Checking for database upgrades',
   });
-  return qs.sendRequest(messages.compileUpgrade, {
-    upgrade: {
-      fromDbscheme: dbItem.contents.dbSchemeUri.fsPath,
-      toDbscheme: targetDbScheme,
-      additionalUpgrades: Array.from(uniqueParentDirs)
+  return qs.sendRequest(
+    messages.compileUpgrade,
+    {
+      upgrade: {
+        fromDbscheme: dbItem.contents.dbSchemeUri.fsPath,
+        toDbscheme: targetDbScheme,
+        additionalUpgrades: Array.from(uniqueParentDirs),
+      },
+      upgradeTempDir: currentUpgradeTmp.path,
+      singleFileUpgrades: true,
     },
-    upgradeTempDir: currentUpgradeTmp.path,
-    singleFileUpgrades: true,
-  }, token, progress);
+    token,
+    progress
+  );
 }
 
 /**
@@ -84,7 +92,6 @@ async function checkAndConfirmDatabaseUpgrade(
   db: DatabaseItem,
   quiet: boolean
 ): Promise<void> {
-
   let descriptionMessage = '';
   const descriptions = getUpgradeDescriptions(compiled);
   for (const script of descriptions) {
@@ -92,7 +99,6 @@ async function checkAndConfirmDatabaseUpgrade(
     descriptionMessage += `\t-> Compatibility: ${script.compatibility}\n`;
   }
   void logger.log(descriptionMessage);
-
 
   // If the quiet flag is set, do the upgrade without a popup.
   if (quiet) {
@@ -109,12 +115,20 @@ async function checkAndConfirmDatabaseUpgrade(
   let messageLines = descriptionMessage.split('\n');
   if (messageLines.length > MAX_UPGRADE_MESSAGE_LINES) {
     messageLines = messageLines.slice(0, MAX_UPGRADE_MESSAGE_LINES);
-    messageLines.push('The list of upgrades was truncated, click "No, Show Changes" to see the full list.');
+    messageLines.push(
+      'The list of upgrades was truncated, click "No, Show Changes" to see the full list.'
+    );
     dialogOptions.push(showLogItem);
   }
 
-  const message = `Should the database ${db.databaseUri.fsPath} be upgraded?\n\n${messageLines.join('\n')}`;
-  const chosenItem = await vscode.window.showInformationMessage(message, { modal: true }, ...dialogOptions);
+  const message = `Should the database ${db.databaseUri.fsPath} be upgraded?\n\n${messageLines.join(
+    '\n'
+  )}`;
+  const chosenItem = await vscode.window.showInformationMessage(
+    message,
+    { modal: true },
+    ...dialogOptions
+  );
 
   if (chosenItem === showLogItem) {
     logger.outputChannel.show();
@@ -128,12 +142,14 @@ async function checkAndConfirmDatabaseUpgrade(
 /**
  * Get the descriptions from a compiled upgrade
  */
-function getUpgradeDescriptions(compiled: messages.CompiledUpgrades): messages.UpgradeDescription[] {
+function getUpgradeDescriptions(
+  compiled: messages.CompiledUpgrades
+): messages.UpgradeDescription[] {
   // We use the presence of compiledUpgradeFile to check
   // if it is multifile or not. We need to explicitly check undefined
   // as the types claim the empty string is a valid value
   if (compiled.compiledUpgradeFile === undefined) {
-    return compiled.scripts.map(script => script.description);
+    return compiled.scripts.map((script) => script.description);
   } else {
     return compiled.descriptions;
   }
@@ -149,9 +165,8 @@ export async function upgradeDatabaseExplicit(
   qs: qsClient.QueryServerClient,
   dbItem: DatabaseItem,
   progress: ProgressCallback,
-  token: vscode.CancellationToken,
+  token: vscode.CancellationToken
 ): Promise<messages.RunUpgradeResult | undefined> {
-
   const searchPath: string[] = getOnDiskWorkspaceFolders();
 
   if (!dbItem?.contents?.dbSchemeUri) {
@@ -168,17 +183,28 @@ export async function upgradeDatabaseExplicit(
   if (finalDbscheme === undefined) {
     throw new Error('Could not determine target dbscheme to upgrade to.');
   }
-  const currentUpgradeTmp = await tmp.dir({ dir: tmpDir.name, prefix: 'upgrade_', keep: false, unsafeCleanup: true });
+  const currentUpgradeTmp = await tmp.dir({
+    dir: tmpDir.name,
+    prefix: 'upgrade_',
+    keep: false,
+    unsafeCleanup: true,
+  });
   try {
     let compileUpgradeResult: messages.CompileUpgradeResult;
     try {
-      compileUpgradeResult = await compileDatabaseUpgrade(qs, dbItem, finalDbscheme, scripts, currentUpgradeTmp, progress, token);
-    }
-    catch (e) {
+      compileUpgradeResult = await compileDatabaseUpgrade(
+        qs,
+        dbItem,
+        finalDbscheme,
+        scripts,
+        currentUpgradeTmp,
+        progress,
+        token
+      );
+    } catch (e) {
       void showAndLogErrorMessage(`Compilation of database upgrades failed: ${e}`);
       return;
-    }
-    finally {
+    } finally {
       void qs.logger.log('Done compiling database upgrade.');
     }
 
@@ -188,15 +214,26 @@ export async function upgradeDatabaseExplicit(
       return;
     }
 
-    await checkAndConfirmDatabaseUpgrade(compileUpgradeResult.compiledUpgrades, dbItem, qs.cliServer.quiet);
+    await checkAndConfirmDatabaseUpgrade(
+      compileUpgradeResult.compiledUpgrades,
+      dbItem,
+      qs.cliServer.quiet
+    );
 
     try {
       void qs.logger.log('Running the following database upgrade:');
 
-      getUpgradeDescriptions(compileUpgradeResult.compiledUpgrades).map(s => s.description).join('\n');
-      return await runDatabaseUpgrade(qs, dbItem, compileUpgradeResult.compiledUpgrades, progress, token);
-    }
-    catch (e) {
+      getUpgradeDescriptions(compileUpgradeResult.compiledUpgrades)
+        .map((s) => s.description)
+        .join('\n');
+      return await runDatabaseUpgrade(
+        qs,
+        dbItem,
+        compileUpgradeResult.compiledUpgrades,
+        progress,
+        token
+      );
+    } catch (e) {
       void showAndLogErrorMessage(`Database upgrade failed: ${e}`);
       return;
     } finally {
@@ -212,21 +249,20 @@ async function runDatabaseUpgrade(
   db: DatabaseItem,
   upgrades: messages.CompiledUpgrades,
   progress: ProgressCallback,
-  token: vscode.CancellationToken,
+  token: vscode.CancellationToken
 ): Promise<messages.RunUpgradeResult> {
-
   if (db.contents === undefined || db.contents.datasetUri === undefined) {
-    throw new Error('Can\'t upgrade an invalid database.');
+    throw new Error("Can't upgrade an invalid database.");
   }
   const database: messages.Dataset = {
     dbDir: db.contents.datasetUri.fsPath,
-    workingSet: 'default'
+    workingSet: 'default',
   };
 
   const params: messages.RunUpgradeParams = {
     db: database,
     timeoutSecs: qs.config.timeoutSecs,
-    toRun: upgrades
+    toRun: upgrades,
   };
 
   return qs.sendRequest(messages.runUpgrade, params, token, progress);

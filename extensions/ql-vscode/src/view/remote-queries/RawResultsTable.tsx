@@ -13,23 +13,30 @@ const numOfResultsInContractedMode = 5;
 const Row = ({
   row,
   fileLinkPrefix,
-  sourceLocationPrefix
+  sourceLocationPrefix,
 }: {
-  row: CellValue[],
-  fileLinkPrefix: string,
-  sourceLocationPrefix: string
+  row: CellValue[];
+  fileLinkPrefix: string;
+  sourceLocationPrefix: string;
 }) => (
   <>
     {row.map((cell, cellIndex) => (
-      <div key={cellIndex} style={{
-        borderColor: borderColor,
-        borderStyle: 'solid',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '0.4rem',
-        wordBreak: 'break-word'
-      }}>
-        <Cell value={cell} fileLinkPrefix={fileLinkPrefix} sourceLocationPrefix={sourceLocationPrefix} />
+      <div
+        key={cellIndex}
+        style={{
+          borderColor: borderColor,
+          borderStyle: 'solid',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '0.4rem',
+          wordBreak: 'break-word',
+        }}
+      >
+        <Cell
+          value={cell}
+          fileLinkPrefix={fileLinkPrefix}
+          sourceLocationPrefix={sourceLocationPrefix}
+        />
       </div>
     ))}
   </>
@@ -38,11 +45,11 @@ const Row = ({
 const Cell = ({
   value,
   fileLinkPrefix,
-  sourceLocationPrefix
+  sourceLocationPrefix,
 }: {
-  value: CellValue,
-  fileLinkPrefix: string
-  sourceLocationPrefix: string
+  value: CellValue;
+  fileLinkPrefix: string;
+  sourceLocationPrefix: string;
 }) => {
   switch (typeof value) {
     case 'string':
@@ -65,12 +72,12 @@ const RawResultsTable = ({
   schema,
   results,
   fileLinkPrefix,
-  sourceLocationPrefix
+  sourceLocationPrefix,
 }: {
-  schema: ResultSetSchema,
-  results: RawResultSet,
-  fileLinkPrefix: string,
-  sourceLocationPrefix: string
+  schema: ResultSetSchema;
+  results: RawResultSet;
+  fileLinkPrefix: string;
+  sourceLocationPrefix: string;
 }) => {
   const [tableExpanded, setTableExpanded] = useState(false);
   const numOfResultsToShow = tableExpanded ? results.rows.length : numOfResultsInContractedMode;
@@ -83,22 +90,28 @@ const RawResultsTable = ({
 
   return (
     <>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: gridTemplateColumns,
-        maxWidth: '45rem',
-        padding: '0.4rem'
-      }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: gridTemplateColumns,
+          maxWidth: '45rem',
+          padding: '0.4rem',
+        }}
+      >
         {results.rows.slice(0, numOfResultsToShow).map((row, rowIndex) => (
-          <Row key={rowIndex} row={row} fileLinkPrefix={fileLinkPrefix} sourceLocationPrefix={sourceLocationPrefix} />
+          <Row
+            key={rowIndex}
+            row={row}
+            fileLinkPrefix={fileLinkPrefix}
+            sourceLocationPrefix={sourceLocationPrefix}
+          />
         ))}
       </div>
-      {
-        showButton &&
-        <TextButton size='x-small' onClick={() => setTableExpanded(!tableExpanded)}>
-          {tableExpanded ? (<span>View less</span>) : (<span>View all</span>)}
+      {showButton && (
+        <TextButton size="x-small" onClick={() => setTableExpanded(!tableExpanded)}>
+          {tableExpanded ? <span>View less</span> : <span>View all</span>}
         </TextButton>
-      }
+      )}
     </>
   );
 };

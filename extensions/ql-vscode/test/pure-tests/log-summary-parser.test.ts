@@ -4,9 +4,9 @@ import 'mocha';
 
 import { parseViewerData } from '../../src/pure/log-summary-parser';
 
-describe('Evaluator log summary tests', async function() {
-  describe('for a valid summary text', async function() {
-    it('should return only valid EvalLogData objects', async function() {
+describe('Evaluator log summary tests', async function () {
+  describe('for a valid summary text', async function () {
+    it('should return only valid EvalLogData objects', async function () {
       const validSummaryPath = path.join(__dirname, 'evaluator-log-summaries/valid-summary.jsonl');
       const logDataItems = await parseViewerData(validSummaryPath);
       expect(logDataItems).to.not.be.undefined;
@@ -25,14 +25,20 @@ describe('Evaluator log summary tests', async function() {
       }
     });
 
-    it('should not parse a summary header object', async function() {
-      const invalidHeaderPath = path.join(__dirname, 'evaluator-log-summaries/invalid-header.jsonl');
+    it('should not parse a summary header object', async function () {
+      const invalidHeaderPath = path.join(
+        __dirname,
+        'evaluator-log-summaries/invalid-header.jsonl'
+      );
       const logDataItems = await parseViewerData(invalidHeaderPath);
       expect(logDataItems.length).to.eq(0);
     });
 
-    it('should not parse a log event missing RA or millis fields', async function() {
-      const invalidSummaryPath = path.join(__dirname, 'evaluator-log-summaries/invalid-summary.jsonl');
+    it('should not parse a log event missing RA or millis fields', async function () {
+      const invalidSummaryPath = path.join(
+        __dirname,
+        'evaluator-log-summaries/invalid-summary.jsonl'
+      );
       const logDataItems = await parseViewerData(invalidSummaryPath);
       expect(logDataItems.length).to.eq(0);
     });

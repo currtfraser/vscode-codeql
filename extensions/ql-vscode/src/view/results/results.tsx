@@ -96,8 +96,7 @@ export class ResultsApp extends React.Component<Record<string, never>, ResultsVi
           sortedResultsMap: new Map(Object.entries(msg.sortedResultsMap)),
           database: msg.database,
           interpretation: msg.interpretation,
-          shouldKeepOldResultsWhileRendering:
-            msg.shouldKeepOldResultsWhileRendering,
+          shouldKeepOldResultsWhileRendering: msg.shouldKeepOldResultsWhileRendering,
           metadata: msg.metadata,
           queryName: msg.queryName,
           queryPath: msg.queryPath,
@@ -106,7 +105,10 @@ export class ResultsApp extends React.Component<Record<string, never>, ResultsVi
         void this.loadResults();
         break;
       case 'showInterpretedPage': {
-        const tableName = msg.interpretation.data.t === 'GraphInterpretationData' ? GRAPH_TABLE_NAME : ALERTS_TABLE_NAME;
+        const tableName =
+          msg.interpretation.data.t === 'GraphInterpretationData'
+            ? GRAPH_TABLE_NAME
+            : ALERTS_TABLE_NAME;
 
         this.updateStateWithNewResultsInfo({
           resultsPath: '', // FIXME: Not used for interpreted, refactor so this is not needed
@@ -122,7 +124,7 @@ export class ResultsApp extends React.Component<Record<string, never>, ResultsVi
               schema: {
                 name: tableName,
                 rows: 1,
-                columns: []
+                columns: [],
               },
               interpretation: msg.interpretation,
             },
@@ -160,9 +162,7 @@ export class ResultsApp extends React.Component<Record<string, never>, ResultsVi
 
   private updateStateWithNewResultsInfo(resultsInfo: ResultsInfo): void {
     this.setState((prevState) => {
-      const stateWithDisplayedResults = (
-        displayedResults: ResultsState
-      ): ResultsViewState => ({
+      const stateWithDisplayedResults = (displayedResults: ResultsState): ResultsViewState => ({
         displayedResults,
         isExpectingResultsUpdate: prevState.isExpectingResultsUpdate,
         nextResultsInfo: resultsInfo,
@@ -188,9 +188,7 @@ export class ResultsApp extends React.Component<Record<string, never>, ResultsVi
     });
   }
 
-  private getResultSets(
-    resultsInfo: ResultsInfo
-  ): readonly ResultSet[] {
+  private getResultSets(resultsInfo: ResultsInfo): readonly ResultSet[] {
     const parsedResultSets = resultsInfo.parsedResultSets;
     const resultSet = parsedResultSets.resultSet;
     if (!resultSet.t) {
@@ -244,24 +242,16 @@ export class ResultsApp extends React.Component<Record<string, never>, ResultsVi
     });
   }
 
-  private getSortStates(
-    resultsInfo: ResultsInfo
-  ): Map<string, RawResultsSortState> {
+  private getSortStates(resultsInfo: ResultsInfo): Map<string, RawResultsSortState> {
     const entries = Array.from(resultsInfo.sortedResultsMap.entries());
     return new Map(
-      entries.map(([key, sortedResultSetInfo]) => [
-        key,
-        sortedResultSetInfo.sortState,
-      ])
+      entries.map(([key, sortedResultSetInfo]) => [key, sortedResultSetInfo.sortState])
     );
   }
 
   render(): JSX.Element {
     const displayedResults = this.state.displayedResults;
-    if (
-      displayedResults.results !== null &&
-      displayedResults.resultsInfo !== null
-    ) {
+    if (displayedResults.results !== null && displayedResults.resultsInfo !== null) {
       const parsedResultSets = displayedResults.resultsInfo.parsedResultSets;
       const key = (parsedResultSets.selectedTable || '') + parsedResultSets.pageNumber;
       const data = displayedResults.resultsInfo.interpretation?.data;
@@ -272,23 +262,18 @@ export class ResultsApp extends React.Component<Record<string, never>, ResultsVi
           parsedResultSets={parsedResultSets}
           rawResultSets={displayedResults.results.resultSets}
           interpretation={
-            displayedResults.resultsInfo
-              ? displayedResults.resultsInfo.interpretation
-              : undefined
+            displayedResults.resultsInfo ? displayedResults.resultsInfo.interpretation : undefined
           }
           database={displayedResults.results.database}
           origResultsPaths={displayedResults.resultsInfo.origResultsPaths}
           resultsPath={displayedResults.resultsInfo.resultsPath}
           metadata={
-            displayedResults.resultsInfo
-              ? displayedResults.resultsInfo.metadata
-              : undefined
+            displayedResults.resultsInfo ? displayedResults.resultsInfo.metadata : undefined
           }
           sortStates={displayedResults.results.sortStates}
           interpretedSortState={data?.t == 'SarifInterpretationData' ? data.sortState : undefined}
           isLoadingNewResults={
-            this.state.isExpectingResultsUpdate ||
-            this.state.nextResultsInfo !== null
+            this.state.isExpectingResultsUpdate || this.state.nextResultsInfo !== null
           }
           queryName={displayedResults.resultsInfo.queryName}
           queryPath={displayedResults.resultsInfo.queryPath}

@@ -17,50 +17,52 @@ describe('Releases API consumer', () => {
   describe('picking the latest release', () => {
     const sampleReleaseResponse: GithubRelease[] = [
       {
-        'assets': [],
-        'created_at': '2019-09-01T00:00:00Z',
-        'id': 1,
-        'name': '',
-        'prerelease': false,
-        'tag_name': 'v2.1.0'
+        assets: [],
+        created_at: '2019-09-01T00:00:00Z',
+        id: 1,
+        name: '',
+        prerelease: false,
+        tag_name: 'v2.1.0',
       },
       {
-        'assets': [],
-        'created_at': '2019-08-10T00:00:00Z',
-        'id': 2,
-        'name': '',
-        'prerelease': false,
-        'tag_name': 'v3.1.1'
+        assets: [],
+        created_at: '2019-08-10T00:00:00Z',
+        id: 2,
+        name: '',
+        prerelease: false,
+        tag_name: 'v3.1.1',
       },
       {
-        'assets': [{
-          id: 1,
-          name: 'exampleAsset.txt',
-          size: 1
-        }],
-        'created_at': '2019-09-05T00:00:00Z',
-        'id': 3,
-        'name': '',
-        'prerelease': false,
-        'tag_name': 'v2.0.0'
+        assets: [
+          {
+            id: 1,
+            name: 'exampleAsset.txt',
+            size: 1,
+          },
+        ],
+        created_at: '2019-09-05T00:00:00Z',
+        id: 3,
+        name: '',
+        prerelease: false,
+        tag_name: 'v2.0.0',
       },
       {
-        'assets': [],
-        'created_at': '2019-08-11T00:00:00Z',
-        'id': 4,
-        'name': '',
-        'prerelease': true,
-        'tag_name': 'v3.1.2-pre-1.1'
+        assets: [],
+        created_at: '2019-08-11T00:00:00Z',
+        id: 4,
+        name: '',
+        prerelease: true,
+        tag_name: 'v3.1.2-pre-1.1',
       },
       // Release ID 5 is older than release ID 4 but its version has a higher precedence, so release
       // ID 5 should be picked over release ID 4.
       {
-        'assets': [],
-        'created_at': '2019-08-09T00:00:00Z',
-        'id': 5,
-        'name': '',
-        'prerelease': true,
-        'tag_name': 'v3.1.2-pre-2.0'
+        assets: [],
+        created_at: '2019-08-09T00:00:00Z',
+        id: 5,
+        name: '',
+        prerelease: true,
+        tag_name: 'v3.1.2-pre-2.0',
       },
     ];
 
@@ -90,9 +92,7 @@ describe('Releases API consumer', () => {
     it('fails if none of the releases are within the version range', async () => {
       const consumer = new MockReleasesApiConsumer(owner, repo);
 
-      await expect(
-        consumer.getLatestRelease(new semver.Range('5.*.*'))
-      ).to.be.rejectedWith(Error);
+      await expect(consumer.getLatestRelease(new semver.Range('5.*.*'))).to.be.rejectedWith(Error);
     });
 
     it('picked release passes additional compatibility test if an additional compatibility test is specified', async () => {
@@ -101,7 +101,7 @@ describe('Releases API consumer', () => {
       const latestRelease = await consumer.getLatestRelease(
         new semver.Range('2.*.*'),
         true,
-        release => release.assets.some(asset => asset.name === 'exampleAsset.txt')
+        (release) => release.assets.some((asset) => asset.name === 'exampleAsset.txt')
       );
       expect(latestRelease.id).to.equal(3);
     });
@@ -109,11 +109,11 @@ describe('Releases API consumer', () => {
     it('fails if none of the releases pass the additional compatibility test', async () => {
       const consumer = new MockReleasesApiConsumer(owner, repo);
 
-      await expect(consumer.getLatestRelease(
-        new semver.Range('2.*.*'),
-        true,
-        release => release.assets.some(asset => asset.name === 'otherExampleAsset.txt')
-      )).to.be.rejectedWith(Error);
+      await expect(
+        consumer.getLatestRelease(new semver.Range('2.*.*'), true, (release) =>
+          release.assets.some((asset) => asset.name === 'otherExampleAsset.txt')
+        )
+      ).to.be.rejectedWith(Error);
     });
 
     it('picked release is the most recent prerelease when includePrereleases is set', async () => {
@@ -127,28 +127,30 @@ describe('Releases API consumer', () => {
   it('gets correct assets for a release', async () => {
     const expectedAssets: GithubReleaseAsset[] = [
       {
-        'id': 1,
-        'name': 'firstAsset',
-        'size': 11
+        id: 1,
+        name: 'firstAsset',
+        size: 11,
       },
       {
-        'id': 2,
-        'name': 'secondAsset',
-        'size': 12
-      }
+        id: 2,
+        name: 'secondAsset',
+        size: 12,
+      },
     ];
 
     class MockReleasesApiConsumer extends ReleasesApiConsumer {
       protected async makeApiCall(apiPath: string): Promise<fetch.Response> {
         if (apiPath === `/repos/${owner}/${repo}/releases`) {
-          const responseBody: GithubRelease[] = [{
-            'assets': expectedAssets,
-            'created_at': '2019-09-01T00:00:00Z',
-            'id': 1,
-            'name': 'Release 1',
-            'prerelease': false,
-            'tag_name': 'v2.0.0'
-          }];
+          const responseBody: GithubRelease[] = [
+            {
+              assets: expectedAssets,
+              created_at: '2019-09-01T00:00:00Z',
+              id: 1,
+              name: 'Release 1',
+              prerelease: false,
+              tag_name: 'v2.0.0',
+            },
+          ];
 
           return Promise.resolve(new fetch.Response(JSON.stringify(responseBody)));
         }
@@ -247,7 +249,7 @@ describe('Launcher path', () => {
     expect(result).to.equal(undefined);
   });
 
-  it('should not warn when deprecated launcher is used, but no new launcher is available', async function() {
+  it('should not warn when deprecated launcher is used, but no new launcher is available', async function () {
     const manager = new (createModule().DistributionManager)(
       { customCodeQlPath: pathToCmd } as any,
       {} as any,
@@ -300,25 +302,25 @@ describe('Launcher path', () => {
     errorSpy = sandbox.spy();
     logSpy = sandbox.spy();
     // pretend that only the .cmd file exists
-    fsSpy = sandbox.stub().callsFake(arg => arg.endsWith(launcherThatExists) ? true : false);
+    fsSpy = sandbox.stub().callsFake((arg) => (arg.endsWith(launcherThatExists) ? true : false));
     platformSpy = sandbox.stub().returns('win32');
 
     return proxyquire('../../distribution', {
       './helpers': {
         showAndLogWarningMessage: warnSpy,
-        showAndLogErrorMessage: errorSpy
+        showAndLogErrorMessage: errorSpy,
       },
       './logging': {
-        'logger': {
-          log: logSpy
-        }
+        logger: {
+          log: logSpy,
+        },
       },
       'fs-extra': {
-        pathExists: fsSpy
+        pathExists: fsSpy,
       },
       os: {
-        platform: platformSpy
-      }
+        platform: platformSpy,
+      },
     });
   }
 });

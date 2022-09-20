@@ -2,8 +2,15 @@ import 'mocha';
 import * as chaiAsPromised from 'chai-as-promised';
 import * as chai from 'chai';
 import * as sarif from 'sarif';
-import { extractAnalysisAlerts, tryGetRule, tryGetSeverity } from '../../src/remote-queries/sarif-processing';
-import { AnalysisMessage, AnalysisMessageLocationToken } from '../../src/remote-queries/shared/analysis-result';
+import {
+  extractAnalysisAlerts,
+  tryGetRule,
+  tryGetSeverity,
+} from '../../src/remote-queries/sarif-processing';
+import {
+  AnalysisMessage,
+  AnalysisMessageLocationToken,
+} from '../../src/remote-queries/shared/analysis-result';
 
 chai.use(chaiAsPromised);
 const expect = chai.expect;
@@ -13,12 +20,12 @@ describe('SARIF processing', () => {
     describe('Using the tool driver', () => {
       it('should return undefined if no rule has been set on the result', () => {
         const result = {
-          message: 'msg'
+          message: 'msg',
           // Rule is missing here.
         } as sarif.Result;
 
         const sarifRun = {
-          results: [result]
+          results: [result],
         } as sarif.Run;
 
         const rule = tryGetRule(sarifRun, result);
@@ -30,8 +37,8 @@ describe('SARIF processing', () => {
         const result = {
           message: 'msg',
           rule: {
-            id: 'NonExistentRule'
-          }
+            id: 'NonExistentRule',
+          },
         } as sarif.Result;
 
         const sarifRun = {
@@ -44,11 +51,11 @@ describe('SARIF processing', () => {
                   id: 'A',
                 },
                 {
-                  id: 'B'
-                }
-              ]
-            }
-          }
+                  id: 'B',
+                },
+              ],
+            },
+          },
         } as sarif.Run;
 
         const rule = tryGetRule(sarifRun, result);
@@ -60,8 +67,8 @@ describe('SARIF processing', () => {
         const result = {
           message: 'msg',
           rule: {
-            id: 'B'
-          }
+            id: 'B',
+          },
         } as sarif.Result;
 
         const sarifRun = {
@@ -72,10 +79,10 @@ describe('SARIF processing', () => {
                 {
                   id: 'A',
                 },
-                result.rule
-              ]
-            }
-          }
+                result.rule,
+              ],
+            },
+          },
         } as sarif.Run;
 
         const rule = tryGetRule(sarifRun, result);
@@ -92,9 +99,9 @@ describe('SARIF processing', () => {
           rule: {
             // The rule index should be set here.
             toolComponent: {
-              index: 1
-            }
-          }
+              index: 1,
+            },
+          },
         } as sarif.Result;
 
         const sarifRun = {
@@ -108,9 +115,9 @@ describe('SARIF processing', () => {
                     id: 'A',
                   },
                   {
-                    id: 'B'
-                  }
-                ]
+                    id: 'B',
+                  },
+                ],
               },
               {
                 name: 'bar',
@@ -119,12 +126,12 @@ describe('SARIF processing', () => {
                     id: 'C',
                   },
                   {
-                    id: 'D'
-                  }
-                ]
-              }
-            ]
-          }
+                    id: 'D',
+                  },
+                ],
+              },
+            ],
+          },
         } as sarif.Run;
 
         const rule = tryGetRule(sarifRun, result);
@@ -139,8 +146,8 @@ describe('SARIF processing', () => {
             index: 1,
             toolComponent: {
               // The tool component index should be set here.
-            }
-          }
+            },
+          },
         } as sarif.Result;
 
         const sarifRun = {
@@ -154,9 +161,9 @@ describe('SARIF processing', () => {
                     id: 'A',
                   },
                   {
-                    id: 'B'
-                  }
-                ]
+                    id: 'B',
+                  },
+                ],
               },
               {
                 name: 'bar',
@@ -165,12 +172,12 @@ describe('SARIF processing', () => {
                     id: 'C',
                   },
                   {
-                    id: 'D'
-                  }
-                ]
-              }
-            ]
-          }
+                    id: 'D',
+                  },
+                ],
+              },
+            ],
+          },
         } as sarif.Run;
 
         const rule = tryGetRule(sarifRun, result);
@@ -184,16 +191,16 @@ describe('SARIF processing', () => {
           rule: {
             index: 1,
             toolComponent: {
-              index: 1
-            }
-          }
+              index: 1,
+            },
+          },
         } as sarif.Result;
 
         const sarifRun = {
           results: [result],
           tool: {
             // Extensions should be set here.
-          }
+          },
         } as sarif.Run;
 
         const rule = tryGetRule(sarifRun, result);
@@ -207,9 +214,9 @@ describe('SARIF processing', () => {
           rule: {
             index: 1,
             toolComponent: {
-              index: 1
-            }
-          }
+              index: 1,
+            },
+          },
         } as sarif.Result;
 
         const sarifRun = {
@@ -223,13 +230,13 @@ describe('SARIF processing', () => {
                     id: 'A',
                   },
                   {
-                    id: 'B'
-                  }
-                ]
-              }
+                    id: 'B',
+                  },
+                ],
+              },
               // There should be one more extension here (index 1).
-            ]
-          }
+            ],
+          },
         } as sarif.Run;
 
         const rule = tryGetRule(sarifRun, result);
@@ -244,9 +251,9 @@ describe('SARIF processing', () => {
           rule: {
             index: 1,
             toolComponent: {
-              index: 1
-            }
-          }
+              index: 1,
+            },
+          },
         } as sarif.Result;
 
         const sarifRun = {
@@ -260,9 +267,9 @@ describe('SARIF processing', () => {
                     id: 'A',
                   },
                   {
-                    id: 'B'
-                  }
-                ]
+                    id: 'B',
+                  },
+                ],
               },
               {
                 name: 'bar',
@@ -272,11 +279,11 @@ describe('SARIF processing', () => {
                   },
                   {
                     id: 'D',
-                  }
-                ]
-              }
-            ]
-          }
+                  },
+                ],
+              },
+            ],
+          },
         } as sarif.Run;
 
         const rule = tryGetRule(sarifRun, result);
@@ -290,14 +297,14 @@ describe('SARIF processing', () => {
   describe('tryGetSeverity', () => {
     it('should return undefined if no rule set', () => {
       const result = {
-        message: 'msg'
+        message: 'msg',
       } as sarif.Result;
 
       // The rule should be set here.
       const rule: sarif.ReportingDescriptor | undefined = undefined;
 
       const sarifRun = {
-        results: [result]
+        results: [result],
       } as sarif.Run;
 
       const severity = tryGetSeverity(sarifRun, result, rule);
@@ -308,27 +315,24 @@ describe('SARIF processing', () => {
       const result = {
         message: 'msg',
         rule: {
-          id: 'A'
-        }
+          id: 'A',
+        },
       } as sarif.Result;
 
       const rule = {
         id: 'A',
         properties: {
           // Severity not set
-        }
+        },
       } as sarif.ReportingDescriptor;
 
       const sarifRun = {
         results: [result],
         tool: {
           driver: {
-            rules: [
-              rule,
-              result.rule
-            ]
-          }
-        }
+            rules: [rule, result.rule],
+          },
+        },
       } as sarif.Run;
 
       const severity = tryGetSeverity(sarifRun, result, rule);
@@ -338,7 +342,7 @@ describe('SARIF processing', () => {
     const severityMap = {
       recommendation: 'Recommendation',
       warning: 'Warning',
-      error: 'Error'
+      error: 'Error',
     };
 
     Object.entries(severityMap).forEach(([sarifSeverity, parsedSeverity]) => {
@@ -346,34 +350,30 @@ describe('SARIF processing', () => {
         const result = {
           message: 'msg',
           rule: {
-            id: 'A'
-          }
+            id: 'A',
+          },
         } as sarif.Result;
 
         const rule = {
           id: 'A',
           properties: {
-            'problem.severity': sarifSeverity
-          }
+            'problem.severity': sarifSeverity,
+          },
         } as sarif.ReportingDescriptor;
 
         const sarifRun = {
           results: [result],
           tool: {
             driver: {
-              rules: [
-                rule,
-                result.rule
-              ]
-            }
-          }
+              rules: [rule, result.rule],
+            },
+          },
         } as sarif.Run;
 
         const severity = tryGetSeverity(sarifRun, result, rule);
         expect(severity).to.equal(parsedSeverity);
       });
     });
-
   });
 
   describe('extractAnalysisAlerts', () => {
@@ -393,12 +393,12 @@ describe('SARIF processing', () => {
       const sarif = {
         runs: [
           {
-            results: []
+            results: [],
           },
           {
             // Results are missing here.
-          }
-        ]
+          },
+        ],
       } as sarif.Log;
 
       const result = extractAnalysisAlerts(sarif, fakefileLinkPrefix);
@@ -427,7 +427,7 @@ describe('SARIF processing', () => {
       const expectedCodeSnippet = {
         startLine: result.alerts[0].codeSnippet!.startLine,
         endLine: result.alerts[0].codeSnippet!.endLine,
-        text: ''
+        text: '',
       };
 
       const actualCodeSnippet = result.alerts[0].codeSnippet;
@@ -446,7 +446,7 @@ describe('SARIF processing', () => {
       const expectedCodeSnippet = {
         startLine: result.alerts[0].highlightedRegion!.startLine,
         endLine: result.alerts[0].highlightedRegion!.endLine,
-        text: ''
+        text: '',
       };
 
       const actualCodeSnippet = result.alerts[0].codeSnippet;
@@ -486,7 +486,7 @@ describe('SARIF processing', () => {
             results: [
               {
                 message: {
-                  text: 'msg1'
+                  text: 'msg1',
                 },
                 locations: [
                   {
@@ -495,18 +495,18 @@ describe('SARIF processing', () => {
                         startLine: 10,
                         endLine: 12,
                         snippet: {
-                          text: 'foo'
-                        }
+                          text: 'foo',
+                        },
                       },
                       region: {
                         startLine: 10,
                         startColumn: 1,
-                        endColumn: 3
+                        endColumn: 3,
                       },
                       artifactLocation: {
-                        uri: 'foo.js'
-                      }
-                    }
+                        uri: 'foo.js',
+                      },
+                    },
                   },
                   {
                     physicalLocation: {
@@ -514,24 +514,24 @@ describe('SARIF processing', () => {
                         startLine: 10,
                         endLine: 12,
                         snippet: {
-                          text: 'bar'
-                        }
+                          text: 'bar',
+                        },
                       },
                       region: {
                         startLine: 10,
                         startColumn: 1,
-                        endColumn: 3
+                        endColumn: 3,
                       },
                       artifactLocation: {
-                        uri: 'bar.js'
-                      }
-                    }
-                  }
-                ]
+                        uri: 'bar.js',
+                      },
+                    },
+                  },
+                ],
               },
               {
                 message: {
-                  text: 'msg2'
+                  text: 'msg2',
                 },
                 locations: [
                   {
@@ -540,34 +540,46 @@ describe('SARIF processing', () => {
                         startLine: 10,
                         endLine: 12,
                         snippet: {
-                          text: 'baz'
-                        }
+                          text: 'baz',
+                        },
                       },
                       region: {
                         startLine: 10,
                         startColumn: 1,
-                        endColumn: 3
+                        endColumn: 3,
                       },
                       artifactLocation: {
-                        uri: 'baz.js'
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        ]
+                        uri: 'baz.js',
+                      },
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
       } as sarif.Log;
 
       const result = extractAnalysisAlerts(sarif, fakefileLinkPrefix);
       expect(result).to.be.ok;
       expect(result.errors.length).to.equal(0);
       expect(result.alerts.length).to.equal(3);
-      expect(result.alerts.find(a => getMessageText(a.message) === 'msg1' && a.codeSnippet!.text === 'foo')).to.be.ok;
-      expect(result.alerts.find(a => getMessageText(a.message) === 'msg1' && a.codeSnippet!.text === 'bar')).to.be.ok;
-      expect(result.alerts.find(a => getMessageText(a.message) === 'msg2' && a.codeSnippet!.text === 'baz')).to.be.ok;
-      expect(result.alerts.every(a => a.severity === 'Warning')).to.be.true;
+      expect(
+        result.alerts.find(
+          (a) => getMessageText(a.message) === 'msg1' && a.codeSnippet!.text === 'foo'
+        )
+      ).to.be.ok;
+      expect(
+        result.alerts.find(
+          (a) => getMessageText(a.message) === 'msg1' && a.codeSnippet!.text === 'bar'
+        )
+      ).to.be.ok;
+      expect(
+        result.alerts.find(
+          (a) => getMessageText(a.message) === 'msg2' && a.codeSnippet!.text === 'baz'
+        )
+      ).to.be.ok;
+      expect(result.alerts.every((a) => a.severity === 'Warning')).to.be.true;
     });
 
     it('should deal with complex messages', () => {
@@ -584,10 +596,10 @@ describe('SARIF processing', () => {
             region: {
               startLine: 35,
               startColumn: 20,
-              endColumn: 60
-            }
+              endColumn: 60,
+            },
           },
-        }
+        },
       ];
 
       const result = extractAnalysisAlerts(sarif, fakefileLinkPrefix);
@@ -610,8 +622,8 @@ describe('SARIF processing', () => {
           startLine: 35,
           startColumn: 20,
           endLine: 35,
-          endColumn: 60
-        }
+          endColumn: 60,
+        },
       });
       expect(message.tokens[2].t).to.equal('text');
       expect(message.tokens[2].text).to.equal('.');
@@ -635,7 +647,7 @@ describe('SARIF processing', () => {
           results: [
             {
               message: {
-                text: 'msg'
+                text: 'msg',
               },
               locations: [
                 {
@@ -644,28 +656,28 @@ describe('SARIF processing', () => {
                       startLine: 10,
                       endLine: 12,
                       snippet: {
-                        text: 'Foo'
-                      }
+                        text: 'Foo',
+                      },
                     },
                     region: {
                       startLine: 10,
                       startColumn: 1,
-                      endColumn: 3
+                      endColumn: 3,
                     },
                     artifactLocation: {
-                      uri: 'foo.js'
-                    }
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      ]
+                      uri: 'foo.js',
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
     } as sarif.Log;
   }
 
   function getMessageText(message: AnalysisMessage) {
-    return message.tokens.map(t => t.text).join('');
+    return message.tokens.map((t) => t.text).join('');
   }
 });

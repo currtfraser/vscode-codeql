@@ -1,4 +1,3 @@
-
 export const PAGE_SIZE = 1000;
 
 /**
@@ -36,7 +35,10 @@ export interface ResultSetSchema {
   pagination?: PaginationInfo;
 }
 
-export function getResultSetSchema(resultSetName: string, resultSets: BQRSInfo): ResultSetSchema | undefined {
+export function getResultSetSchema(
+  resultSetName: string,
+  resultSets: BQRSInfo
+): ResultSetSchema | undefined {
   for (const schema of resultSets['result-sets']) {
     if (schema.name === resultSetName) {
       return schema;

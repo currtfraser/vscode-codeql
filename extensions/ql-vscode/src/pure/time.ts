@@ -80,6 +80,6 @@ function createFormatter(unit: string) {
   return Intl.NumberFormat('en-US', {
     style: 'unit',
     unit,
-    unitDisplay: 'long'
+    unitDisplay: 'long',
   });
 }

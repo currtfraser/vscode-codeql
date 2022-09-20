@@ -11,7 +11,7 @@ import { getErrorMessage } from '../../pure/helpers-pure';
 
 const proxyquire = pq.noPreserveCache();
 
-describe('Packaging commands', function() {
+describe('Packaging commands', function () {
   let sandbox: sinon.SinonSandbox;
 
   // up to 3 minutes per test
@@ -25,7 +25,7 @@ describe('Packaging commands', function() {
   let showAndLogInformationMessageSpy: sinon.SinonStub;
   let mod: any;
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     sandbox = sinon.createSandbox();
     progress = sandbox.spy();
     quickPickSpy = sandbox.stub(window, 'showQuickPick');
@@ -40,9 +40,7 @@ describe('Packaging commands', function() {
     });
 
     const extension = await extensions
-      .getExtension<CodeQLExtensionInterface | Record<string, never>>(
-        'GitHub.vscode-codeql'
-      )!
+      .getExtension<CodeQLExtensionInterface | Record<string, never>>('GitHub.vscode-codeql')!
       .activate();
     if ('cliServer' in extension) {
       cli = extension.cliServer;
@@ -52,8 +50,9 @@ describe('Packaging commands', function() {
       );
     }
     if (!(await cli.cliConstraints.supportsPackaging())) {
-      console.log(`Packaging commands are not supported on CodeQL CLI v${CliVersionConstraint.CLI_VERSION_WITH_PACKAGING
-        }. Skipping this test.`);
+      console.log(
+        `Packaging commands are not supported on CodeQL CLI v${CliVersionConstraint.CLI_VERSION_WITH_PACKAGING}. Skipping this test.`
+      );
       this.skip();
     }
   });
@@ -87,9 +86,7 @@ describe('Packaging commands', function() {
 
     await mod.handleDownloadPacks(cli, progress);
 
-    expect(showAndLogErrorMessageSpy.firstCall.args[0]).to.contain(
-      'Unable to download all packs.'
-    );
+    expect(showAndLogErrorMessageSpy.firstCall.args[0]).to.contain('Unable to download all packs.');
   });
 
   it('should install valid workspace pack', async () => {
@@ -108,7 +105,10 @@ describe('Packaging commands', function() {
   });
 
   it('should throw an error when installing invalid workspace pack', async () => {
-    const rootDir = path.join(__dirname, '../../../src/vscode-tests/cli-integration/data-invalid-pack');
+    const rootDir = path.join(
+      __dirname,
+      '../../../src/vscode-tests/cli-integration/data-invalid-pack'
+    );
     quickPickSpy.resolves([
       {
         label: 'foo/bar',

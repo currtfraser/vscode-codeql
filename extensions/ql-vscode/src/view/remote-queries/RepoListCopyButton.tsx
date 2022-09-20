@@ -7,7 +7,7 @@ import { IconButton } from '@primer/react';
 const copyRepositoryList = (queryResult: RemoteQueryResult) => {
   vscode.postMessage({
     t: 'copyRepoList',
-    queryId: queryResult.queryId
+    queryId: queryResult.queryId,
   });
 };
 
@@ -18,7 +18,8 @@ const RepoListCopyButton = ({ queryResult }: { queryResult: RemoteQueryResult })
     variant="invisible"
     size="small"
     sx={{ 'text-align': 'right' }}
-    onClick={() => copyRepositoryList(queryResult)} />
+    onClick={() => copyRepositoryList(queryResult)}
+  />
 );
 
 export default RepoListCopyButton;

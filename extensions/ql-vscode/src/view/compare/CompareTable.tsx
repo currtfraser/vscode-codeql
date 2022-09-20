@@ -26,34 +26,23 @@ export default function CompareTable(props: Props) {
     return (
       <tbody>
         {rows.map((row, rowIndex) => (
-          <RawTableRow
-            key={rowIndex}
-            rowIndex={rowIndex}
-            row={row}
-            databaseUri={databaseUri}
-          />
+          <RawTableRow key={rowIndex} rowIndex={rowIndex} row={row} databaseUri={databaseUri} />
         ))}
       </tbody>
     );
   }
 
   return (
-    <table className='vscode-codeql__compare-body'>
+    <table className="vscode-codeql__compare-body">
       <thead>
         <tr>
           <td>
-            <a
-              onClick={() => openQuery('from')}
-              className='vscode-codeql__compare-open'
-            >
+            <a onClick={() => openQuery('from')} className="vscode-codeql__compare-open">
               {comparison.stats.fromQuery?.name}
             </a>
           </td>
           <td>
-            <a
-              onClick={() => openQuery('to')}
-              className='vscode-codeql__compare-open'
-            >
+            <a onClick={() => openQuery('to')} className="vscode-codeql__compare-open">
               {comparison.stats.toQuery?.name}
             </a>
           </td>

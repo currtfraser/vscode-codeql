@@ -24,10 +24,10 @@ describe('EvalLogViewer', () => {
     }
   });
 
-  it('should update the viewer\'s roots', () => {
+  it("should update the viewer's roots", () => {
     const rootItem1: EvalLogTreeItem = {
       label: 'root-1',
-      children: []
+      children: [],
     };
 
     const childItem1: ChildEvalLogTreeItem = {
@@ -39,7 +39,7 @@ describe('EvalLogViewer', () => {
 
     const rootItem2: EvalLogTreeItem = {
       label: 'root-2',
-      children: []
+      children: [],
     };
 
     const childItem2: ChildEvalLogTreeItem = {
@@ -59,7 +59,7 @@ describe('EvalLogViewer', () => {
     const grandchildItem1: ChildEvalLogTreeItem = {
       label: 'grandchild-1',
       parent: childItem3,
-      children: []
+      children: [],
     };
     childItem3.children.push(grandchildItem1);
 
@@ -71,7 +71,7 @@ describe('EvalLogViewer', () => {
     expect((viewer as any).treeView.message).to.eq('Viewer for query run:');
   });
 
-  it('should clear the viewer\'s roots', () => {
+  it("should clear the viewer's roots", () => {
     viewer.dispose(testDisposeHandler);
     expect((viewer as any).treeDataProvider.roots.length).to.eq(0);
   });

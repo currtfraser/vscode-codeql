@@ -22,7 +22,6 @@ export async function slurpQueryHistory(fsPath: string): Promise<QueryHistoryInf
 
     const queries = obj.queries;
     const parsedQueries = queries.map((q: QueryHistoryInfo) => {
-
       // Need to explicitly set prototype since reading in from JSON will not
       // do this automatically. Note that we can't call the constructor here since
       // the constructor invokes extra logic that we don't want to do.
@@ -37,7 +36,9 @@ export async function slurpQueryHistory(fsPath: string): Promise<QueryHistoryInf
           Object.setPrototypeOf(q.completedQuery, CompletedQueryInfo.prototype);
           Object.setPrototypeOf(q.completedQuery.query, QueryEvaluationInfo.prototype);
           // slurped queries do not need to be disposed
-          q.completedQuery.dispose = () => { /**/ };
+          q.completedQuery.dispose = () => {
+            /**/
+          };
         }
       } else if (q.t === 'remote') {
         // A bug was introduced that didn't set the completed flag in query history
@@ -61,7 +62,7 @@ export async function slurpQueryHistory(fsPath: string): Promise<QueryHistoryInf
         return true;
       }
       const resultsPath = q.completedQuery?.query.resultsPaths.resultsPath;
-      return !!resultsPath && await fs.pathExists(resultsPath);
+      return !!resultsPath && (await fs.pathExists(resultsPath));
     });
   } catch (e) {
     void showAndLogErrorMessage('Error loading query history.', {
@@ -82,17 +83,26 @@ export async function slurpQueryHistory(fsPath: string): Promise<QueryHistoryInf
  * @param queries the list of queries to save.
  * @param fsPath the path to save the queries to.
  */
-export async function splatQueryHistory(queries: QueryHistoryInfo[], fsPath: string): Promise<void> {
+export async function splatQueryHistory(
+  queries: QueryHistoryInfo[],
+  fsPath: string
+): Promise<void> {
   try {
     if (!(await fs.pathExists(fsPath))) {
       await fs.mkdir(path.dirname(fsPath), { recursive: true });
     }
     // remove incomplete local queries since they cannot be recreated on restart
-    const filteredQueries = queries.filter(q => q.t === 'local' ? q.completedQuery !== undefined : true);
-    const data = JSON.stringify({
-      version: 1,
-      queries: filteredQueries
-    }, null, 2);
+    const filteredQueries = queries.filter((q) =>
+      q.t === 'local' ? q.completedQuery !== undefined : true
+    );
+    const data = JSON.stringify(
+      {
+        version: 1,
+        queries: filteredQueries,
+      },
+      null,
+      2
+    );
     await fs.writeFile(fsPath, data);
   } catch (e) {
     throw new Error(`Error saving query history to ${fsPath}: ${getErrorMessage(e)}`);

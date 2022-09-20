@@ -16,7 +16,7 @@ export function convertNonPrintableChars(label: string | undefined) {
     /**
      * If the label contains certain non-printable characters, loop through each
      * character and replace it with the cooresponding unicode control label.
-    */
+     */
     const convertedLabelArray: any[] = [];
     for (let i = 0; i < label.length; i++) {
       const labelCheck = label.codePointAt(i)!;

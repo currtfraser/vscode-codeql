@@ -14,28 +14,28 @@ export default {
       <ThemeProvider colorMode="auto">
         <Story />
       </ThemeProvider>
-    )
-  ]
+    ),
+  ],
 } as ComponentMeta<typeof CodePaths>;
 
-const Template: ComponentStory<typeof CodePaths> = (args) => (
-  <CodePaths {...args} />
-);
+const Template: ComponentStory<typeof CodePaths> = (args) => <CodePaths {...args} />;
 
 export const PowerShell = Template.bind({});
 
 const codeFlows: CodeFlow[] = [
   {
-    'threadFlows': [
+    threadFlows: [
       {
         fileLink: {
-          fileLinkPrefix: 'https://github.com/PowerShell/PowerShell/blob/450d884668ca477c6581ce597958f021fac30bff',
-          filePath: 'src/System.Management.Automation/help/UpdatableHelpSystem.cs'
+          fileLinkPrefix:
+            'https://github.com/PowerShell/PowerShell/blob/450d884668ca477c6581ce597958f021fac30bff',
+          filePath: 'src/System.Management.Automation/help/UpdatableHelpSystem.cs',
         },
         codeSnippet: {
           startLine: 1260,
           endLine: 1260,
-          text: '                        string extractPath = Path.Combine(destination, entry.FullName);'
+          text:
+            '                        string extractPath = Path.Combine(destination, entry.FullName);',
         },
         highlightedRegion: {
           startLine: 1260,
@@ -47,20 +47,22 @@ const codeFlows: CodeFlow[] = [
           tokens: [
             {
               t: 'text',
-              text: 'access to property FullName : String'
-            }
-          ]
-        }
+              text: 'access to property FullName : String',
+            },
+          ],
+        },
       },
       {
         fileLink: {
-          fileLinkPrefix: 'https://github.com/PowerShell/PowerShell/blob/450d884668ca477c6581ce597958f021fac30bff',
-          filePath: 'src/System.Management.Automation/help/UpdatableHelpSystem.cs'
+          fileLinkPrefix:
+            'https://github.com/PowerShell/PowerShell/blob/450d884668ca477c6581ce597958f021fac30bff',
+          filePath: 'src/System.Management.Automation/help/UpdatableHelpSystem.cs',
         },
         codeSnippet: {
           startLine: 1260,
           endLine: 1260,
-          text: '                        string extractPath = Path.Combine(destination, entry.FullName);'
+          text:
+            '                        string extractPath = Path.Combine(destination, entry.FullName);',
         },
         highlightedRegion: {
           startLine: 1260,
@@ -72,20 +74,21 @@ const codeFlows: CodeFlow[] = [
           tokens: [
             {
               t: 'text',
-              text: 'call to method Combine : String'
-            }
-          ]
-        }
+              text: 'call to method Combine : String',
+            },
+          ],
+        },
       },
       {
         fileLink: {
-          fileLinkPrefix: 'https://github.com/PowerShell/PowerShell/blob/450d884668ca477c6581ce597958f021fac30bff',
-          filePath: 'src/System.Management.Automation/help/UpdatableHelpSystem.cs'
+          fileLinkPrefix:
+            'https://github.com/PowerShell/PowerShell/blob/450d884668ca477c6581ce597958f021fac30bff',
+          filePath: 'src/System.Management.Automation/help/UpdatableHelpSystem.cs',
         },
         codeSnippet: {
           startLine: 1261,
           endLine: 1261,
-          text: '                        entry.ExtractToFile(extractPath);'
+          text: '                        entry.ExtractToFile(extractPath);',
         },
         highlightedRegion: {
           startLine: 1261,
@@ -97,13 +100,13 @@ const codeFlows: CodeFlow[] = [
           tokens: [
             {
               t: 'text',
-              text: 'access to local variable extractPath'
-            }
-          ]
-        }
-      }
-    ]
-  }
+              text: 'access to local variable extractPath',
+            },
+          ],
+        },
+      },
+    ],
+  },
 ];
 
 PowerShell.args = {
@@ -113,9 +116,9 @@ PowerShell.args = {
     tokens: [
       {
         type: 'text',
-        t: 'This zip file may have a dangerous path'
-      }
-    ]
+        t: 'This zip file may have a dangerous path',
+      },
+    ],
   },
   severity: 'Warning',
 };

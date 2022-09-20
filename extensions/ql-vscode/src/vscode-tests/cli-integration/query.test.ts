@@ -13,7 +13,6 @@ import { CodeQLExtensionInterface } from '../../extension';
 import { fail } from 'assert';
 import { skipIfNoCodeQL } from '../ensureCli';
 
-
 const baseDir = path.join(__dirname, '../../../test/data');
 
 const tmpDir = tmp.dirSync({ prefix: 'query_test_', keep: false, unsafeCleanup: true });
@@ -30,8 +29,12 @@ class Checkpoint<T> {
   private promise: Promise<T>;
 
   constructor() {
-    this.res = () => { /**/ };
-    this.rej = () => { /**/ };
+    this.res = () => {
+      /**/
+    };
+    this.rej = () => {
+      /**/
+    };
     this.promise = new Promise((res, rej) => {
       this.res = res as () => Record<string, never>;
       this.rej = rej;
@@ -43,44 +46,47 @@ class Checkpoint<T> {
   }
 
   async resolve(): Promise<void> {
-    await (this.res)();
+    await this.res();
   }
 
   async reject(e: Error): Promise<void> {
-    await (this.rej)(e);
+    await this.rej(e);
   }
 }
 
 type ResultSets = {
   [name: string]: CellValue[][];
-}
+};
 
 type QueryTestCase = {
   queryPath: string;
   expectedResultSets: ResultSets;
-}
+};
 
 // Test cases: queries to run and their expected results.
 const queryTestCases: QueryTestCase[] = [
   {
     queryPath: path.join(baseDir, 'query.ql'),
     expectedResultSets: {
-      '#select': [[42, 3.14159, 'hello world', true]]
-    }
+      '#select': [[42, 3.14159, 'hello world', true]],
+    },
   },
   {
     queryPath: path.join(baseDir, 'compute-default-strings.ql'),
     expectedResultSets: {
-      '#select': [[{ label: '(no string representation)' }]]
-    }
+      '#select': [[{ label: '(no string representation)' }]],
+    },
   },
   {
     queryPath: path.join(baseDir, 'multiple-result-sets.ql'),
     expectedResultSets: {
-      'edges': [[1, 2], [2, 3]],
-      '#select': [['s']]
-    }
-  }
+      edges: [
+        [1, 2],
+        [2, 3],
+      ],
+      '#select': [['s']],
+    },
+  },
 ];
 
 const db: messages.Dataset = {
@@ -88,8 +94,8 @@ const db: messages.Dataset = {
   workingSet: 'default',
 };
 
-describe('using the query server', function() {
-  before(function() {
+describe('using the query server', function () {
+  before(function () {
     skipIfNoCodeQL(this);
   });
 
@@ -103,20 +109,24 @@ describe('using the query server', function() {
 
   beforeEach(async () => {
     try {
-      const extension = await extensions.getExtension<CodeQLExtensionInterface | Record<string, never>>('GitHub.vscode-codeql')!.activate();
+      const extension = await extensions
+        .getExtension<CodeQLExtensionInterface | Record<string, never>>('GitHub.vscode-codeql')!
+        .activate();
       if ('cliServer' in extension && 'qs' in extension) {
         cliServer = extension.cliServer;
         qs = extension.qs;
         cliServer.quiet = true;
       } else {
-        throw new Error('Extension not initialized. Make sure cli is downloaded and installed properly.');
+        throw new Error(
+          'Extension not initialized. Make sure cli is downloaded and installed properly.'
+        );
       }
     } catch (e) {
       fail(e as Error);
     }
   });
 
-  it('should be able to start the query server', async function() {
+  it('should be able to start the query server', async function () {
     await qs.startQueryServer();
     await queryServerStarted.resolve();
   });
@@ -129,18 +139,20 @@ describe('using the query server', function() {
 
     it('should register the database if necessary', async () => {
       if (await cliServer.cliConstraints.supportsDatabaseRegistration()) {
-        await qs.sendRequest(messages.registerDatabases, { databases: [db] }, token, (() => { /**/ }) as any);
+        await qs.sendRequest(messages.registerDatabases, { databases: [db] }, token, (() => {
+          /**/
+        }) as any);
       }
     });
 
-    it(`should be able to compile query ${queryName}`, async function() {
+    it(`should be able to compile query ${queryName}`, async function () {
       await queryServerStarted.done();
       expect(fs.existsSync(queryTestCase.queryPath)).to.be.true;
       try {
         const qlProgram: messages.QlProgram = {
           libraryPath: [],
           dbschemePath: path.join(baseDir, 'test.dbscheme'),
-          queryPath: queryTestCase.queryPath
+          queryPath: queryTestCase.queryPath,
         };
         const params: messages.CompileQueryParams = {
           compilationOptions: {
@@ -152,25 +164,26 @@ describe('using the query server', function() {
             noComputeGetUrl: false,
             noComputeToString: false,
             computeDefaultStrings: true,
-            emitDebugInfo: true
+            emitDebugInfo: true,
           },
           queryToCheck: qlProgram,
           resultPath: COMPILED_QUERY_PATH,
-          target: { query: {} }
+          target: { query: {} },
         };
-        const result = await qs.sendRequest(messages.compileQuery, params, token, () => { /**/ });
+        const result = await qs.sendRequest(messages.compileQuery, params, token, () => {
+          /**/
+        });
         expect(result.messages!.length).to.equal(0);
         await compilationSucceeded.resolve();
-      }
-      catch (e) {
+      } catch (e) {
         await compilationSucceeded.reject(e as Error);
       }
     });
 
-    it(`should be able to run query ${queryName}`, async function() {
+    it(`should be able to run query ${queryName}`, async function () {
       try {
         await compilationSucceeded.done();
-        const callbackId = qs.registerCallback(_res => {
+        const callbackId = qs.registerCallback((_res) => {
           void evaluationSucceeded.resolve();
         });
         const queryToRun: messages.QueryToRun = {
@@ -185,17 +198,18 @@ describe('using the query server', function() {
           evaluateId: callbackId,
           queries: [queryToRun],
           stopOnError: true,
-          useSequenceHint: false
+          useSequenceHint: false,
         };
-        await qs.sendRequest(messages.runQueries, params, token, () => { /**/ });
-      }
-      catch (e) {
+        await qs.sendRequest(messages.runQueries, params, token, () => {
+          /**/
+        });
+      } catch (e) {
         await evaluationSucceeded.reject(e as Error);
       }
     });
 
     const actualResultSets: ResultSets = {};
-    it(`should be able to parse results of query ${queryName}`, async function() {
+    it(`should be able to parse results of query ${queryName}`, async function () {
       await evaluationSucceeded.done();
       const info = await cliServer.bqrsInfo(RESULTS_PATH);
 
@@ -206,12 +220,17 @@ describe('using the query server', function() {
       await parsedResults.resolve();
     });
 
-    it(`should have correct results for query ${queryName}`, async function() {
+    it(`should have correct results for query ${queryName}`, async function () {
       await parsedResults.done();
       expect(actualResultSets!).not.to.be.empty;
-      expect(Object.keys(actualResultSets!).sort()).to.eql(Object.keys(queryTestCase.expectedResultSets).sort());
+      expect(Object.keys(actualResultSets!).sort()).to.eql(
+        Object.keys(queryTestCase.expectedResultSets).sort()
+      );
       for (const name in queryTestCase.expectedResultSets) {
-        expect(actualResultSets![name]).to.eql(queryTestCase.expectedResultSets[name], `Results for query predicate ${name} do not match`);
+        expect(actualResultSets![name]).to.eql(
+          queryTestCase.expectedResultSets[name],
+          `Results for query predicate ${name} do not match`
+        );
       }
     });
   }

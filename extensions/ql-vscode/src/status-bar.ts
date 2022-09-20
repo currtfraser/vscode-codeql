@@ -1,4 +1,10 @@
-import { ConfigurationChangeEvent, StatusBarAlignment, StatusBarItem, window, workspace } from 'vscode';
+import {
+  ConfigurationChangeEvent,
+  StatusBarAlignment,
+  StatusBarItem,
+  window,
+  workspace,
+} from 'vscode';
 import { CodeQLCliServer } from './cli';
 import { CANARY_FEATURES, CUSTOM_CODEQL_PATH_SETTING, DistributionConfigListener } from './config';
 import { DisposableObject } from './pure/disposable-object';
@@ -10,10 +16,12 @@ import { DisposableObject } from './pure/disposable-object';
  *
  */
 export class CodeQlStatusBarHandler extends DisposableObject {
-
   private readonly item: StatusBarItem;
 
-  constructor(private cli: CodeQLCliServer, distributionConfigListener: DistributionConfigListener) {
+  constructor(
+    private cli: CodeQLCliServer,
+    distributionConfigListener: DistributionConfigListener
+  ) {
     super();
     this.item = window.createStatusBarItem(StatusBarAlignment.Right);
     this.push(this.item);

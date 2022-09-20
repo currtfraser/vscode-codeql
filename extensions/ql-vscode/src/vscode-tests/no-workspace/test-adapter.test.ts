@@ -5,7 +5,12 @@ import { expect } from 'chai';
 
 import { QLTestAdapter } from '../../test-adapter';
 import { CodeQLCliServer } from '../../cli';
-import { DatabaseItem, DatabaseItemImpl, DatabaseManager, FullDatabaseOptions } from '../../databases';
+import {
+  DatabaseItem,
+  DatabaseItemImpl,
+  DatabaseManager,
+  FullDatabaseOptions,
+} from '../../databases';
 
 describe('test-adapter', () => {
   let adapter: QLTestAdapter;
@@ -24,14 +29,18 @@ describe('test-adapter', () => {
   const preTestDatabaseItem = new DatabaseItemImpl(
     Uri.file('/path/to/test/dir/dir.testproj'),
     undefined,
-    { displayName: 'custom display name' } as unknown as FullDatabaseOptions,
-    (_) => { /* no change event listener */ }
+    ({ displayName: 'custom display name' } as unknown) as FullDatabaseOptions,
+    (_) => {
+      /* no change event listener */
+    }
   );
   const postTestDatabaseItem = new DatabaseItemImpl(
     Uri.file('/path/to/test/dir/dir.testproj'),
     undefined,
-    { displayName: 'default name' } as unknown as FullDatabaseOptions,
-    (_) => { /* no change event listener */ }
+    ({ displayName: 'default name' } as unknown) as FullDatabaseOptions,
+    (_) => {
+      /* no change event listener */
+    }
   );
 
   beforeEach(() => {
@@ -43,26 +52,29 @@ describe('test-adapter', () => {
     setCurrentDatabaseItemSpy = sandox.stub().resolves();
     resolveQlpacksSpy = sandox.stub().resolves({});
     resolveTestsSpy = sandox.stub().resolves([]);
-    fakeDatabaseManager = {
+    fakeDatabaseManager = ({
       currentDatabaseItem: undefined,
       databaseItems: undefined,
       openDatabase: openDatabaseSpy,
       removeDatabaseItem: removeDatabaseItemSpy,
       renameDatabaseItem: renameDatabaseItemSpy,
       setCurrentDatabaseItem: setCurrentDatabaseItemSpy,
-    } as unknown as DatabaseManager;
+    } as unknown) as DatabaseManager;
     sandox.stub(fakeDatabaseManager, 'currentDatabaseItem').get(() => currentDatabaseItem);
     sandox.stub(fakeDatabaseManager, 'databaseItems').get(() => databaseItems);
     sandox.stub(preTestDatabaseItem, 'isAffectedByTest').resolves(true);
-    adapter = new QLTestAdapter({
-      name: 'ABC',
-      uri: Uri.parse('file:/ab/c')
-    } as WorkspaceFolder, {
-      runTests: runTestsSpy,
-      resolveQlpacks: resolveQlpacksSpy,
-      resolveTests: resolveTestsSpy
-    } as unknown as CodeQLCliServer,
-      fakeDatabaseManager);
+    adapter = new QLTestAdapter(
+      {
+        name: 'ABC',
+        uri: Uri.parse('file:/ab/c'),
+      } as WorkspaceFolder,
+      ({
+        runTests: runTestsSpy,
+        resolveQlpacks: resolveQlpacksSpy,
+        resolveTests: resolveTestsSpy,
+      } as unknown) as CodeQLCliServer,
+      fakeDatabaseManager
+    );
   });
 
   afterEach(() => {
@@ -70,7 +82,6 @@ describe('test-adapter', () => {
   });
 
   it('should run some tests', async () => {
-
     const listenerSpy = sandox.spy();
     adapter.testStates(listenerSpy);
     const testsPath = Uri.parse('file:/ab/c').fsPath;
@@ -80,32 +91,34 @@ describe('test-adapter', () => {
 
     await adapter.run([testsPath]);
 
-    expect(listenerSpy.getCall(0).args).to.deep.eq([
-      { type: 'started', tests: [testsPath] }
+    expect(listenerSpy.getCall(0).args).to.deep.eq([{ type: 'started', tests: [testsPath] }]);
+    expect(listenerSpy.getCall(1).args).to.deep.eq([
+      {
+        type: 'test',
+        state: 'passed',
+        test: dPath,
+        message: undefined,
+        decorations: [],
+      },
     ]);
-    expect(listenerSpy.getCall(1).args).to.deep.eq([{
-      type: 'test',
-      state: 'passed',
-      test: dPath,
-      message: undefined,
-      decorations: []
-    }]);
-    expect(listenerSpy.getCall(2).args).to.deep.eq([{
-      type: 'test',
-      state: 'errored',
-      test: gPath,
-      message: `\ncompilation error: ${gPath}\nERROR: abc\n`,
-      decorations: [
-        { line: 1, message: 'abc' }
-      ]
-    }]);
-    expect(listenerSpy.getCall(3).args).to.deep.eq([{
-      type: 'test',
-      state: 'failed',
-      test: hPath,
-      message: `\nfailed: ${hPath}\njkh\ntuv\n`,
-      decorations: []
-    }]);
+    expect(listenerSpy.getCall(2).args).to.deep.eq([
+      {
+        type: 'test',
+        state: 'errored',
+        test: gPath,
+        message: `\ncompilation error: ${gPath}\nERROR: abc\n`,
+        decorations: [{ line: 1, message: 'abc' }],
+      },
+    ]);
+    expect(listenerSpy.getCall(3).args).to.deep.eq([
+      {
+        type: 'test',
+        state: 'failed',
+        test: hPath,
+        message: `\nfailed: ${hPath}\njkh\ntuv\n`,
+        decorations: [],
+      },
+    ]);
     expect(listenerSpy.getCall(4).args).to.deep.eq([{ type: 'finished' }]);
     expect(listenerSpy).to.have.callCount(5);
   });
@@ -122,13 +135,23 @@ describe('test-adapter', () => {
     setCurrentDatabaseItemSpy.getCall(0).calledAfter(openDatabaseSpy.getCall(0));
 
     sinon.assert.calledOnceWithExactly(
-      removeDatabaseItemSpy, sinon.match.any, sinon.match.any, preTestDatabaseItem);
+      removeDatabaseItemSpy,
+      sinon.match.any,
+      sinon.match.any,
+      preTestDatabaseItem
+    );
     sinon.assert.calledOnceWithExactly(
-      openDatabaseSpy, sinon.match.any, sinon.match.any, preTestDatabaseItem.databaseUri);
+      openDatabaseSpy,
+      sinon.match.any,
+      sinon.match.any,
+      preTestDatabaseItem.databaseUri
+    );
     sinon.assert.calledOnceWithExactly(
-      renameDatabaseItemSpy, postTestDatabaseItem, preTestDatabaseItem.name);
-    sinon.assert.calledOnceWithExactly(
-      setCurrentDatabaseItemSpy, postTestDatabaseItem, true);
+      renameDatabaseItemSpy,
+      postTestDatabaseItem,
+      preTestDatabaseItem.name
+    );
+    sinon.assert.calledOnceWithExactly(setCurrentDatabaseItemSpy, postTestDatabaseItem, true);
   });
 
   function mockRunTests() {
@@ -136,11 +159,11 @@ describe('test-adapter', () => {
     // However, we can pretend the same thing by just returning an async array.
     runTestsSpy = sandox.stub();
     runTestsSpy.returns(
-      (async function*() {
+      (async function* () {
         yield Promise.resolve({
           test: Uri.parse('file:/ab/c/d.ql').fsPath,
           pass: true,
-          messages: []
+          messages: [],
         });
         yield Promise.resolve({
           test: Uri.parse('file:/ab/c/e/f/g.ql').fsPath,
@@ -148,16 +171,14 @@ describe('test-adapter', () => {
           diff: ['pqr', 'xyz'],
           // a compile error
           failureStage: 'COMPILATION',
-          messages: [
-            { position: { line: 1 }, message: 'abc', severity: 'ERROR' }
-          ]
+          messages: [{ position: { line: 1 }, message: 'abc', severity: 'ERROR' }],
         });
         yield Promise.resolve({
           test: Uri.parse('file:/ab/c/e/f/h.ql').fsPath,
           pass: false,
           diff: ['jkh', 'tuv'],
           failureStage: 'RESULT',
-          messages: []
+          messages: [],
         });
       })()
     );

@@ -44,7 +44,10 @@ const RETURN_REGEXP = /^\s*return /;
  * @param summaryPath The path to the summary file.
  * @param symbolsPath The path to the symbols file to generate.
  */
-export async function generateSummarySymbolsFile(summaryPath: string, symbolsPath: string): Promise<void> {
+export async function generateSummarySymbolsFile(
+  summaryPath: string,
+  symbolsPath: string
+): Promise<void> {
   const symbols = await generateSummarySymbols(summaryPath);
   await fs.writeFile(symbolsPath, JSON.stringify(symbols));
 }
@@ -59,7 +62,7 @@ export async function generateSummarySymbolsFile(summaryPath: string, symbolsPat
 async function generateSummarySymbols(summaryPath: string): Promise<SummarySymbols> {
   const summary = await fs.promises.readFile(summaryPath, { encoding: 'utf-8' });
   const symbols: SummarySymbols = {
-    predicates: {}
+    predicates: {},
   };
 
   const lines = summary.split(/\r?\n/);
@@ -84,7 +87,7 @@ async function generateSummarySymbols(summaryPath: string): Promise<SummarySymbo
     if (predicateName !== undefined) {
       const raStartLine = lineNumber;
       let raEndLine: number | undefined = undefined;
-      while ((lineNumber < lines.length) && (raEndLine === undefined)) {
+      while (lineNumber < lines.length && raEndLine === undefined) {
         const raLine = lines[lineNumber];
         const returnMatch = raLine.match(RETURN_REGEXP);
         if (returnMatch) {
@@ -96,14 +99,14 @@ async function generateSummarySymbols(summaryPath: string): Promise<SummarySymbo
         let symbol = symbols.predicates[predicateName];
         if (symbol === undefined) {
           symbol = {
-            iterations: {}
+            iterations: {},
           };
           symbols.predicates[predicateName] = symbol;
         }
         symbol.iterations[iteration] = {
           startLine: lineNumber,
           raStartLine: raStartLine,
-          raEndLine: raEndLine
+          raEndLine: raEndLine,
         };
       }
     }

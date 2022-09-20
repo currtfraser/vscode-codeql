@@ -11,9 +11,9 @@ interface Props {
 export default function RawTableValue(props: Props): JSX.Element {
   const rawValue = props.value;
   if (
-    typeof rawValue === 'string'
-    || typeof rawValue === 'number'
-    || typeof rawValue === 'boolean'
+    typeof rawValue === 'string' ||
+    typeof rawValue === 'number' ||
+    typeof rawValue === 'boolean'
   ) {
     return <span>{renderLocation(undefined, rawValue.toString())}</span>;
   }

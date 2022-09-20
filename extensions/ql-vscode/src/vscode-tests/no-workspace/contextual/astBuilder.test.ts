@@ -29,21 +29,22 @@ int disable_interrupts(void)
 }
  */
 
-
 describe('AstBuilder', () => {
   let mockCli: CodeQLCliServer;
   let overrides: Record<string, Record<string, unknown> | undefined>;
 
   beforeEach(() => {
-    mockCli = {
-      bqrsDecode: sinon.stub().callsFake((_: string, resultSet: 'nodes' | 'edges' | 'graphProperties') => {
-        return mockDecode(resultSet);
-      })
-    } as unknown as CodeQLCliServer;
+    mockCli = ({
+      bqrsDecode: sinon
+        .stub()
+        .callsFake((_: string, resultSet: 'nodes' | 'edges' | 'graphProperties') => {
+          return mockDecode(resultSet);
+        }),
+    } as unknown) as CodeQLCliServer;
     overrides = {
       nodes: undefined,
       edges: undefined,
-      graphProperties: undefined
+      graphProperties: undefined,
     };
   });
 
@@ -56,9 +57,7 @@ describe('AstBuilder', () => {
     expect(mockCli.bqrsDecode).to.have.been.calledWith('/a/b/c', 'edges', options);
     expect(mockCli.bqrsDecode).to.have.been.calledWith('/a/b/c', 'graphProperties', options);
 
-    expect(roots.map(
-      r => ({ ...r, children: undefined })
-    )).to.deep.eq(expectedRoots);
+    expect(roots.map((r) => ({ ...r, children: undefined }))).to.deep.eq(expectedRoots);
   });
 
   it('should build an AST child without edge label', async () => {
@@ -82,10 +81,10 @@ describe('AstBuilder', () => {
         endLine: 19,
         startColumn: 5,
         startLine: 19,
-        uri: 'file:/opt/src/arch/sandbox/lib/interrupts.c'
+        uri: 'file:/opt/src/arch/sandbox/lib/interrupts.c',
       },
       order: 0,
-      parent: undefined
+      parent: undefined,
     };
 
     expect(roots[0].children[0]).to.deep.eq(child);
@@ -112,10 +111,10 @@ describe('AstBuilder', () => {
         endLine: 22,
         startColumn: 1,
         startLine: 20,
-        uri: 'file:/opt/src/arch/sandbox/lib/interrupts.c'
+        uri: 'file:/opt/src/arch/sandbox/lib/interrupts.c',
       },
       order: 2,
-      parent: undefined
+      parent: undefined,
     };
 
     expect(roots[0].children[1]).to.deep.eq(child);
@@ -123,12 +122,7 @@ describe('AstBuilder', () => {
 
   it('should fail when graphProperties are not correct', async () => {
     overrides.graphProperties = {
-      tuples: [
-        [
-          'semmle.graphKind',
-          'hucairz'
-        ]
-      ]
+      tuples: [['semmle.graphKind', 'hucairz']],
     };
 
     const astBuilder = createAstBuilder();
@@ -136,13 +130,18 @@ describe('AstBuilder', () => {
   });
 
   function createAstBuilder() {
-    return new AstBuilder({
-      query: {
-        resultsPaths: {
-          resultsPath: '/a/b/c'
-        }
-      }
-    } as QueryWithResults, mockCli, {} as DatabaseItem, Uri.file(''));
+    return new AstBuilder(
+      {
+        query: {
+          resultsPaths: {
+            resultsPath: '/a/b/c',
+          },
+        },
+      } as QueryWithResults,
+      mockCli,
+      {} as DatabaseItem,
+      Uri.file('')
+    );
   }
 
   function mockDecode(resultSet: 'nodes' | 'edges' | 'graphProperties') {
@@ -153,7 +152,7 @@ describe('AstBuilder', () => {
     const mapper = {
       nodes: 0,
       edges: 1,
-      graphProperties: 2
+      graphProperties: 2,
     };
     const index = mapper[resultSet] as number;
     if (index >= 0 && index <= 2) {
@@ -174,10 +173,10 @@ const expectedRoots = [
       startLine: 19,
       startColumn: 5,
       endLine: 19,
-      endColumn: 22
+      endColumn: 22,
     },
     order: 3,
-    children: undefined
+    children: undefined,
   },
   {
     id: 26363,
@@ -188,10 +187,10 @@ const expectedRoots = [
       startLine: 15,
       startColumn: 6,
       endLine: 15,
-      endColumn: 22
+      endColumn: 22,
     },
     order: 2,
-    children: undefined
+    children: undefined,
   },
   {
     id: 26364,
@@ -202,9 +201,9 @@ const expectedRoots = [
       startLine: 10,
       startColumn: 5,
       endLine: 10,
-      endColumn: 18
+      endColumn: 18,
     },
     order: 1,
-    children: undefined
-  }
+    children: undefined,
+  },
 ];

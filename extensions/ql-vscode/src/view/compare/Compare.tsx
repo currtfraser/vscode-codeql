@@ -1,10 +1,7 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 
-import {
-  ToCompareViewMessage,
-  SetComparisonsMessage,
-} from '../../pure/interface-types';
+import { ToCompareViewMessage, SetComparisonsMessage } from '../../pure/interface-types';
 import CompareSelector from './CompareSelector';
 import { vscode } from '../vscode-api';
 import CompareTable from './CompareTable';
@@ -19,13 +16,11 @@ const emptyComparison: SetComparisonsMessage = {
   commonResultSetNames: [],
   currentResultSetName: '',
   databaseUri: '',
-  message: 'Empty comparison'
+  message: 'Empty comparison',
 };
 
 export function Compare(_: Record<string, never>): JSX.Element {
-  const [comparison, setComparison] = useState<SetComparisonsMessage>(
-    emptyComparison
-  );
+  const [comparison, setComparison] = useState<SetComparisonsMessage>(emptyComparison);
 
   const message = comparison.message || 'Empty comparison';
   const hasRows = comparison.rows && (comparison.rows.to.length || comparison.rows.from.length);
@@ -53,9 +48,7 @@ export function Compare(_: Record<string, never>): JSX.Element {
     return (
       <>
         <div className="vscode-codeql__compare-header">
-          <div className="vscode-codeql__compare-header-item">
-            Table to compare:
-          </div>
+          <div className="vscode-codeql__compare-header-item">Table to compare:</div>
           <CompareSelector
             availableResultSets={comparison.commonResultSetNames}
             currentResultSetName={comparison.currentResultSetName}

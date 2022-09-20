@@ -23,22 +23,32 @@ export function run() {
     it('should allow ql files to be quick-evaled', async () => {
       const doc = await showQlDocument('query.ql');
       const q = await determineSelectedQuery(doc.uri, true);
-      expect(q.queryPath).to.satisfy((p: string) => p.endsWith(path.join('ql-vscode', 'test', 'data', 'query.ql')));
+      expect(q.queryPath).to.satisfy((p: string) =>
+        p.endsWith(path.join('ql-vscode', 'test', 'data', 'query.ql'))
+      );
     });
 
     it('should allow qll files to be quick-evaled', async () => {
       const doc = await showQlDocument('library.qll');
       const q = await determineSelectedQuery(doc.uri, true);
-      expect(q.queryPath).to.satisfy((p: string) => p.endsWith(path.join('ql-vscode', 'test', 'data', 'library.qll')));
+      expect(q.queryPath).to.satisfy((p: string) =>
+        p.endsWith(path.join('ql-vscode', 'test', 'data', 'library.qll'))
+      );
     });
 
     it('should reject non-ql files when running a query', async () => {
-      await expect(determineSelectedQuery(Uri.parse('file:///tmp/queryname.txt'), false)).to.be.rejectedWith(Error, 'The selected resource is not a CodeQL query file');
-      await expect(determineSelectedQuery(Uri.parse('file:///tmp/queryname.qll'), false)).to.be.rejectedWith(Error, 'The selected resource is not a CodeQL query file');
+      await expect(
+        determineSelectedQuery(Uri.parse('file:///tmp/queryname.txt'), false)
+      ).to.be.rejectedWith(Error, 'The selected resource is not a CodeQL query file');
+      await expect(
+        determineSelectedQuery(Uri.parse('file:///tmp/queryname.qll'), false)
+      ).to.be.rejectedWith(Error, 'The selected resource is not a CodeQL query file');
     });
 
     it('should reject non-ql[l] files when running a quick eval', async () => {
-      await expect(determineSelectedQuery(Uri.parse('file:///tmp/queryname.txt'), true)).to.be.rejectedWith(Error, 'The selected resource is not a CodeQL file');
+      await expect(
+        determineSelectedQuery(Uri.parse('file:///tmp/queryname.txt'), true)
+      ).to.be.rejectedWith(Error, 'The selected resource is not a CodeQL file');
     });
   });
 }

@@ -4,7 +4,7 @@ import {
   window as Window,
   commands,
   Disposable,
-  ProgressLocation
+  ProgressLocation,
 } from 'vscode';
 import { showAndLogErrorMessage, showAndLogWarningMessage } from './helpers';
 import { logger } from './logging';
@@ -67,7 +67,7 @@ export type ProgressTask<R> = (
  * @param args arguments passed to this task passed on from
  * `commands.registerCommand`.
  */
-type NoProgressTask = ((...args: any[]) => Promise<any>);
+type NoProgressTask = (...args: any[]) => Promise<any>;
 
 /**
  * This mediates between the kind of progress callbacks we want to
@@ -91,15 +91,18 @@ export function withProgress<R>(
   ...args: any[]
 ): Thenable<R> {
   let progressAchieved = 0;
-  return Window.withProgress(options,
-    (progress, token) => {
-      return task(p => {
+  return Window.withProgress(options, (progress, token) => {
+    return task(
+      (p) => {
         const { message, step, maxStep } = p;
-        const increment = 100 * (step - progressAchieved) / maxStep;
+        const increment = (100 * (step - progressAchieved)) / maxStep;
         progressAchieved = step;
         progress.report({ message, increment });
-      }, token, ...args);
-    });
+      },
+      token,
+      ...args
+    );
+  });
 }
 
 /**
@@ -111,10 +114,7 @@ export function withProgress<R>(
  * @param task The task to run. It is passed directly to `commands.registerCommand`. Any
  * arguments to the command handler are passed on to the task.
  */
-export function commandRunner(
-  commandId: string,
-  task: NoProgressTask,
-): Disposable {
+export function commandRunner(commandId: string, task: NoProgressTask): Disposable {
   return commands.registerCommand(commandId, async (...args: any[]) => {
     const startTime = Date.now();
     let error: Error | undefined;
@@ -134,11 +134,9 @@ export function commandRunner(
         }
       } else {
         // Include the full stack in the error log only.
-        const fullMessage = errorStack
-          ? `${errorMessage}\n${errorStack}`
-          : errorMessage;
+        const fullMessage = errorStack ? `${errorMessage}\n${errorStack}` : errorMessage;
         void showAndLogErrorMessage(errorMessage, {
-          fullMessage
+          fullMessage,
         });
       }
       return undefined;
@@ -170,7 +168,7 @@ export function commandRunnerWithProgress<R>(
     let error: Error | undefined;
     const progressOptionsWithDefaults = {
       location: ProgressLocation.Notification,
-      ...progressOptions
+      ...progressOptions,
     };
     try {
       return await withProgress(progressOptionsWithDefaults, task, ...args);
@@ -187,12 +185,10 @@ export function commandRunnerWithProgress<R>(
         }
       } else {
         // Include the full stack in the error log only.
-        const fullMessage = errorStack
-          ? `${errorMessage}\n${errorStack}`
-          : errorMessage;
+        const fullMessage = errorStack ? `${errorMessage}\n${errorStack}` : errorMessage;
         void showAndLogErrorMessage(errorMessage, {
           outputLogger,
-          fullMessage
+          fullMessage,
         });
       }
       return undefined;
@@ -220,19 +216,22 @@ export function reportStreamProgress(
 ) {
   if (progress && totalNumBytes) {
     let numBytesDownloaded = 0;
-    const bytesToDisplayMB = (numBytes: number): string => `${(numBytes / (1024 * 1024)).toFixed(1)} MB`;
+    const bytesToDisplayMB = (numBytes: number): string =>
+      `${(numBytes / (1024 * 1024)).toFixed(1)} MB`;
     const updateProgress = () => {
       progress({
         step: numBytesDownloaded,
         maxStep: totalNumBytes,
-        message: `${messagePrefix} [${bytesToDisplayMB(numBytesDownloaded)} of ${bytesToDisplayMB(totalNumBytes)}]`,
+        message: `${messagePrefix} [${bytesToDisplayMB(numBytesDownloaded)} of ${bytesToDisplayMB(
+          totalNumBytes
+        )}]`,
       });
     };
 
     // Display the progress straight away rather than waiting for the first chunk.
     updateProgress();
 
-    readable.on('data', data => {
+    readable.on('data', (data) => {
       numBytesDownloaded += data.length;
       updateProgress();
     });

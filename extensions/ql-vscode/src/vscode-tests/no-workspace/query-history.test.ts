@@ -42,27 +42,21 @@ describe('query-history', () => {
     sandbox = sinon.createSandbox();
 
     showTextDocumentSpy = sandbox.stub(vscode.window, 'showTextDocument');
-    showInformationMessageSpy = sandbox.stub(
-      vscode.window,
-      'showInformationMessage'
-    );
-    showQuickPickSpy = sandbox.stub(
-      vscode.window,
-      'showQuickPick'
-    );
+    showInformationMessageSpy = sandbox.stub(vscode.window, 'showInformationMessage');
+    showQuickPickSpy = sandbox.stub(vscode.window, 'showQuickPick');
     executeCommandSpy = sandbox.stub(vscode.commands, 'executeCommand');
     sandbox.stub(logger, 'log');
     tryOpenExternalFile = (QueryHistoryManager.prototype as any).tryOpenExternalFile;
     configListener = new QueryHistoryConfigListener();
     doCompareCallback = sandbox.stub();
-    localQueriesResultsViewStub = {
-      showResults: sandbox.stub()
-    } as any as ResultsView;
-    remoteQueriesManagerStub = {
+    localQueriesResultsViewStub = ({
+      showResults: sandbox.stub(),
+    } as any) as ResultsView;
+    remoteQueriesManagerStub = ({
       onRemoteQueryAdded: sandbox.stub(),
       onRemoteQueryRemoved: sandbox.stub(),
-      onRemoteQueryStatusUpdate: sandbox.stub()
-    } as any as RemoteQueriesManager;
+      onRemoteQueryStatusUpdate: sandbox.stub(),
+    } as any) as RemoteQueriesManager;
   });
 
   afterEach(async () => {
@@ -76,42 +70,34 @@ describe('query-history', () => {
   describe('tryOpenExternalFile', () => {
     it('should open an external file', async () => {
       await tryOpenExternalFile('xxx');
-      expect(showTextDocumentSpy).to.have.been.calledOnceWith(
-        vscode.Uri.file('xxx')
-      );
+      expect(showTextDocumentSpy).to.have.been.calledOnceWith(vscode.Uri.file('xxx'));
       expect(executeCommandSpy).not.to.have.been.called;
     });
 
-    [
-      'too large to open',
-      'Files above 50MB cannot be synchronized with extensions',
-    ].forEach(msg => {
-      it(`should fail to open a file because "${msg}" and open externally`, async () => {
-        showTextDocumentSpy.throws(new Error(msg));
-        showInformationMessageSpy.returns({ title: 'Yes' });
+    ['too large to open', 'Files above 50MB cannot be synchronized with extensions'].forEach(
+      (msg) => {
+        it(`should fail to open a file because "${msg}" and open externally`, async () => {
+          showTextDocumentSpy.throws(new Error(msg));
+          showInformationMessageSpy.returns({ title: 'Yes' });
 
-        await tryOpenExternalFile('xxx');
-        const uri = vscode.Uri.file('xxx');
-        expect(showTextDocumentSpy).to.have.been.calledOnceWith(
-          uri
-        );
-        expect(executeCommandSpy).to.have.been.calledOnceWith(
-          'revealFileInOS',
-          uri
-        );
-      });
+          await tryOpenExternalFile('xxx');
+          const uri = vscode.Uri.file('xxx');
+          expect(showTextDocumentSpy).to.have.been.calledOnceWith(uri);
+          expect(executeCommandSpy).to.have.been.calledOnceWith('revealFileInOS', uri);
+        });
 
-      it(`should fail to open a file because "${msg}" and NOT open externally`, async () => {
-        showTextDocumentSpy.throws(new Error(msg));
-        showInformationMessageSpy.returns({ title: 'No' });
+        it(`should fail to open a file because "${msg}" and NOT open externally`, async () => {
+          showTextDocumentSpy.throws(new Error(msg));
+          showInformationMessageSpy.returns({ title: 'No' });
 
-        await tryOpenExternalFile('xxx');
-        const uri = vscode.Uri.file('xxx');
-        expect(showTextDocumentSpy).to.have.been.calledOnceWith(uri);
-        expect(showInformationMessageSpy).to.have.been.called;
-        expect(executeCommandSpy).not.to.have.been.called;
-      });
-    });
+          await tryOpenExternalFile('xxx');
+          const uri = vscode.Uri.file('xxx');
+          expect(showTextDocumentSpy).to.have.been.calledOnceWith(uri);
+          expect(showInformationMessageSpy).to.have.been.called;
+          expect(executeCommandSpy).not.to.have.been.called;
+        });
+      }
+    );
   });
 
   let allHistory: LocalQueryInfo[];
@@ -155,7 +141,10 @@ describe('query-history', () => {
       const thisQuery = allHistory[3];
       queryHistoryManager = await createMockQueryHistory(allHistory);
 
-      const otherQuery = await (queryHistoryManager as any).findOtherQueryToCompare(thisQuery, [thisQuery, allHistory[0]]);
+      const otherQuery = await (queryHistoryManager as any).findOtherQueryToCompare(thisQuery, [
+        thisQuery,
+        allHistory[0],
+      ]);
       expect(otherQuery).to.eq(allHistory[0]);
       expect(showQuickPickSpy).not.to.have.been.called;
     });
@@ -166,7 +155,10 @@ describe('query-history', () => {
       allHistory[0] = createMockFullQueryInfo('a', createMockQueryWithResults(false));
 
       try {
-        await (queryHistoryManager as any).findOtherQueryToCompare(thisQuery, [thisQuery, allHistory[0]]);
+        await (queryHistoryManager as any).findOtherQueryToCompare(thisQuery, [
+          thisQuery,
+          allHistory[0],
+        ]);
         assert(false, 'Should have thrown');
       } catch (e) {
         expect(getErrorMessage(e)).to.eq('Please select a successful query.');
@@ -179,7 +171,10 @@ describe('query-history', () => {
       try {
         // allHistory[0] is database a
         // allHistory[1] is database b
-        await (queryHistoryManager as any).findOtherQueryToCompare(allHistory[0], [allHistory[0], allHistory[1]]);
+        await (queryHistoryManager as any).findOtherQueryToCompare(allHistory[0], [
+          allHistory[0],
+          allHistory[1],
+        ]);
         assert(false, 'Should have thrown');
       } catch (e) {
         expect(getErrorMessage(e)).to.eq('Query databases must be the same.');
@@ -191,7 +186,11 @@ describe('query-history', () => {
       queryHistoryManager = await createMockQueryHistory(allHistory);
 
       try {
-        await (queryHistoryManager as any).findOtherQueryToCompare(thisQuery, [thisQuery, allHistory[0], allHistory[1]]);
+        await (queryHistoryManager as any).findOtherQueryToCompare(thisQuery, [
+          thisQuery,
+          allHistory[0],
+          allHistory[1],
+        ]);
         assert(false, 'Should have thrown');
       } catch (e) {
         expect(getErrorMessage(e)).to.eq('Please select no more than 2 queries.');
@@ -332,16 +331,21 @@ describe('query-history', () => {
       labelProvider = new HistoryItemLabelProvider({
         /**/
       } as QueryHistoryConfig);
-      historyTreeDataProvider = new HistoryTreeDataProvider(vscode.Uri.file(mockExtensionLocation).fsPath, labelProvider);
+      historyTreeDataProvider = new HistoryTreeDataProvider(
+        vscode.Uri.file(mockExtensionLocation).fsPath,
+        labelProvider
+      );
     });
 
     afterEach(() => {
       historyTreeDataProvider.dispose();
     });
 
-
     it('should get a tree item with raw results', async () => {
-      const mockQuery = createMockFullQueryInfo('a', createMockQueryWithResults(true, /* raw results */ false));
+      const mockQuery = createMockFullQueryInfo(
+        'a',
+        createMockQueryWithResults(true, /* raw results */ false)
+      );
       const treeItem = await historyTreeDataProvider.getTreeItem(mockQuery);
       expect(treeItem.command).to.deep.eq({
         title: 'Query History Item',
@@ -351,33 +355,45 @@ describe('query-history', () => {
       });
       expect(treeItem.label).to.contain('hucairz');
       expect(treeItem.contextValue).to.eq('rawResultsItem');
-      expect(treeItem.iconPath).to.deep.eq(vscode.Uri.file(mockExtensionLocation + '/media/drive.svg').fsPath);
+      expect(treeItem.iconPath).to.deep.eq(
+        vscode.Uri.file(mockExtensionLocation + '/media/drive.svg').fsPath
+      );
     });
 
     it('should get a tree item with interpreted results', async () => {
-      const mockQuery = createMockFullQueryInfo('a', createMockQueryWithResults(true, /* interpreted results */ true));
+      const mockQuery = createMockFullQueryInfo(
+        'a',
+        createMockQueryWithResults(true, /* interpreted results */ true)
+      );
       const treeItem = await historyTreeDataProvider.getTreeItem(mockQuery);
       expect(treeItem.contextValue).to.eq('interpretedResultsItem');
-      expect(treeItem.iconPath).to.deep.eq(vscode.Uri.file(mockExtensionLocation + '/media/drive.svg').fsPath);
+      expect(treeItem.iconPath).to.deep.eq(
+        vscode.Uri.file(mockExtensionLocation + '/media/drive.svg').fsPath
+      );
     });
 
     it('should get a tree item that did not complete successfully', async () => {
       const mockQuery = createMockFullQueryInfo('a', createMockQueryWithResults(false), false);
       const treeItem = await historyTreeDataProvider.getTreeItem(mockQuery);
-      expect(treeItem.iconPath).to.eq(vscode.Uri.file(mockExtensionLocation + '/media/red-x.svg').fsPath);
+      expect(treeItem.iconPath).to.eq(
+        vscode.Uri.file(mockExtensionLocation + '/media/red-x.svg').fsPath
+      );
     });
 
     it('should get a tree item that failed before creating any results', async () => {
       const mockQuery = createMockFullQueryInfo('a', undefined, true);
       const treeItem = await historyTreeDataProvider.getTreeItem(mockQuery);
-      expect(treeItem.iconPath).to.eq(vscode.Uri.file(mockExtensionLocation + '/media/red-x.svg').fsPath);
+      expect(treeItem.iconPath).to.eq(
+        vscode.Uri.file(mockExtensionLocation + '/media/red-x.svg').fsPath
+      );
     });
 
     it('should get a tree item that is in progress', async () => {
       const mockQuery = createMockFullQueryInfo('a');
       const treeItem = await historyTreeDataProvider.getTreeItem(mockQuery);
       expect(treeItem.iconPath).to.deep.eq({
-        id: 'sync~spin', color: undefined
+        id: 'sync~spin',
+        color: undefined,
       });
     });
 
@@ -398,7 +414,7 @@ describe('query-history', () => {
       const selection = (queryHistoryManager as any).determineSelection(singleItem, multipleItems);
       expect(selection).to.deep.eq({
         finalSingleItem: singleItem,
-        finalMultiSelect: multipleItems
+        finalMultiSelect: multipleItems,
       });
     });
 
@@ -407,7 +423,7 @@ describe('query-history', () => {
       const selection = (queryHistoryManager as any).determineSelection(undefined, multipleItems);
       expect(selection).to.deep.eq({
         finalSingleItem: multipleItems[0],
-        finalMultiSelect: multipleItems
+        finalMultiSelect: multipleItems,
       });
     });
 
@@ -416,21 +432,21 @@ describe('query-history', () => {
       const selection = (queryHistoryManager as any).determineSelection(singleItem, undefined);
       expect(selection).to.deep.eq({
         finalSingleItem: singleItem,
-        finalMultiSelect: [singleItem]
+        finalMultiSelect: [singleItem],
       });
     });
 
     it('should get the selection from the treeView when both selections are empty', async () => {
       queryHistoryManager = await createMockQueryHistory(allHistory);
-      const p = new Promise<void>(done => {
-        queryHistoryManager!.treeView.onDidChangeSelection(s => {
+      const p = new Promise<void>((done) => {
+        queryHistoryManager!.treeView.onDidChangeSelection((s) => {
           if (s.selection[0] !== allHistory[1]) {
             return;
           }
           const selection = (queryHistoryManager as any).determineSelection(undefined, undefined);
           expect(selection).to.deep.eq({
             finalSingleItem: allHistory[1],
-            finalMultiSelect: [allHistory[1]]
+            finalMultiSelect: [allHistory[1]],
           });
           done();
         });
@@ -450,7 +466,7 @@ describe('query-history', () => {
       const selection = (queryHistoryManager as any).determineSelection(undefined, undefined);
       expect(selection).to.deep.eq({
         finalSingleItem: allHistory[1],
-        finalMultiSelect: [allHistory[1]]
+        finalMultiSelect: [allHistory[1]],
       });
     });
   });
@@ -554,12 +570,12 @@ describe('query-history', () => {
             start: new Date(start),
             databaseInfo: {
               name: 'test',
-            }
+            },
           },
           completedQuery: {
             resultCount,
           },
-          t
+          t,
         };
       } else {
         return {
@@ -572,24 +588,30 @@ describe('query-history', () => {
               name: 'test',
               owner: 'user',
             },
-            repositories: []
+            repositories: [],
           },
           resultCount,
-          t
+          t,
         };
       }
     }
   });
 
-  function createMockFullQueryInfo(dbName = 'a', queryWitbResults?: QueryWithResults, isFail = false): LocalQueryInfo {
+  function createMockFullQueryInfo(
+    dbName = 'a',
+    queryWitbResults?: QueryWithResults,
+    isFail = false
+  ): LocalQueryInfo {
     const fqi = new LocalQueryInfo(
       {
         databaseInfo: { name: dbName },
         start: new Date(),
-        queryPath: 'hucairz'
+        queryPath: 'hucairz',
       } as InitialQueryInfo,
       {
-        dispose: () => { /**/ },
+        dispose: () => {
+          /**/
+        },
       } as vscode.CancellationTokenSource
     );
 
@@ -612,14 +634,14 @@ describe('query-history', () => {
     // so we can better mimic real life
     const LESS_THAN_ONE_DAY = ONE_DAY_IN_MS - 1000;
     const tmpDir = tmp.dirSync({
-      unsafeCleanup: true
+      unsafeCleanup: true,
     });
 
     beforeEach(() => {
       clock = sandbox.useFakeTimers({
-        toFake: ['setInterval', 'Date']
+        toFake: ['setInterval', 'Date'],
       });
-      mockCtx = {
+      mockCtx = ({
         globalState: {
           lastScrubTime: Date.now(),
           get(key: string) {
@@ -633,9 +655,9 @@ describe('query-history', () => {
               throw new Error(`Unexpected key: ${key}`);
             }
             this.lastScrubTime = value;
-          }
-        }
-      } as any as vscode.ExtensionContext;
+          },
+        },
+      } as any) as vscode.ExtensionContext;
     });
 
     afterEach(() => {
@@ -646,7 +668,7 @@ describe('query-history', () => {
       }
     });
 
-    it('should not throw an error when the query directory does not exist', async function() {
+    it('should not throw an error when the query directory does not exist', async function () {
       // because of the waits, we need to have a higher timeout on this test.
       this.timeout(5000);
       registerScrubber('idontexist');
@@ -667,10 +689,13 @@ describe('query-history', () => {
       await wait();
       expect(runCount, 'Should have called the scrubber a second time').to.eq(2);
 
-      expect((mockCtx.globalState as any).lastScrubTime).to.eq(TWO_HOURS_IN_MS * 2, 'Should have scrubbed the last time at 4 hours.');
+      expect((mockCtx.globalState as any).lastScrubTime).to.eq(
+        TWO_HOURS_IN_MS * 2,
+        'Should have scrubbed the last time at 4 hours.'
+      );
     });
 
-    it('should scrub directories', async function() {
+    it('should scrub directories', async function () {
       this.timeout(5000);
       // create two query directories that are right around the cut off time
       const queryDir = createMockQueryDir(ONE_HOUR_IN_MS, TWO_HOURS_IN_MS, THREE_HOURS_IN_MS);
@@ -684,7 +709,7 @@ describe('query-history', () => {
         queryDir,
         toQueryDirName(ONE_HOUR_IN_MS),
         toQueryDirName(TWO_HOURS_IN_MS),
-        toQueryDirName(THREE_HOURS_IN_MS),
+        toQueryDirName(THREE_HOURS_IN_MS)
       );
 
       clock.tick(LESS_THAN_ONE_DAY);
@@ -695,7 +720,7 @@ describe('query-history', () => {
         queryDir,
         toQueryDirName(ONE_HOUR_IN_MS),
         toQueryDirName(TWO_HOURS_IN_MS),
-        toQueryDirName(THREE_HOURS_IN_MS),
+        toQueryDirName(THREE_HOURS_IN_MS)
       );
 
       clock.tick(1000);
@@ -704,19 +729,14 @@ describe('query-history', () => {
       // should have deleted the two older directories
       // even though they have different time stamps,
       // they both expire during the same scrubbing period
-      expectDirectories(
-        queryDir,
-        toQueryDirName(THREE_HOURS_IN_MS),
-      );
+      expectDirectories(queryDir, toQueryDirName(THREE_HOURS_IN_MS));
 
       // Wait until the next scrub time and the final directory is deleted
       clock.tick(TWO_HOURS_IN_MS);
       await wait();
 
       // should have deleted everything
-      expectDirectories(
-        queryDir
-      );
+      expectDirectories(queryDir);
     });
 
     function expectDirectories(queryDir: string, ...dirNames: string[]) {
@@ -765,11 +785,13 @@ describe('query-history', () => {
         LESS_THAN_ONE_DAY,
         dir,
         {
-          removeDeletedQueries: () => { return Promise.resolve(); }
+          removeDeletedQueries: () => {
+            return Promise.resolve();
+          },
         } as QueryHistoryManager,
         mockCtx,
         {
-          increment: () => runCount++
+          increment: () => runCount++,
         }
       );
     }
@@ -779,18 +801,21 @@ describe('query-history', () => {
     }
   });
 
-  function createMockQueryWithResults(didRunSuccessfully = true, hasInterpretedResults = true): QueryWithResults {
+  function createMockQueryWithResults(
+    didRunSuccessfully = true,
+    hasInterpretedResults = true
+  ): QueryWithResults {
     return {
-      query: {
+      query: ({
         hasInterpretedResults: () => Promise.resolve(hasInterpretedResults),
         deleteQuery: sandbox.stub(),
-      } as unknown as QueryEvaluationInfo,
+      } as unknown) as QueryEvaluationInfo,
       result: {
         resultType: didRunSuccessfully
           ? messages.QueryResultType.SUCCESS
-          : messages.QueryResultType.OTHER_ERROR
+          : messages.QueryResultType.OTHER_ERROR,
       } as messages.EvaluationResult,
-      dispose: sandbox.spy()
+      dispose: sandbox.spy(),
     };
   }
 

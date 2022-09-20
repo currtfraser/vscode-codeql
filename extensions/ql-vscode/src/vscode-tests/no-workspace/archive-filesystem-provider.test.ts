@@ -7,7 +7,7 @@ import {
   ArchiveFileSystemProvider,
   decodeSourceArchiveUri,
   ZipFileReference,
-  zipArchiveScheme
+  zipArchiveScheme,
 } from '../../archive-filesystem-provider';
 import { FileType, FileSystemError, Uri } from 'vscode';
 
@@ -15,8 +15,11 @@ describe('archive-filesystem-provider', () => {
   it('reads empty file correctly', async () => {
     const archiveProvider = new ArchiveFileSystemProvider();
     const uri = encodeSourceArchiveUri({
-      sourceArchiveZipPath: path.resolve(__dirname, 'data/archive-filesystem-provider-test/single_file.zip'),
-      pathWithinSourceArchive: '/aFileName.txt'
+      sourceArchiveZipPath: path.resolve(
+        __dirname,
+        'data/archive-filesystem-provider-test/single_file.zip'
+      ),
+      pathWithinSourceArchive: '/aFileName.txt',
     });
     const data = await archiveProvider.readFile(uri);
     expect(data.length).to.equal(0);
@@ -25,8 +28,11 @@ describe('archive-filesystem-provider', () => {
   it('read non-empty file correctly', async () => {
     const archiveProvider = new ArchiveFileSystemProvider();
     const uri = encodeSourceArchiveUri({
-      sourceArchiveZipPath: path.resolve(__dirname, 'data/archive-filesystem-provider-test/zip_with_folder.zip'),
-      pathWithinSourceArchive: 'folder1/textFile.txt'
+      sourceArchiveZipPath: path.resolve(
+        __dirname,
+        'data/archive-filesystem-provider-test/zip_with_folder.zip'
+      ),
+      pathWithinSourceArchive: 'folder1/textFile.txt',
     });
     const data = await archiveProvider.readFile(uri);
     expect(Buffer.from(data).toString('utf8')).to.be.equal('I am a text\n');
@@ -35,8 +41,11 @@ describe('archive-filesystem-provider', () => {
   it('read a directory', async () => {
     const archiveProvider = new ArchiveFileSystemProvider();
     const uri = encodeSourceArchiveUri({
-      sourceArchiveZipPath: path.resolve(__dirname, 'data/archive-filesystem-provider-test/zip_with_folder.zip'),
-      pathWithinSourceArchive: 'folder1'
+      sourceArchiveZipPath: path.resolve(
+        __dirname,
+        'data/archive-filesystem-provider-test/zip_with_folder.zip'
+      ),
+      pathWithinSourceArchive: 'folder1',
     });
     const files = await archiveProvider.readDirectory(uri);
     expect(files).to.be.deep.equal([
@@ -49,8 +58,11 @@ describe('archive-filesystem-provider', () => {
   it('should handle a missing directory', async () => {
     const archiveProvider = new ArchiveFileSystemProvider();
     const uri = encodeSourceArchiveUri({
-      sourceArchiveZipPath: path.resolve(__dirname, 'data/archive-filesystem-provider-test/zip_with_folder.zip'),
-      pathWithinSourceArchive: 'folder1/not-here'
+      sourceArchiveZipPath: path.resolve(
+        __dirname,
+        'data/archive-filesystem-provider-test/zip_with_folder.zip'
+      ),
+      pathWithinSourceArchive: 'folder1/not-here',
     });
     try {
       await archiveProvider.readDirectory(uri);
@@ -63,8 +75,11 @@ describe('archive-filesystem-provider', () => {
   it('should handle a missing file', async () => {
     const archiveProvider = new ArchiveFileSystemProvider();
     const uri = encodeSourceArchiveUri({
-      sourceArchiveZipPath: path.resolve(__dirname, 'data/archive-filesystem-provider-test/zip_with_folder.zip'),
-      pathWithinSourceArchive: 'folder1/not-here'
+      sourceArchiveZipPath: path.resolve(
+        __dirname,
+        'data/archive-filesystem-provider-test/zip_with_folder.zip'
+      ),
+      pathWithinSourceArchive: 'folder1/not-here',
     });
     try {
       await archiveProvider.readFile(uri);
@@ -77,8 +92,11 @@ describe('archive-filesystem-provider', () => {
   it('should handle reading a file as a directory', async () => {
     const archiveProvider = new ArchiveFileSystemProvider();
     const uri = encodeSourceArchiveUri({
-      sourceArchiveZipPath: path.resolve(__dirname, 'data/archive-filesystem-provider-test/zip_with_folder.zip'),
-      pathWithinSourceArchive: 'folder1/textFile.txt'
+      sourceArchiveZipPath: path.resolve(
+        __dirname,
+        'data/archive-filesystem-provider-test/zip_with_folder.zip'
+      ),
+      pathWithinSourceArchive: 'folder1/textFile.txt',
     });
     try {
       await archiveProvider.readDirectory(uri);
@@ -91,8 +109,11 @@ describe('archive-filesystem-provider', () => {
   it('should handle reading a directory as a file', async () => {
     const archiveProvider = new ArchiveFileSystemProvider();
     const uri = encodeSourceArchiveUri({
-      sourceArchiveZipPath: path.resolve(__dirname, 'data/archive-filesystem-provider-test/zip_with_folder.zip'),
-      pathWithinSourceArchive: 'folder1/folder2'
+      sourceArchiveZipPath: path.resolve(
+        __dirname,
+        'data/archive-filesystem-provider-test/zip_with_folder.zip'
+      ),
+      pathWithinSourceArchive: 'folder1/folder2',
     });
     try {
       await archiveProvider.readFile(uri);
@@ -105,49 +126,50 @@ describe('archive-filesystem-provider', () => {
   it('read a nested directory', async () => {
     const archiveProvider = new ArchiveFileSystemProvider();
     const uri = encodeSourceArchiveUri({
-      sourceArchiveZipPath: path.resolve(__dirname, 'data/archive-filesystem-provider-test/zip_with_folder.zip'),
-      pathWithinSourceArchive: 'folder1/folder2'
+      sourceArchiveZipPath: path.resolve(
+        __dirname,
+        'data/archive-filesystem-provider-test/zip_with_folder.zip'
+      ),
+      pathWithinSourceArchive: 'folder1/folder2',
     });
     const files = await archiveProvider.readDirectory(uri);
-    expect(files).to.be.deep.equal([
-      ['textFile3.txt', FileType.File],
-    ]);
+    expect(files).to.be.deep.equal([['textFile3.txt', FileType.File]]);
   });
 });
 
-describe('source archive uri encoding', function() {
+describe('source archive uri encoding', function () {
   const testCases: { name: string; input: ZipFileReference }[] = [
     {
       name: 'mixed case and unicode',
       input: {
         sourceArchiveZipPath: '/I-\u2665-codeql.zip',
-        pathWithinSourceArchive: '/foo/bar'
-      }
+        pathWithinSourceArchive: '/foo/bar',
+      },
     },
     {
       name: 'Windows path',
       input: {
         sourceArchiveZipPath: 'C:/Users/My Name/folder/src.zip',
-        pathWithinSourceArchive: '/foo/bar.ext'
-      }
+        pathWithinSourceArchive: '/foo/bar.ext',
+      },
     },
     {
       name: 'Unix path',
       input: {
         sourceArchiveZipPath: '/home/folder/src.zip',
-        pathWithinSourceArchive: '/foo/bar.ext'
-      }
+        pathWithinSourceArchive: '/foo/bar.ext',
+      },
     },
     {
       name: 'Empty path',
       input: {
         sourceArchiveZipPath: '/home/folder/src.zip',
-        pathWithinSourceArchive: '/'
-      }
-    }
+        pathWithinSourceArchive: '/',
+      },
+    },
   ];
   for (const testCase of testCases) {
-    it(`should work round trip with ${testCase.name}`, function() {
+    it(`should work round trip with ${testCase.name}`, function () {
       const output = decodeSourceArchiveUri(encodeSourceArchiveUri(testCase.input));
       expect(output).to.eql(testCase.input);
     });
@@ -156,11 +178,11 @@ describe('source archive uri encoding', function() {
   it('should decode an empty path as a "/"', () => {
     const uri = encodeSourceArchiveUri({
       pathWithinSourceArchive: '',
-      sourceArchiveZipPath: 'a/b/c'
+      sourceArchiveZipPath: 'a/b/c',
     });
     expect(decodeSourceArchiveUri(uri)).to.deep.eq({
       pathWithinSourceArchive: '/',
-      sourceArchiveZipPath: 'a/b/c'
+      sourceArchiveZipPath: 'a/b/c',
     });
   });
 
@@ -179,7 +201,7 @@ describe('source archive uri encoding', function() {
     expect(uri.authority).to.eq('');
     expect(decodeSourceArchiveUri(uri)).to.deep.eq({
       sourceArchiveZipPath: '/a/b/c/src.zip',
-      pathWithinSourceArchive: '/'
+      pathWithinSourceArchive: '/',
     });
   });
 });

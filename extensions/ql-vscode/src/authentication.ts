@@ -18,7 +18,7 @@ export class Credentials {
   // Explicitly make the constructor private, so that we can't accidentally call the constructor from outside the class
   // without also initializing the class.
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  private constructor() { }
+  private constructor() {}
 
   /**
    * Initializes an instance of credentials with an octokit instance.
@@ -50,17 +50,22 @@ export class Credentials {
     return c;
   }
 
-  private async createOctokit(createIfNone: boolean, overrideToken?: string): Promise<Octokit.Octokit | undefined> {
+  private async createOctokit(
+    createIfNone: boolean,
+    overrideToken?: string
+  ): Promise<Octokit.Octokit | undefined> {
     if (overrideToken) {
       return new Octokit.Octokit({ auth: overrideToken, retry });
     }
 
-    const session = await vscode.authentication.getSession(GITHUB_AUTH_PROVIDER_ID, SCOPES, { createIfNone });
+    const session = await vscode.authentication.getSession(GITHUB_AUTH_PROVIDER_ID, SCOPES, {
+      createIfNone,
+    });
 
     if (session) {
       return new Octokit.Octokit({
         auth: session.accessToken,
-        retry
+        retry,
       });
     } else {
       return undefined;
@@ -69,11 +74,13 @@ export class Credentials {
 
   registerListeners(context: vscode.ExtensionContext): void {
     // Sessions are changed when a user logs in or logs out.
-    context.subscriptions.push(vscode.authentication.onDidChangeSessions(async e => {
-      if (e.provider.id === GITHUB_AUTH_PROVIDER_ID) {
-        this.octokit = await this.createOctokit(false);
-      }
-    }));
+    context.subscriptions.push(
+      vscode.authentication.onDidChangeSessions(async (e) => {
+        if (e.provider.id === GITHUB_AUTH_PROVIDER_ID) {
+          this.octokit = await this.createOctokit(false);
+        }
+      })
+    );
   }
 
   /**

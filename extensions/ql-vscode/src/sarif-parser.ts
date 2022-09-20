@@ -15,7 +15,7 @@ export async function sarifParser(interpretedResultsPath: string): Promise<Sarif
     const pipeline = chain([
       fs.createReadStream(interpretedResultsPath),
       p,
-      pick({ filter: 'runs.0.results' })
+      pick({ filter: 'runs.0.results' }),
     ]);
 
     // Creates JavaScript objects from the token stream
@@ -29,21 +29,22 @@ export async function sarifParser(interpretedResultsPath: string): Promise<Sarif
       });
 
       asm.on('done', (asm) => {
-
         const log: Sarif.Log = {
           version: '2.1.0',
           runs: [
             {
               tool: DUMMY_TOOL,
-              results: asm.current ?? []
-            }
-          ]
+              results: asm.current ?? [],
+            },
+          ],
         };
 
         resolve(log);
       });
     });
   } catch (e) {
-    throw new Error(`Parsing output of interpretation failed: ${(e as any).stderr || getErrorMessage(e)}`);
+    throw new Error(
+      `Parsing output of interpretation failed: ${(e as any).stderr || getErrorMessage(e)}`
+    );
   }
 }

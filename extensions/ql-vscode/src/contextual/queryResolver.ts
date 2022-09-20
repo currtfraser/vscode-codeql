@@ -3,17 +3,15 @@ import * as yaml from 'js-yaml';
 import * as tmp from 'tmp-promise';
 
 import * as helpers from '../helpers';
-import {
-  KeyType,
-  kindOfKeyType,
-  nameOfKeyType,
-  tagOfKeyType
-} from './keyType';
+import { KeyType, kindOfKeyType, nameOfKeyType, tagOfKeyType } from './keyType';
 import { CodeQLCliServer } from '../cli';
 import { DatabaseItem } from '../databases';
 import { QlPacksForLanguage } from '../helpers';
 
-export async function qlpackOfDatabase(cli: CodeQLCliServer, db: DatabaseItem): Promise<QlPacksForLanguage> {
+export async function qlpackOfDatabase(
+  cli: CodeQLCliServer,
+  db: DatabaseItem
+): Promise<QlPacksForLanguage> {
   if (db.contents === undefined) {
     throw new Error('Database is invalid and cannot infer QLPack.');
   }
@@ -30,10 +28,16 @@ export async function qlpackOfDatabase(cli: CodeQLCliServer, db: DatabaseItem): 
  * @param keyType The contextual query key of the query to search for.
  * @returns The found queries from the first pack in which any matching queries were found.
  */
-async function resolveQueriesFromPacks(cli: CodeQLCliServer, qlpacks: string[], keyType: KeyType): Promise<string[]> {
-  const suiteFile = (await tmp.file({
-    postfix: '.qls'
-  })).path;
+async function resolveQueriesFromPacks(
+  cli: CodeQLCliServer,
+  qlpacks: string[],
+  keyType: KeyType
+): Promise<string[]> {
+  const suiteFile = (
+    await tmp.file({
+      postfix: '.qls',
+    })
+  ).path;
   const suiteYaml = [];
   for (const qlpack of qlpacks) {
     suiteYaml.push({
@@ -41,8 +45,8 @@ async function resolveQueriesFromPacks(cli: CodeQLCliServer, qlpacks: string[], 
       queries: '.',
       include: {
         kind: kindOfKeyType(keyType),
-        'tags contain': tagOfKeyType(keyType)
-      }
+        'tags contain': tagOfKeyType(keyType),
+      },
     });
   }
   await fs.writeFile(suiteFile, yaml.dump(suiteYaml), 'utf8');
@@ -51,7 +55,11 @@ async function resolveQueriesFromPacks(cli: CodeQLCliServer, qlpacks: string[], 
   return queries;
 }
 
-export async function resolveQueries(cli: CodeQLCliServer, qlpacks: QlPacksForLanguage, keyType: KeyType): Promise<string[]> {
+export async function resolveQueries(
+  cli: CodeQLCliServer,
+  qlpacks: QlPacksForLanguage,
+  keyType: KeyType
+): Promise<string[]> {
   const cliCanHandleLibraryPack = await cli.cliConstraints.supportsAllowLibraryPacksInResolveQueries();
   const packsToSearch: string[] = [];
   let blameCli: boolean;
@@ -92,15 +100,22 @@ export async function resolveQueries(cli: CodeQLCliServer, qlpacks: QlPacksForLa
   }
 
   // No queries found. Determine the correct error message for the various scenarios.
-  const errorMessage = blameCli ?
-    `Your current version of the CodeQL CLI, '${(await cli.getVersion()).version}', \
+  const errorMessage = blameCli
+    ? `Your current version of the CodeQL CLI, '${(await cli.getVersion()).version}', \
     is unable to use contextual queries from recent versions of the standard CodeQL libraries. \
     Please upgrade to the latest version of the CodeQL CLI.`
-    :
-    `No ${nameOfKeyType(keyType)} queries (tagged "${tagOfKeyType(keyType)}") could be found in the current library path. \
-    Try upgrading the CodeQL libraries. If that doesn't work, then ${nameOfKeyType(keyType)} queries are not yet available \
+    : `No ${nameOfKeyType(keyType)} queries (tagged "${tagOfKeyType(
+        keyType
+      )}") could be found in the current library path. \
+    Try upgrading the CodeQL libraries. If that doesn't work, then ${nameOfKeyType(
+      keyType
+    )} queries are not yet available \
     for this language.`;
 
   void helpers.showAndLogErrorMessage(errorMessage);
-  throw new Error(`Couldn't find any queries tagged ${tagOfKeyType(keyType)} in any of the following packs: ${packsToSearch.join(', ')}.`);
+  throw new Error(
+    `Couldn't find any queries tagged ${tagOfKeyType(
+      keyType
+    )} in any of the following packs: ${packsToSearch.join(', ')}.`
+  );
 }

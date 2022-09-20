@@ -58,26 +58,29 @@ export function sorter(sort: Sort): (left: Sortable, right: Sortable) => number 
 }
 
 const SortRepoFilter = ({ sort, setSort }: Props) => {
-  return <SortWrapper>
-    <ActionMenu>
-      <ActionMenu.Anchor>
-        <IconButton icon={FilterIcon} variant="invisible" aria-label="Sort results" />
-      </ActionMenu.Anchor>
+  return (
+    <SortWrapper>
+      <ActionMenu>
+        <ActionMenu.Anchor>
+          <IconButton icon={FilterIcon} variant="invisible" aria-label="Sort results" />
+        </ActionMenu.Anchor>
 
-      <ActionMenu.Overlay width="small" anchorSide="outside-bottom">
-        <ActionList selectionVariant="single">
-          {sortBy.map((type, index) => (
-            <ActionList.Item
-              key={index}
-              selected={type.sort === sort} onSelect={() => setSort(type.sort as Sort)}
-            >
-              {type.name}
-            </ActionList.Item>
-          ))}
-        </ActionList>
-      </ActionMenu.Overlay>
-    </ActionMenu>
-  </SortWrapper>;
+        <ActionMenu.Overlay width="small" anchorSide="outside-bottom">
+          <ActionList selectionVariant="single">
+            {sortBy.map((type, index) => (
+              <ActionList.Item
+                key={index}
+                selected={type.sort === sort}
+                onSelect={() => setSort(type.sort as Sort)}
+              >
+                {type.name}
+              </ActionList.Item>
+            ))}
+          </ActionList>
+        </ActionMenu.Overlay>
+      </ActionMenu>
+    </SortWrapper>
+  );
 };
 
 export default SortRepoFilter;

@@ -26,7 +26,7 @@ export const VariantAnalysisActions = ({
   variantAnalysisStatus,
   onStopQueryClick,
   onCopyRepositoryListClick,
-  onExportResultsClick
+  onExportResultsClick,
 }: Props) => {
   return (
     <Container>

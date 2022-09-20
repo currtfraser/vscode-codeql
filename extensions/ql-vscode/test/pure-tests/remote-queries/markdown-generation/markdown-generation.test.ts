@@ -1,17 +1,26 @@
 import { expect } from 'chai';
 import * as path from 'path';
 import * as fs from 'fs-extra';
-import { generateMarkdown, MarkdownFile } from '../../../../src/remote-queries/remote-queries-markdown-generation';
+import {
+  generateMarkdown,
+  MarkdownFile,
+} from '../../../../src/remote-queries/remote-queries-markdown-generation';
 
-describe('markdown generation', async function() {
-  describe('for path-problem query', async function() {
-    it('should generate markdown file for each repo with results', async function() {
+describe('markdown generation', async function () {
+  describe('for path-problem query', async function () {
+    it('should generate markdown file for each repo with results', async function () {
       const pathProblemQuery = JSON.parse(
-        await fs.readFile(path.join(__dirname, 'data/interpreted-results/path-problem/path-problem-query.json'), 'utf8')
+        await fs.readFile(
+          path.join(__dirname, 'data/interpreted-results/path-problem/path-problem-query.json'),
+          'utf8'
+        )
       );
 
       const analysesResults = JSON.parse(
-        await fs.readFile(path.join(__dirname, 'data/interpreted-results/path-problem/analyses-results.json'), 'utf8')
+        await fs.readFile(
+          path.join(__dirname, 'data/interpreted-results/path-problem/analyses-results.json'),
+          'utf8'
+        )
       );
 
       const actualFiles = generateMarkdown(pathProblemQuery, analysesResults, 'gist');
@@ -20,14 +29,20 @@ describe('markdown generation', async function() {
     });
   });
 
-  describe('for problem query', async function() {
-    it('should generate markdown file for each repo with results', async function() {
+  describe('for problem query', async function () {
+    it('should generate markdown file for each repo with results', async function () {
       const problemQuery = JSON.parse(
-        await fs.readFile(path.join(__dirname, 'data/interpreted-results/problem/problem-query.json'), 'utf8')
+        await fs.readFile(
+          path.join(__dirname, 'data/interpreted-results/problem/problem-query.json'),
+          'utf8'
+        )
       );
 
       const analysesResults = JSON.parse(
-        await fs.readFile(path.join(__dirname, 'data/interpreted-results/problem/analyses-results.json'), 'utf8')
+        await fs.readFile(
+          path.join(__dirname, 'data/interpreted-results/problem/analyses-results.json'),
+          'utf8'
+        )
       );
       const actualFiles = generateMarkdown(problemQuery, analysesResults, 'gist');
 
@@ -35,8 +50,8 @@ describe('markdown generation', async function() {
     });
   });
 
-  describe('for non-alert query', async function() {
-    it('should generate markdown file for each repo with results', async function() {
+  describe('for non-alert query', async function () {
+    it('should generate markdown file for each repo with results', async function () {
       const query = JSON.parse(
         await fs.readFile(path.join(__dirname, 'data/raw-results/query.json'), 'utf8')
       );
@@ -62,7 +77,7 @@ async function readTestOutputFile(relativePath: string): Promise<string> {
 
 /**
  * Compares the generated (actual) markdown files to the expected markdown files and
- * checks whether the names and contents are the same.  
+ * checks whether the names and contents are the same.
  */
 async function checkGeneratedMarkdown(actualFiles: MarkdownFile[], testDataBasePath: string) {
   const expectedDir = path.join(__dirname, testDataBasePath);
@@ -71,7 +86,7 @@ async function checkGeneratedMarkdown(actualFiles: MarkdownFile[], testDataBaseP
   expect(actualFiles.length).to.equal(expectedFiles.length);
 
   for (const expectedFile of expectedFiles) {
-    const actualFile = actualFiles.find(f => `${f.fileName}.md` === expectedFile);
+    const actualFile = actualFiles.find((f) => `${f.fileName}.md` === expectedFile);
     expect(actualFile).to.not.be.undefined;
     const expectedContent = await readTestOutputFile(path.join(testDataBasePath, expectedFile));
     expect(actualFile!.content.join('\n')).to.equal(expectedContent);

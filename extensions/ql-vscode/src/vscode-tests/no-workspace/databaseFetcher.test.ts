@@ -15,7 +15,7 @@ import {
 import { ProgressCallback } from '../../commandRunner';
 import * as Octokit from '@octokit/rest';
 
-describe('databaseFetcher', function() {
+describe('databaseFetcher', function () {
   // These tests make API calls and may need extra time to complete.
   this.timeout(10000);
 
@@ -33,7 +33,7 @@ describe('databaseFetcher', function() {
       mockRequest = sandbox.stub();
       octokit = ({
         request: mockRequest,
-      }) as unknown as Octokit.Octokit;
+      } as unknown) as Octokit.Octokit;
     });
 
     afterEach(() => {
@@ -54,7 +54,8 @@ describe('databaseFetcher', function() {
             size: 55599715,
             created_at: '2022-03-24T10:46:24Z',
             updated_at: '2022-03-24T10:46:27Z',
-            url: 'https://api.github.com/repositories/143040428/code-scanning/codeql/databases/csharp',
+            url:
+              'https://api.github.com/repositories/143040428/code-scanning/codeql/databases/csharp',
           },
           {
             id: 1100671,
@@ -66,7 +67,8 @@ describe('databaseFetcher', function() {
             size: 29294434,
             created_at: '2022-03-01T16:00:04Z',
             updated_at: '2022-03-01T16:00:06Z',
-            url: 'https://api.github.com/repositories/143040428/code-scanning/codeql/databases/javascript',
+            url:
+              'https://api.github.com/repositories/143040428/code-scanning/codeql/databases/javascript',
           },
           {
             id: 648738,
@@ -85,11 +87,7 @@ describe('databaseFetcher', function() {
       mockRequest.resolves(mockApiResponse);
       quickPickSpy.resolves('javascript');
       const githubRepo = 'github/codeql';
-      const result = await convertGithubNwoToDatabaseUrl(
-        githubRepo,
-        octokit,
-        progressSpy
-      );
+      const result = await convertGithubNwoToDatabaseUrl(githubRepo, octokit, progressSpy);
       expect(result).not.to.be.undefined;
       if (result === undefined) {
         return;
@@ -102,11 +100,7 @@ describe('databaseFetcher', function() {
       );
       expect(name).to.equal('codeql');
       expect(owner).to.equal('github');
-      expect(quickPickSpy.firstCall.args[0]).to.deep.equal([
-        'csharp',
-        'javascript',
-        'ql',
-      ]);
+      expect(quickPickSpy.firstCall.args[0]).to.deep.equal(['csharp', 'javascript', 'ql']);
     });
 
     // Repository doesn't exist, or the user has no access to the repository.
@@ -160,103 +154,74 @@ describe('databaseFetcher', function() {
       const lgtmUrl = 'https://lgtm.com/projects/g/github/codeql';
       const dbUrl = await convertLgtmUrlToDatabaseUrl(lgtmUrl, progressSpy);
 
-      expect(dbUrl).to.equal(
-        'https://lgtm.com/api/v1.0/snapshots/1506465042581/javascript'
-      );
+      expect(dbUrl).to.equal('https://lgtm.com/api/v1.0/snapshots/1506465042581/javascript');
       expect(quickPickSpy.firstCall.args[0]).to.contain('javascript');
       expect(quickPickSpy.firstCall.args[0]).to.contain('python');
     });
 
     it('should convert a project url to a database url with extra path segments', async () => {
       quickPickSpy.resolves('python');
-      const lgtmUrl =
-        'https://lgtm.com/projects/g/github/codeql/subpage/subpage2?query=xxx';
+      const lgtmUrl = 'https://lgtm.com/projects/g/github/codeql/subpage/subpage2?query=xxx';
       const dbUrl = await convertLgtmUrlToDatabaseUrl(lgtmUrl, progressSpy);
 
-      expect(dbUrl).to.equal(
-        'https://lgtm.com/api/v1.0/snapshots/1506465042581/python'
-      );
+      expect(dbUrl).to.equal('https://lgtm.com/api/v1.0/snapshots/1506465042581/python');
       expect(progressSpy).to.have.been.calledOnce;
     });
 
     it('should convert a raw slug to a database url with extra path segments', async () => {
       quickPickSpy.resolves('python');
-      const lgtmUrl =
-        'g/github/codeql';
+      const lgtmUrl = 'g/github/codeql';
       const dbUrl = await convertLgtmUrlToDatabaseUrl(lgtmUrl, progressSpy);
 
-      expect(dbUrl).to.equal(
-        'https://lgtm.com/api/v1.0/snapshots/1506465042581/python'
-      );
+      expect(dbUrl).to.equal('https://lgtm.com/api/v1.0/snapshots/1506465042581/python');
       expect(progressSpy).to.have.been.calledOnce;
     });
 
     it('should fail on a nonexistent project', async () => {
       quickPickSpy.resolves('javascript');
       const lgtmUrl = 'https://lgtm.com/projects/g/github/hucairz';
-      await expect(convertLgtmUrlToDatabaseUrl(lgtmUrl, progressSpy)).to.rejectedWith(/Invalid LGTM URL/);
+      await expect(convertLgtmUrlToDatabaseUrl(lgtmUrl, progressSpy)).to.rejectedWith(
+        /Invalid LGTM URL/
+      );
       expect(progressSpy).to.have.callCount(0);
     });
   });
 
   describe('looksLikeGithubRepo', () => {
     it('should handle invalid urls', () => {
-      expect(looksLikeGithubRepo(''))
-        .to.be.false;
-      expect(looksLikeGithubRepo('http://github.com/foo/bar'))
-        .to.be.false;
-      expect(looksLikeGithubRepo('https://ww.github.com/foo/bar'))
-        .to.be.false;
-      expect(looksLikeGithubRepo('https://ww.github.com/foo'))
-        .to.be.false;
-      expect(looksLikeGithubRepo('foo'))
-        .to.be.false;
+      expect(looksLikeGithubRepo('')).to.be.false;
+      expect(looksLikeGithubRepo('http://github.com/foo/bar')).to.be.false;
+      expect(looksLikeGithubRepo('https://ww.github.com/foo/bar')).to.be.false;
+      expect(looksLikeGithubRepo('https://ww.github.com/foo')).to.be.false;
+      expect(looksLikeGithubRepo('foo')).to.be.false;
     });
 
     it('should handle valid urls', () => {
-      expect(looksLikeGithubRepo('https://github.com/foo/bar'))
-        .to.be.true;
-      expect(looksLikeGithubRepo('https://www.github.com/foo/bar'))
-        .to.be.true;
-      expect(looksLikeGithubRepo('https://github.com/foo/bar/sub/pages'))
-        .to.be.true;
-      expect(looksLikeGithubRepo('foo/bar'))
-        .to.be.true;
+      expect(looksLikeGithubRepo('https://github.com/foo/bar')).to.be.true;
+      expect(looksLikeGithubRepo('https://www.github.com/foo/bar')).to.be.true;
+      expect(looksLikeGithubRepo('https://github.com/foo/bar/sub/pages')).to.be.true;
+      expect(looksLikeGithubRepo('foo/bar')).to.be.true;
     });
   });
 
   describe('looksLikeLgtmUrl', () => {
     it('should handle invalid urls', () => {
       expect(looksLikeLgtmUrl('')).to.be.false;
-      expect(looksLikeLgtmUrl('http://lgtm.com/projects/g/github/codeql')).to.be
-        .false;
-      expect(looksLikeLgtmUrl('https://ww.lgtm.com/projects/g/github/codeql'))
-        .to.be.false;
-      expect(looksLikeLgtmUrl('https://ww.lgtm.com/projects/g/github')).to.be
-        .false;
-      expect(looksLikeLgtmUrl('g/github')).to.be
-        .false;
-      expect(looksLikeLgtmUrl('ggg/github/myproj')).to.be
-        .false;
+      expect(looksLikeLgtmUrl('http://lgtm.com/projects/g/github/codeql')).to.be.false;
+      expect(looksLikeLgtmUrl('https://ww.lgtm.com/projects/g/github/codeql')).to.be.false;
+      expect(looksLikeLgtmUrl('https://ww.lgtm.com/projects/g/github')).to.be.false;
+      expect(looksLikeLgtmUrl('g/github')).to.be.false;
+      expect(looksLikeLgtmUrl('ggg/github/myproj')).to.be.false;
     });
 
     it('should handle valid urls', () => {
-      expect(looksLikeLgtmUrl('https://lgtm.com/projects/g/github/codeql')).to
-        .be.true;
-      expect(looksLikeLgtmUrl('https://www.lgtm.com/projects/g/github/codeql'))
+      expect(looksLikeLgtmUrl('https://lgtm.com/projects/g/github/codeql')).to.be.true;
+      expect(looksLikeLgtmUrl('https://www.lgtm.com/projects/g/github/codeql')).to.be.true;
+      expect(looksLikeLgtmUrl('https://lgtm.com/projects/g/github/codeql/sub/pages')).to.be.true;
+      expect(looksLikeLgtmUrl('https://lgtm.com/projects/g/github/codeql/sub/pages?query=string'))
         .to.be.true;
-      expect(
-        looksLikeLgtmUrl('https://lgtm.com/projects/g/github/codeql/sub/pages')
-      ).to.be.true;
-      expect(
-        looksLikeLgtmUrl(
-          'https://lgtm.com/projects/g/github/codeql/sub/pages?query=string'
-        )
-      ).to.be.true;
-      expect(looksLikeLgtmUrl('g/github/myproj')).to.be
-        .true;
-      expect(looksLikeLgtmUrl('git/github/myproj')).to.be
-        .true;
+      expect(looksLikeLgtmUrl('g/github/myproj')).to.be.true;
+      expect(looksLikeLgtmUrl('git/github/myproj')).to.be.true;
     });
   });
 
@@ -285,12 +250,8 @@ describe('databaseFetcher', function() {
     });
 
     it('should find files', async () => {
-      expect(await findDirWithFile(dir.name, 'k')).to.equal(
-        path.join(dir.name, 'dir2', 'dir3')
-      );
-      expect(await findDirWithFile(dir.name, 'h')).to.equal(
-        path.join(dir.name, 'dir2')
-      );
+      expect(await findDirWithFile(dir.name, 'k')).to.equal(path.join(dir.name, 'dir2', 'dir3'));
+      expect(await findDirWithFile(dir.name, 'h')).to.equal(path.join(dir.name, 'dir2'));
       expect(await findDirWithFile(dir.name, 'z', 'a')).to.equal(dir.name);
       // there's some slight indeterminism when more than one name exists
       // but in general, this will find files in the current directory before
@@ -298,11 +259,9 @@ describe('databaseFetcher', function() {
       expect(await findDirWithFile(dir.name, 'k', 'a')).to.equal(dir.name);
     });
 
-
     it('should not find files', async () => {
       expect(await findDirWithFile(dir.name, 'x', 'y', 'z')).to.be.undefined;
     });
-
 
     function createFile(...segments: string[]) {
       fs.createFileSync(path.join(dir.name, ...segments));

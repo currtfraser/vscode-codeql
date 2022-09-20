@@ -8,7 +8,6 @@ import { DisposableObject } from '../../src/pure/disposable-object';
 import { expect } from 'chai';
 
 describe('DisposableObject and DisposeHandler', () => {
-
   let disposable1: { dispose: sinon.SinonSpy };
   let disposable2: { dispose: sinon.SinonSpy };
   let disposable3: { dispose: sinon.SinonSpy };
@@ -82,9 +81,10 @@ describe('DisposableObject and DisposeHandler', () => {
   });
 
   it('ahould use a dispose handler', () => {
-    const handler = (d: any) => (d === disposable1 || d === disposable3 || d === nestedDisposableObject)
-      ? d.dispose(handler)
-      : void (0);
+    const handler = (d: any) =>
+      d === disposable1 || d === disposable3 || d === nestedDisposableObject
+        ? d.dispose(handler)
+        : void 0;
 
     disposableObject.push(disposable1);
     disposableObject.push(disposable2);

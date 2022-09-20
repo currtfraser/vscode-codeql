@@ -9,7 +9,7 @@ import * as fs from 'fs-extra';
 /**
  * Integration tests for queries
  */
-describe('SourceMap', function() {
+describe('SourceMap', function () {
   this.timeout(20000);
 
   it('should jump to QL code', async () => {
@@ -17,7 +17,7 @@ describe('SourceMap', function() {
       const root = workspace.workspaceFolders![0].uri.fsPath;
       const srcFiles = {
         summary: path.join(root, 'log-summary', 'evaluator-log.summary'),
-        summaryMap: path.join(root, 'log-summary', 'evaluator-log.summary.map')
+        summaryMap: path.join(root, 'log-summary', 'evaluator-log.summary.map'),
       };
       // We need to modify the source map so that its paths point to the actual location of the
       // workspace root on this machine. We'll copy the summary and its source map to a temp

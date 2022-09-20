@@ -20,9 +20,10 @@ export class UIService extends DisposableObject {
     this.push(commandRunner(command, callback.bind(this)));
   }
 
-  protected registerTreeDataProvider<T>(viewId: string, treeDataProvider: TreeDataProvider<T>):
-    void {
-
+  protected registerTreeDataProvider<T>(
+    viewId: string,
+    treeDataProvider: TreeDataProvider<T>
+  ): void {
     this.push(window.registerTreeDataProvider<T>(viewId, treeDataProvider));
   }
 }
