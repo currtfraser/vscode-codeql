@@ -375,7 +375,7 @@ async function runRemoteQueriesApiRequest(
     void showAndLogInformationMessage(popupMessage, { fullMessage: logMessage });
     return response.data;
   } catch (error) {
-    if (error.status === 404) {
+    if ((error as any).status === 404) {
       void showAndLogErrorMessage(
         `Controller repository was not found. Please make sure it's a valid repo name.${eol}`
       );
